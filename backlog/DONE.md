@@ -3,8 +3,8 @@
 > Archive of all completed tasks from the backlog. Tasks are moved here when marked as ✅ in BACKLOG.md.
 > This file serves as a historical record of project progress.
 
-**Last Updated:** 2026-04-10  
-**Total Completed Tasks:** 386
+**Last Updated:** 2026-05-01  
+**Total Completed Tasks:** 391
 
 ---
 
@@ -1048,3 +1048,35 @@
   - File: `tests/e2e/website.spec.ts`
   - Added a static-export Playwright spec that serves `apps/website/dist` directly and covers the main marketing, docs, blog, and demo flows. Execution was skipped afterward due the user-confirmed Playwright/browser-network constraint.
 - ✅ Quality gates: docs:check ✅ website typecheck ✅ website build ✅ root lint ✅ root typecheck ✅ root build ✅ 1059/1059 tests ✅ — *2026-04-10*
+
+---
+
+## Launch Readiness Gate
+
+### Session L-1: Test Strategy & Environment Setup — *Completed: 2026-05-01*
+- ✅ Created `docs/launch/BLOCK_TEST_MATRIX.md` covering all block types with editor/renderer/mobile verification columns.
+- ✅ Created `docs/launch/SECURITY_AUDIT_CHECKLIST.md` with input sanitization, XSS, CSP, CORS, secrets, and schema validation checks.
+- ✅ Created `docs/launch/PERF_AUDIT_CHECKLIST.md` with bundle size targets, runtime performance, editor performance, and website performance checks.
+- ✅ Created `docs/launch/BUG_LOG.md` with severity legend (P0/P1/P2) and tracking template.
+- ✅ Hardened build/test environment by closing two pre-existing P1 bugs:
+  - **L-0-001:** Root `npm run build` failed because `tsconfig.build.json` included `apps/**/*.ts` without Next.js path aliases. Removed `apps/**/*.ts` from root build include.
+  - **L-0-002:** `apps/website/lib/blog-studio.test.ts` used a hardcoded WSL absolute path. Replaced with a portable path resolved from `import.meta.url`.
+- ✅ Verified all quality gates pass after fixes.
+
+**Files Updated:**
+- `tsconfig.build.json` — excluded app source from root TypeScript emit
+- `apps/website/lib/blog-studio.test.ts` — portable snapshot path
+- `docs/launch/BUG_LOG.md` — L-0-001 / L-0-002 closed
+- `backlog/BACKLOG.md` — L-1 tasks marked complete
+- `docs/memory/CONTEXT_SNAPSHOT.md` — current state updated
+- `docs/memory/CONVERSATION_LOG.md` — session summary appended
+
+**Quality Gates:**
+- Root: `npm run lint` ✅
+- Root: `npm run typecheck` ✅
+- Root: `npm run build` ✅
+- Root: `npm run test` ✅
+- `apps/website/lib/blog-studio.test.ts`: 9/9 tests pass ✅
+- Playwright/browser-dependent E2E execution skipped by explicit user instruction.
+
+**Next:** L-2 — Basic Blocks QA (Editor + Renderer).

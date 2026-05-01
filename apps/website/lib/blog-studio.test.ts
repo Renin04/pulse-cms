@@ -1,4 +1,6 @@
 import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 import {
@@ -257,9 +259,8 @@ describe('BlogStudioWorkspace', () => {
   })
 
   it('renders every published entry from the public snapshot without schema crashes', () => {
-    const rawSnapshot = JSON.parse(
-      readFileSync('/mnt/c/Users/z0512/Desktop/pulse/apps/website/public/blog-snapshot.json', 'utf8'),
-    )
+    const snapshotPath = join(dirname(fileURLToPath(import.meta.url)), '../public/blog-snapshot.json')
+    const rawSnapshot = JSON.parse(readFileSync(snapshotPath, 'utf8'))
     const snapshot = sanitizeBlogStudioSnapshot(rawSnapshot)
     const workspace = new BlogStudioWorkspace(snapshot)
 

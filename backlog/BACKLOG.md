@@ -19,11 +19,11 @@ Start prompt: `docs/prompt/PHASE_LAUNCH_KICKOFF.md`
 Closeout prompt: `docs/prompt/PHASE_LAUNCH_CLOSEOUT.md`
 
 #### Session L-1 — Test Strategy & Environment Setup
-- ⬜ Create `docs/launch/BLOCK_TEST_MATRIX.md` covering all block types.
-- ⬜ Create `docs/launch/SECURITY_AUDIT_CHECKLIST.md`.
-- ⬜ Create `docs/launch/PERF_AUDIT_CHECKLIST.md`.
-- ⬜ Define severity labels and `docs/launch/BUG_LOG.md` template.
-- ⬜ Get user approval on test strategy.
+- ✅ Create `docs/launch/BLOCK_TEST_MATRIX.md` covering all block types.
+- ✅ Create `docs/launch/SECURITY_AUDIT_CHECKLIST.md`.
+- ✅ Create `docs/launch/PERF_AUDIT_CHECKLIST.md`.
+- ✅ Define severity labels and `docs/launch/BUG_LOG.md` template.
+- ✅ Harden build/test environment: fix root `npm run build` (L-0-001) and website snapshot test path (L-0-002).
 
 #### Session L-2 — Basic Blocks QA (Editor + Renderer)
 - ⬜ Manual verification: Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, Image.

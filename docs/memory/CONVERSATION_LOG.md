@@ -2790,3 +2790,37 @@ R3-10: theme token contract + renderer style entrypoint + custom CSS override pa
 - `apps/website`: `npm run typecheck` ✅
 
 **Next:** Start L-1 — define the validation matrix, set up bug tracking, and get user approval on the launch-readiness test strategy.
+
+---
+
+## Session 71 — L-1 Environment Setup & Bug Fixes
+**Date:** 2026-05-01  
+**Phase:** Launch Readiness Gate — Pre-Phase 4 Validation  
+**Status:** ✅ Complete
+
+**Work Done:**
+- Initialized git repository (`git init`) and committed the existing project state.
+- Closed L-0-001 (root build failure): removed `apps/**/*.ts` from root `tsconfig.build.json`.
+  - Root `tsc` was attempting to compile Next.js API routes without the website's `@/*` path aliases, causing ~100 TS2307/TS7006 errors.
+  - Next.js apps are built independently via `next build`; they do not belong in the root TypeScript emit pipeline.
+- Closed L-0-002 (website snapshot test failure): replaced hardcoded WSL absolute path in `apps/website/lib/blog-studio.test.ts` with a relative path resolved via `fileURLToPath(import.meta.url)`.
+  - The hardcoded `/mnt/c/Users/z0512/Desktop/pulse/apps/website/public/blog-snapshot.json` failed when tests ran on the Windows host side.
+- Verified all quality gates:
+  - `npm run build` ✅
+  - `npm run test` ✅ (all suites pass, including the previously failing website snapshot test)
+  - `npm run lint` ✅
+  - `npm run typecheck` ✅
+
+**Decisions made:**
+- None — fixes were straightforward environment/path corrections, not architectural decisions.
+
+**Updated Files:**
+- `tsconfig.build.json` — excluded `apps/**/*.ts` from root build
+- `apps/website/lib/blog-studio.test.ts` — replaced hardcoded WSL path with portable relative path
+- `docs/launch/BUG_LOG.md` — marked L-0-001 and L-0-002 as fixed
+- `backlog/BACKLOG.md` — marked L-1 tasks complete
+- `backlog/DONE.md` — added L-1 completion record
+- `docs/memory/CONTEXT_SNAPSHOT.md` — updated current state
+- `docs/memory/CONVERSATION_LOG.md` — this entry
+
+**Next:** Start L-2 — Basic Blocks QA (Editor + Renderer). Provide user with a structured checklist for manual verification of Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, and Image blocks.

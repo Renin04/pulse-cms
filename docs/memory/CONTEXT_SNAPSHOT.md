@@ -4,14 +4,21 @@
 > Update this at the end of every session.
 
 **Last Updated:** 2026-05-01  
-**Current Session:** Session 70 — Launch Readiness Gate Planning (Completed)  
-**Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation (L-1 next)
+**Current Session:** Session 71 — L-1 Environment Setup & Bug Fixes (Completed)  
+**Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation (L-2 next)
 
 ---
 
 ## Current Focus
 
-**What we just completed (Session 70):**
+**What we just completed (Session 71 — L-1):**
+- Initialized git repository for the project.
+- Fixed L-0-001: removed `apps/**/*.ts` from root `tsconfig.build.json` so Next.js apps with path aliases no longer cause ~100 TS errors during root `npm run build`.
+- Fixed L-0-002: replaced hardcoded WSL path in `apps/website/lib/blog-studio.test.ts` with a portable `import.meta.url`–based path so the test passes on both WSL and Windows host.
+- Verified all quality gates pass: `build`, `test`, `lint`, `typecheck`.
+- Updated `docs/launch/BUG_LOG.md`, `backlog/BACKLOG.md`, `backlog/DONE.md`, `docs/memory/CONTEXT_SNAPSHOT.md`, and `docs/memory/CONVERSATION_LOG.md`.
+
+**What we completed previously (Session 70):**
 - Created `phases/PHASE_LAUNCH_READINESS.md` with a 14-session validation plan.
 - Created `docs/launch/BLOCK_TEST_MATRIX.md` for manual block-by-block verification.
 - Created `docs/launch/SECURITY_AUDIT_CHECKLIST.md` for security validation.
@@ -121,4 +128,4 @@
 
 ---
 
-**Next Session Goal:** Start L-1 — define the validation matrix, set up bug tracking, and get user approval on the launch-readiness test strategy.
+**Next Session Goal:** Start L-2 — Basic Blocks QA (Editor + Renderer). Manual verification of Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, Image blocks.

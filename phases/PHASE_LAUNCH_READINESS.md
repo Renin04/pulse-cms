@@ -338,7 +338,10 @@ This gate is complete only when all criteria pass:
 
 ## 📌 Execution Log
 
-*No validation sessions yet.*
+### L-1 — Test Strategy & Environment Setup
+**Date:** 2026-05-01  
+**Status:** ✅ Complete  
+**Notes:** Test matrices and checklists created. Two pre-existing P1 build/test bugs (L-0-001, L-0-002) fixed and verified. All quality gates pass. Ready for L-2 block QA.
 
 ---
 
