@@ -2824,3 +2824,36 @@ R3-10: theme token contract + renderer style entrypoint + custom CSS override pa
 - `docs/memory/CONVERSATION_LOG.md` — this entry
 
 **Next:** Start L-2 — Basic Blocks QA (Editor + Renderer). Provide user with a structured checklist for manual verification of Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, and Image blocks.
+
+---
+
+## Session 71 (continued) — L-1 User Feedback & Bug Fixes
+**Date:** 2026-05-01  
+**Phase:** Launch Readiness Gate — Pre-Phase 4 Validation  
+**Status:** ✅ Complete
+
+**User Feedback Received:**
+1. Homepage WebGL console spam (`INVALID_ENUM: activeTexture: texture unit out of range`) from `SplashCursor.tsx` and `ReactBitsInfiniteMenu.tsx`.
+2. Homepage mobile design noted as suboptimal — user will fix later themselves.
+3. Backslash (`\`) macro trigger does not open block palette in website studio; only `/` works.
+4. User confirmed expectation: sessions proceed **block family by block family**, not all at once.
+
+**Actions Taken:**
+- Started website server permanently on port 8000 via PM2 (`pulse-website`).
+- **Investigated WebGL errors:** Root cause is raw WebGL code in homepage marketing components (`SplashCursor.tsx` fluid-cursor effect and `ReactBitsInfiniteMenu.tsx` 3D grid). These are decorative, not part of core editor/renderer. Logged as **L-1-003 P2** — homepage console hygiene, not a launch blocker.
+- **Investigated and fixed backslash bug:** Website studio (`StudioBlockCanvas.tsx`) used a custom palette that only listened for `/` key. The editor package natively supports `\`, but the studio bypassed it. Fixed by:
+  - Adding `e.key === '\\'` to the global keydown handler.
+  - Updating `parsePath`, `tabComplete`, and `breadcrumb` to treat `\` identically to `/`.
+  - Updating help text and input placeholder to mention `\`.
+  - Rebuilt website and restarted PM2 process.
+  - Logged as **L-1-004 P1** → closed in same session.
+
+**Updated Files:**
+- `apps/website/app/components/StudioBlockCanvas.tsx` — `\` trigger support
+- `docs/launch/BUG_LOG.md` — L-1-003 (open, P2) and L-1-004 (closed, P1)
+
+**Quality Gates:**
+- `apps/website`: `npm run build` ✅
+- Website server responding on `localhost:8000` ✅
+
+**Next:** L-2 — Basic Blocks QA. Together, block by block: Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, Image.

@@ -1437,7 +1437,8 @@ export default function StudioBlockCanvas({
 
   function parsePath(query: string): { category: string | null; blockQuery: string } {
     const trimmed = query.trim().toLowerCase();
-    if (!trimmed.startsWith('/')) return { category: activeCategory === 'All' ? null : activeCategory, blockQuery: trimmed };
+    const hasTrigger = trimmed.startsWith('/') || trimmed.startsWith('\\');
+    if (!hasTrigger) return { category: activeCategory === 'All' ? null : activeCategory, blockQuery: trimmed };
     const parts = trimmed.slice(1).split('/').filter(Boolean);
     if (parts.length === 0) return { category: null, blockQuery: '' };
     if (parts.length === 1) {
@@ -1454,7 +1455,8 @@ export default function StudioBlockCanvas({
 
   function tabComplete(query: string): string {
     const trimmed = query.trim().toLowerCase();
-    if (!trimmed.startsWith('/')) {
+    const hasTrigger = trimmed.startsWith('/') || trimmed.startsWith('\\');
+    if (!hasTrigger) {
       const match = allDefs.find((d) => (blockTypeToLabel[d.type] || d.type).toLowerCase().startsWith(trimmed));
       return match ? `/${blockTypeToLabel[match.type] || match.type}`.toLowerCase().replace(/\s+/g, '-') : query;
     }
@@ -1481,7 +1483,7 @@ export default function StudioBlockCanvas({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName || '')) {
+      if ((e.key === '/' || e.key === '\\') && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName || '')) {
         e.preventDefault();
         setShowPalette(true);
       }
@@ -1553,7 +1555,8 @@ export default function StudioBlockCanvas({
 
   const breadcrumb = useMemo(() => {
     const trimmed = paletteQuery.trim().toLowerCase();
-    if (!trimmed.startsWith('/')) return null;
+    const hasTrigger = trimmed.startsWith('/') || trimmed.startsWith('\\');
+    if (!hasTrigger) return null;
     const parts = trimmed.slice(1).split('/').filter(Boolean);
     return parts;
   }, [paletteQuery]);
@@ -1565,7 +1568,7 @@ export default function StudioBlockCanvas({
           Pulse editor canvas
         </p>
         <p className="mt-2 text-sm text-[var(--neutral-600)]">
-          Type <kbd className="rounded bg-white px-1 py-0.5 font-mono text-xs">/</kbd> to open the command palette, or click "Add a block" below. Drag the handle on the left to reorder blocks. Type a position number and press Enter to move instantly.
+          Type <kbd className="rounded bg-white px-1 py-0.5 font-mono text-xs">/</kbd> or <kbd className="rounded bg-white px-1 py-0.5 font-mono text-xs">\</kbd> to open the command palette, or click "Add a block" below. Drag the handle on the left to reorder blocks. Type a position number and press Enter to move instantly.
         </p>
       </div>
 
@@ -1625,7 +1628,7 @@ export default function StudioBlockCanvas({
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Type /category/block or search..."
+                    placeholder="Type /category/block or \\search..."
                     value={paletteQuery}
                     onChange={(e) => setPaletteQuery(e.target.value)}
                     onKeyDown={(e) => {
