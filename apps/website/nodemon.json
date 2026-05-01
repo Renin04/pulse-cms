@@ -1,0 +1,15 @@
+{
+  "watch": [
+    "app",
+    "components",
+    "lib",
+    "public",
+    "next.config.js",
+    "tailwind.config.js",
+    "postcss.config.js"
+  ],
+  "ext": "js,jsx,ts,tsx,json,css,scss,md",
+  "exec": "next dev",
+  "legacyWatch": true,
+  "delay": 500
+}

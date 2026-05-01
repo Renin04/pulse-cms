@@ -1,0 +1,57 @@
+ You are continuing work on the Pulse project. Phase 4 is now complete.
+
+  This is a PLANNING + DOCUMENTATION session only (no feature implementation code in this session).
+
+  Follow startup protocol exactly:
+  1) Read docs/memory/CONTEXT_SNAPSHOT.md
+  2) Read backlog/BACKLOG.md
+  3) Read backlog/DECISIONS.md
+  4) Read docs/FEATURES.md
+  5) Read all existing phase files in phases/
+
+  Goal:
+  Create the post-Phase-4 master execution plan so that, by completing the planned remaining phases, ALL features listed
+  in docs/FEATURES.md are implemented with no leftovers.
+
+  Mandatory tasks:
+  - Audit docs/FEATURES.md and list every feature not completed (including items with phase “-” or unclear mapping).
+  - Normalize and finalize phase mapping for all remaining features (no unassigned “-” features left unless explicitly
+  cancelled).
+  - Create/expand remaining phase plans (e.g. Phase 5, Phase 6, and beyond if needed) with:
+    - clear scope
+    - session-by-session breakdown
+    - priorities (P0/P1/P2/P3)
+    - dependencies
+    - acceptance criteria
+    - definition of done
+  - Ensure roadmap continuity from current state to final project completion.
+  - Ensure backlog hygiene rule is preserved:
+    - backlog/BACKLOG.md contains only open actionable tasks
+    - completed items are archived in backlog/DONE.md
+  - If any true architectural decisions are made while planning, append them to backlog/DECISIONS.md.
+
+  Required file updates (must be done in this session):
+  - backlog/BACKLOG.md
+  - backlog/DONE.md (if any planning-only archive/meta tasks are completed)
+  - docs/memory/CONTEXT_SNAPSHOT.md
+  - docs/memory/CONVERSATION_LOG.md
+  - docs/FEATURES.md
+  - backlog/DECISIONS.md (only if a real architecture/design decision is made)
+  - Create/update missing phase files in phases/ as needed for full roadmap completion.
+
+  Hard acceptance criteria for this planning session:
+  1) A complete roadmap exists from now until full project completion.
+  2) Every feature in docs/FEATURES.md is mapped to a concrete final phase/session path.
+  3) No remaining “orphan” features without a delivery phase.
+  4) Backlog strictly reflects only remaining work.
+  5) Planning docs are internally consistent (BACKLOG, FEATURES, phase files, CONTEXT_SNAPSHOT).
+
+  Validation:
+  - Run: npm run docs:check
+  - Run: npm run ci:local
+  - Report any mismatches found and how they were resolved.
+
+  At the end, provide:
+  - A concise “Final Roadmap Summary”
+  - Remaining phases with expected session waves
+  - Confirmation that completing planned phases will leave zero unimplemented features from docs/FEATURES.md.

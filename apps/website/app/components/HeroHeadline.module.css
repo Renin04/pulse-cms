@@ -1,0 +1,159 @@
+/* The h1 row */
+.headline {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3em;
+  white-space: nowrap;
+  position: relative;
+}
+
+/* ── Word box ───────────────────────────────────────────────────
+   Fixed-height container whose WIDTH transitions smoothly.
+   "are next." is a sibling in the flex row, so it slides as this
+   box grows/shrinks — no JS needed on the suffix side.           */
+.wordBox {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  transition: width 0.56s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow: visible;
+  vertical-align: baseline;
+}
+
+.wordViewport {
+  display: inline-flex;
+  align-items: baseline;
+  overflow: visible;
+  padding-top: 0.34em;
+  padding-right: 0.08em;
+  padding-bottom: 0.36em;
+  padding-left: 0.08em;
+  margin-top: -0.34em;
+  margin-right: -0.08em;
+  margin-bottom: -0.36em;
+  margin-left: -0.08em;
+}
+
+/* ── Hidden measurer ────────────────────────────────────────── */
+.measureRack {
+  position: absolute;
+  visibility: hidden;
+  inset: 0 auto auto 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.measurer {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none;
+  font-weight: 800;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+  top: 0;
+  left: -9999px;
+}
+
+/* ── Visible word ───────────────────────────────────────────── */
+.word {
+  display: inline-block;
+  font-weight: 800;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+  will-change: transform, opacity;
+  color: var(--pulse-red);
+  text-shadow: 0 1px 0 rgba(169, 27, 0, 0.14);
+}
+
+.staticWord {
+  display: inline-block;
+  font-weight: 800;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+  color: var(--pulse-red);
+  text-shadow: 0 1px 0 rgba(169, 27, 0, 0.14);
+}
+
+/* ── Phase states ───────────────────────────────────────────── */
+.idle {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.exit {
+  animation: word-exit 0.32s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.enter {
+  animation: word-enter 0.42s cubic-bezier(0.0, 0, 0.2, 1) forwards;
+}
+
+/* ── Suffix ─────────────────────────────────────────────────── */
+.suffix {
+  display: inline-block;
+  color: var(--neutral-600);
+  transition:
+    transform 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease;
+  will-change: transform, opacity;
+}
+
+.suffixExit {
+  transform: translateX(-0.02em) translateY(-0.02em);
+  opacity: 0.92;
+}
+
+.suffixEnter {
+  transform: translateX(0) translateY(0);
+  opacity: 1;
+}
+
+/* ── Keyframes ──────────────────────────────────────────────── */
+@keyframes word-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0%);
+  }
+  35% {
+    opacity: 0.95;
+    transform: translateY(-0.14em) scaleY(0.99);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-0.78em) scaleY(0.98);
+  }
+}
+
+@keyframes word-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.78em) scaleY(0.98);
+  }
+  68% {
+    opacity: 1;
+    transform: translateY(0.03em) scaleY(1.003);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wordBox,
+  .suffix {
+    transition: none;
+  }
+
+  .word,
+  .exit,
+  .enter {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
+}

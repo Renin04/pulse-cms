@@ -1,0 +1,68 @@
+:root {
+  --pulse-container-max-width: 860px;
+  --pulse-container-padding: 24px;
+  --pulse-block-gap: 18px;
+}
+
+.pulse-layout {
+  box-sizing: border-box;
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--pulse-container-padding);
+}
+
+.pulse-layout--single .pulse-layout__inner {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--pulse-container-max-width);
+  margin-inline: auto;
+  display: grid;
+  grid-auto-flow: row;
+  gap: var(--pulse-block-gap);
+}
+
+.pulse-layout__inner > * {
+  min-width: 0;
+}
+
+.pulse-layout--mobile {
+  --pulse-container-max-width: 640px;
+  --pulse-container-padding: 16px;
+  --pulse-block-gap: 16px;
+}
+
+.pulse-layout--tablet {
+  --pulse-container-max-width: 760px;
+  --pulse-container-padding: 24px;
+  --pulse-block-gap: 18px;
+}
+
+.pulse-layout--desktop {
+  --pulse-container-max-width: 860px;
+  --pulse-container-padding: 32px;
+  --pulse-block-gap: 20px;
+}
+
+.pulse-layout--wide {
+  --pulse-container-max-width: 960px;
+  --pulse-container-padding: 40px;
+  --pulse-block-gap: 24px;
+}
+
+@media (max-width: 767px) {
+  .pulse-layout {
+    padding-inline: var(--pulse-container-padding, 16px);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pulse-layout {
+    padding-inline: var(--pulse-container-padding, 24px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .pulse-layout {
+    padding-inline: var(--pulse-container-padding, 32px);
+  }
+}

@@ -1,0 +1,76 @@
+/**
+ * Pulse Renderer — Built-in Theme Overrides
+ *
+ * Apply a theme by adding the matching attribute to the renderer root element:
+ *   <div data-pulse-theme="dark">...</div>
+ *   <div data-pulse-theme="minimal">...</div>
+ *
+ * The "light" theme matches the base token defaults (tokens.css) so no
+ * override block is needed for it — it is the default.
+ *
+ * Import order: tokens.css → layout.css → layout-modes.css → themes.css → custom
+ */
+
+/* ── Dark theme ──────────────────────────────────────────────────────────── */
+[data-pulse-theme="dark"] {
+  --pulse-color-bg:                #18181b;
+  --pulse-color-surface:           #27272a;
+  --pulse-color-text:              #e4e4e7;
+  --pulse-color-text-muted:        #a1a1aa;
+  --pulse-color-heading:           #f4f4f5;
+  --pulse-color-link:              #60a5fa;
+  --pulse-color-link-hover:        #93c5fd;
+  --pulse-color-border:            #3f3f46;
+  --pulse-color-focus:             #60a5fa;
+  --pulse-color-accent:            #60a5fa;
+  --pulse-color-code-bg:           #27272a;
+  --pulse-color-code-text:         #e4e4e7;
+  --pulse-color-blockquote-border: #52525b;
+  --pulse-color-blockquote-bg:     #27272a;
+}
+
+/* ── Minimal theme ───────────────────────────────────────────────────────── */
+[data-pulse-theme="minimal"] {
+  --pulse-color-bg:                #ffffff;
+  --pulse-color-surface:           #ffffff;
+  --pulse-color-text:              #0a0a0a;
+  --pulse-color-text-muted:        #525252;
+  --pulse-color-heading:           #0a0a0a;
+  --pulse-color-link:              #0a0a0a;
+  --pulse-color-link-hover:        #404040;
+  --pulse-color-border:            #d4d4d4;
+  --pulse-color-focus:             #0a0a0a;
+  --pulse-color-accent:            #0a0a0a;
+  --pulse-color-code-bg:           #f5f5f5;
+  --pulse-color-code-text:         #0a0a0a;
+  --pulse-color-blockquote-border: #a3a3a3;
+  --pulse-color-blockquote-bg:     #fafafa;
+  /* Flatten decorative chrome */
+  --pulse-shadow-sm:               none;
+  --pulse-shadow-md:               none;
+  --pulse-shadow-lg:               none;
+  --pulse-radius-sm:               2px;
+  --pulse-radius-md:               2px;
+  --pulse-radius-lg:               2px;
+}
+
+/* ── System dark mode auto-detection ─────────────────────────────────────── */
+/* Applied only when no explicit data-pulse-theme is set */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-pulse-theme]) {
+    --pulse-color-bg:                #18181b;
+    --pulse-color-surface:           #27272a;
+    --pulse-color-text:              #e4e4e7;
+    --pulse-color-text-muted:        #a1a1aa;
+    --pulse-color-heading:           #f4f4f5;
+    --pulse-color-link:              #60a5fa;
+    --pulse-color-link-hover:        #93c5fd;
+    --pulse-color-border:            #3f3f46;
+    --pulse-color-focus:             #60a5fa;
+    --pulse-color-accent:            #60a5fa;
+    --pulse-color-code-bg:           #27272a;
+    --pulse-color-code-text:         #e4e4e7;
+    --pulse-color-blockquote-border: #52525b;
+    --pulse-color-blockquote-bg:     #27272a;
+  }
+}

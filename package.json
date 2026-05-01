@@ -1,0 +1,42 @@
+{
+  "name": "pulse",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "docs:check": "node scripts/check-backlog.mjs",
+    "build:clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run build:clean && node ./node_modules/typescript/bin/tsc -p tsconfig.build.json",
+    "dev:manual-lab": "npm run build && node --experimental-specifier-resolution=node apps/manual-lab/server.mjs",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier \"**/*.{ts,cjs,json,yml,yaml}\" --write",
+    "format:check": "prettier \"**/*.{ts,cjs,json,yml,yaml}\" --check",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:integration": "vitest run packages/core/tests/integration.test.ts",
+    "test:e2e": "playwright test --reporter=line",
+    "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit",
+    "ci:local": "npm run docs:check && npm run lint && npm run typecheck && npm run build && npm run test && npm run test:e2e"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^24.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "happy-dom": "^20.8.9",
+    "prettier": "^3.8.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

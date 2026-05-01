@@ -1,0 +1,80 @@
+#infinite-grid-menu-canvas {
+  cursor: grab;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  outline: none;
+  mask-image: radial-gradient(circle at center, black 58%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at center, black 58%, transparent 75%);
+}
+
+#infinite-grid-menu-canvas:active {
+  cursor: grabbing;
+}
+
+.face-title {
+  user-select: none;
+  position: absolute;
+  font-weight: 800;
+  font-size: 2.25rem;
+  top: 50%;
+  left: 5%;
+  transform: translate(0, -50%);
+  color: var(--pulse-black);
+  pointer-events: none;
+  max-width: 26%;
+  line-height: 1.1;
+  text-align: left;
+  text-shadow: 0 2px 24px rgba(255, 255, 255, 0.9);
+}
+
+.face-title.active {
+  opacity: 1;
+  transform: translate(0, -50%);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.face-title.inactive {
+  opacity: 0;
+  transform: translate(-1rem, -50%);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.face-description {
+  user-select: none;
+  position: absolute;
+  max-width: 24%;
+  top: 50%;
+  right: 5%;
+  transform: translate(0, -50%);
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--neutral-600);
+  pointer-events: none;
+  text-align: right;
+  text-shadow: 0 2px 24px rgba(255, 255, 255, 0.9);
+}
+
+.face-description.active {
+  opacity: 1;
+  transform: translate(0, -50%);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.face-description.inactive {
+  opacity: 0;
+  transform: translate(1rem, -50%);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+@media (max-width: 1024px) {
+  .face-title,
+  .face-description {
+    display: none;
+  }
+  #infinite-grid-menu-canvas {
+    mask-image: radial-gradient(circle at center, black 62%, transparent 78%);
+    -webkit-mask-image: radial-gradient(circle at center, black 62%, transparent 78%);
+  }
+}

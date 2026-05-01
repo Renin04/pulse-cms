@@ -1,0 +1,46 @@
+{
+  "name": "@pulse/website",
+  "version": "0.1.0",
+  "private": true,
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "serve:offline": "node ./scripts/serve-static.mjs",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "@pulse/blocks": "file:../../packages/blocks",
+    "@pulse/core": "file:../../packages/core",
+    "@pulse/editor": "file:../../packages/editor",
+    "@pulse/react": "file:../../packages/react",
+    "@pulse/renderer": "file:../../packages/renderer",
+    "bcryptjs": "^3.0.3",
+    "gl-matrix": "^3.4.4",
+    "jose": "^6.2.2",
+    "lucide-react": "^0.511.0",
+    "motion": "^12.38.0",
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sharp": "^0.34.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "prisma": "^5.22.0",
+    "puppeteer-core": "^24.42.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.3.0"
+  }
+}

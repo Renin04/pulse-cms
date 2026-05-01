@@ -1,0 +1,34 @@
+ You are continuing work on the Pulse project.
+
+    First, follow `docs/AGENT_PROMPT.md` startup protocol exactly:
+    1) Read `docs/memory/CONTEXT_SNAPSHOT.md`
+    2) Read `backlog/BACKLOG.md`
+    3) Read `backlog/DECISIONS.md`
+    4) Read `phases/PHASE_03`
+	read all above and then start the next session/sessions; move completely as docs.
+
+    Implement in small, testable steps, run tests/typecheck, and at session end update:
+    - `backlog/BACKLOG.md`
+    - `backlog/DONE.md`
+    - `docs/memory/CONTEXT_SNAPSHOT.md`
+    - `docs/memory/CONVERSATION_LOG.md`
+    - `backlog/DECISIONS.md` only if a real architectural decision is made.
+	- features.md
+  also, remember
+  that i'm on windows, but you're running on wsl. my project is located at pulse folder in my desktop.
+ also, you've got some tools on wsl that you can use to work better, you can read the entire list at this address: "C:\Users\z0512\Desktop\ai-agent-tools.md"
+ این فایل، یک فاز قبل از ورود به فاز 4 خواهد بود. هدف از این فاز چیه؟ 1- مقایسه تمام فیچرهایی که تا به حال
+  پیاده شدن با تمام فیچرهای ادیتورهای معروف مثل ckeditor و tinyMCE. و درصورتی که فیچر مهمی نیست (چه متن مثل الاینمنت و
+  چه تصویری مثل آلت) بهش اضافه کنیم. 2- اضافه کردن ویژگی های کامل یک CMS! چون الان من فقط یک ادیتور دارم و نه یک CMS
+  کامل! برای اینم باید دوباره رقبای معروف رو بررسی کنیم + خلاقیت هایی پیاده کنیم که مثل کلیت پروژه الانمون، برای بهبود
+  UX باشن! 3- از نظر منطقی بررسی کن ببین همه چیز سر جاشه؟ مثلا الان صفحه راهنمای شورت کات ها و کامندها رو داریم؟ یا
+  مثلا میتونیم شورت کات یا کامند جدید تعریف کنیم؟ و چیزای دیگه. چون عملا پایان فاز سه که الان هستیم، باید ادیتورمون
+  کامل کامل باشه! و در فازهای بعدی فیچرها رو اضافه کنیم و بریم به سمت پروداکشن. اوکی؟ 4- من میخوام یه سایت هم بزنیم!
+  هدف از این سایت دو چیزه: الف) معرفی خود pulse به عنوان یک ادیتور و همینطور CMS کامل با همه فیچرهایی که دارمی. ب) تست
+  کردن خود پالس داخل این سایت! یعنی باید بلاگ داشته باشیم و مدیریت بلاگ و ادیتورش هم کاملا با pulse باشه. من ازت
+  میخوام که با توجه به تمام چیزهایی که گفتم، مستندات رو آپدیت کنی، فایل جدید فاز رو بسازی، پرامپتی که اولش بهت دادم رو
+  هم ادیت کنی، بک لاگ رو با دقت آپدیت کنی )و تمام تسک های  جدید رو با دقت اضافه کنی و مدیریت سشن هم انجام بدی!).
+  درنهایت، ما باید اماده ورود به سشن بعدی در این فاز باشیم. اوکی؟ ازت میخوام که حتما برای پیدا کردن فیچرهای دقیق CMSها
+  یا ادیتورهای دیگه، سرچ کامل و دقیق در اینترنت انجام بدی..
+
+من این پرامپت رو در سشن قبلی داده بودم؛ اما در انتهای کار همه چیز قاطی شد و به هم ریخت! میتونی ببینی چقدر کار انجام شده؟ و کار باقی مونده رو تکمیل کردی؟

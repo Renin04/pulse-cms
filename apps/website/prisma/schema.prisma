@@ -1,0 +1,337 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Authentication & Authorization
+// ============================================================================
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  displayName   String?   @map("display_name")
+  status        String    @default("active") // active, inactive, suspended
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  lastLoginAt   DateTime? @map("last_login_at")
+
+  // Relations
+  userRoles     UserRole[]
+  auditLogs     AuditLog[]
+  entries       Entry[]       @relation("EntryAuthor")
+  entryVersions EntryVersion[] @relation("VersionAuthor")
+  mediaAssets   MediaAsset[]  @relation("MediaUploader")
+
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id     String @id @default(uuid())
+  scope  String @unique // e.g., content.read, content.publish
+  name   String
+  description String?
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  roleId String @map("role_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ============================================================================
+// Content Type System
+// ============================================================================
+
+model ContentType {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  slug        String   @unique
+  fields      String   // JSON: ContentTypeField[]
+  metadata    String?  // JSON: icon, color, sortField, sortDirection
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  entries Entry[]
+
+  @@map("content_types")
+}
+
+// ============================================================================
+// Content Entry System
+// ============================================================================
+
+model Entry {
+  id            String    @id @default(uuid())
+  contentTypeId String    @map("content_type_id")
+  title         String
+  slug          String
+  status        String    @default("draft") // draft, review, scheduled, published, archived
+  fieldValues   String    @map("field_values") // JSON: EntryFieldValue[]
+  blocks        String?   // JSON: Block[]
+  authorId      String?   @map("author_id")
+  publishedAt   DateTime? @map("published_at")
+  scheduledAt   DateTime? @map("scheduled_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  metadata      String?   // JSON: seoTitle, seoDescription, seoKeywords, ogImage, canonicalUrl, seoScore, hasAltText, wordCount
+  parentId      String?   @map("parent_id")
+  origin        String    @default("real") // template, sample, seed, real
+
+  // Relations
+  contentType ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+  author      User?       @relation("EntryAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  versions    EntryVersion[]
+  taxonomyLinks EntryTaxonomyTerm[]
+  relationshipsAsSource EntryRelationship[] @relation("RelationshipSource")
+  relationshipsAsTarget EntryRelationship[] @relation("RelationshipTarget")
+  mediaUsages MediaUsage[]
+  auditLogs   AuditLog[]
+  publishJobs PublishJob[]
+
+  @@unique([slug, contentTypeId])
+  @@map("entries")
+}
+
+model EntryVersion {
+  id        String   @id @default(uuid())
+  entryId   String   @map("entry_id")
+  version   Int
+  title     String
+  slug      String
+  status    String
+  fieldValues String @map("field_values") // JSON
+  blocks    String?  // JSON
+  metadata  String?  // JSON
+  authorId  String?  @map("author_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entry  Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  author User? @relation("VersionAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@unique([entryId, version])
+  @@map("entry_versions")
+}
+
+model EntryTaxonomyTerm {
+  id      String @id @default(uuid())
+  entryId String @map("entry_id")
+  termId  String @map("term_id")
+
+  entry Entry        @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  term  TaxonomyTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, termId])
+  @@map("entry_taxonomy_terms")
+}
+
+model EntryRelationship {
+  id              String @id @default(uuid())
+  sourceEntryId   String @map("source_entry_id")
+  targetEntryId   String @map("target_entry_id")
+  relationshipType String @default("related") @map("relationship_type")
+  order           Int?
+  metadata        String? // JSON
+
+  sourceEntry Entry @relation("RelationshipSource", fields: [sourceEntryId], references: [id], onDelete: Cascade)
+  targetEntry Entry @relation("RelationshipTarget", fields: [targetEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceEntryId, targetEntryId, relationshipType])
+  @@map("entry_relationships")
+}
+
+// ============================================================================
+// Taxonomy System
+// ============================================================================
+
+model Taxonomy {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  type        String   @default("tag") // category, tag, label, custom
+  description String?
+  config      String   // JSON: hierarchical, allowMultiple, required
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  terms TaxonomyTerm[]
+
+  @@map("taxonomies")
+}
+
+model TaxonomyTerm {
+  id          String   @id @default(uuid())
+  taxonomyId  String   @map("taxonomy_id")
+  name        String
+  slug        String
+  description String?
+  color       String?
+  parentId    String?  @map("parent_id")
+  order       Int      @default(0)
+  metadata    String?  // JSON
+
+  taxonomy Taxonomy @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+  entryLinks EntryTaxonomyTerm[]
+
+  @@unique([taxonomyId, slug])
+  @@map("taxonomy_terms")
+}
+
+// ============================================================================
+// Media System
+// ============================================================================
+
+model MediaAsset {
+  id          String   @id @default(uuid())
+  name        String
+  filename    String
+  url         String
+  type        String   // image, video, audio, document, other
+  folderId    String?  @map("folder_id")
+  metadata    String   // JSON: alt, title, caption, credit, source, license, width, height, duration, fileSize, mimeType, tags
+  uploaderId  String   @map("uploader_id")
+  usageCount  Int      @default(0) @map("usage_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  uploader User        @relation("MediaUploader", fields: [uploaderId], references: [id], onDelete: Cascade)
+  usages   MediaUsage[]
+
+  @@map("media_assets")
+}
+
+model MediaFolder {
+  id          String   @id @default(uuid())
+  name        String
+  parentId    String?  @map("parent_id")
+  path        String
+  description String?
+  assetCount  Int      @default(0) @map("asset_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("media_folders")
+}
+
+model MediaUsage {
+  id        String @id @default(uuid())
+  assetId   String @map("asset_id")
+  entryId   String @map("entry_id")
+  fieldId   String @map("field_id") // which field uses this asset
+
+  asset MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  entry Entry      @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, entryId, fieldId])
+  @@map("media_usage")
+}
+
+// ============================================================================
+// Settings
+// ============================================================================
+
+model SiteSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   // JSON string
+  category    String   @default("general") // general, seo, social, featured-tags, integrations
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+}
+
+// ============================================================================
+// Workflow & Jobs
+// ============================================================================
+
+model PublishJob {
+  id          String    @id @default(uuid())
+  entryId     String    @map("entry_id")
+  action      String    // publish, unpublish, archive
+  scheduledAt DateTime  @map("scheduled_at")
+  executedAt  DateTime? @map("executed_at")
+  executed    Boolean   @default(false)
+  failed      Boolean   @default(false)
+  error       String?
+  createdBy   String    @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  entry Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@map("publish_jobs")
+}
+
+// ============================================================================
+// Audit & Observability
+// ============================================================================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  entryId     String?  @map("entry_id")
+  action      String   // create, update, delete, publish, unpublish, archive, login, logout, etc.
+  resource    String   // entry, user, taxonomy, media, setting
+  resourceId  String?  @map("resource_id")
+  fromStatus  String?  @map("from_status")
+  toStatus    String?  @map("to_status")
+  metadata    String?  // JSON: details of the change
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  entry Entry? @relation(fields: [entryId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

@@ -1,0 +1,52 @@
+/* Outer wrapper — motion animates width with layout spring */
+.container {
+  display: inline-flex;
+  align-items: baseline;
+  vertical-align: baseline;
+  white-space: nowrap;
+  /* clip the vertical slide so chars don't overflow the line */
+  overflow: hidden;
+  /* extra vertical padding so blur doesn't clip at edges */
+  padding-top: 0.1em;
+  padding-bottom: 0.15em;
+  margin-top: -0.1em;
+  margin-bottom: -0.15em;
+}
+
+/* The word — gradient applied to a single span so it looks correct */
+.word {
+  display: inline-block;
+  font-weight: 800;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+  background: linear-gradient(
+    135deg,
+    var(--pulse-red) 0%,
+    var(--pulse-red-light) 35%,
+    var(--pulse-jasmine) 65%,
+    var(--pulse-red) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-shift 3s ease infinite;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}

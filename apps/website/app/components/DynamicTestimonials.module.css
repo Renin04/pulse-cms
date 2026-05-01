@@ -1,0 +1,129 @@
+.section {
+  position: relative;
+  padding: 6rem 1rem;
+  background: linear-gradient(180deg, #faf8f5 0%, var(--pulse-black) 100%);
+  overflow: hidden;
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 40, 0, 0.08), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 230, 149, 0.05), transparent 40%);
+  pointer-events: none;
+}
+
+.kicker {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pulse-jasmine);
+  margin-bottom: 1rem;
+}
+
+.headlineWrap {
+  text-align: center;
+  margin-bottom: 3rem;
+  min-height: 3.5rem;
+}
+
+.headline {
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  line-height: 1.2;
+}
+
+@media (min-width: 640px) {
+  .headline {
+    font-size: 2.5rem;
+  }
+}
+
+.headlineText {
+  display: inline;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card {
+  position: relative;
+  height: 100%;
+  padding: 2rem !important;
+  border-radius: 1.5rem !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.accentLine {
+  position: absolute;
+  top: 0;
+  left: 2rem;
+  right: 2rem;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  opacity: 0.8;
+}
+
+.quoteIcon {
+  width: 1.75rem;
+  height: 1.75rem;
+  opacity: 0.4;
+  margin-bottom: 1rem;
+}
+
+.quoteText {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 1.5rem 0;
+  font-style: italic;
+  flex: 1;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.name {
+  font-weight: 700;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.role {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}

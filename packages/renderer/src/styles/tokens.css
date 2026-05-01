@@ -1,0 +1,107 @@
+/**
+ * Pulse Renderer — Design Token Defaults
+ *
+ * This file sets the default values for all --pulse-* CSS custom properties.
+ * Import this file as the first stylesheet on any page that uses @pulse/renderer.
+ *
+ * Consumer override pattern:
+ *   :root { --pulse-color-accent: #e11d48; }   /* site-wide override */
+ *   .my-section { --pulse-color-bg: #fafafa; } /* scoped override     */
+ *
+ * Import order: tokens.css → layout.css → layout-modes.css → themes.css → custom
+ */
+
+/* ── Color ──────────────────────────────────────────────────────────────── */
+:root {
+  --pulse-color-bg:               #ffffff;
+  --pulse-color-surface:          #f8f9fa;
+  --pulse-color-text:             #1a1a1a;
+  --pulse-color-text-muted:       #6b7280;
+  --pulse-color-heading:          #111111;
+  --pulse-color-link:             #2563eb;
+  --pulse-color-link-hover:       #1d4ed8;
+  --pulse-color-border:           #e5e7eb;
+  --pulse-color-focus:            #2563eb;
+  --pulse-color-accent:           #2563eb;
+  --pulse-color-code-bg:          #f3f4f6;
+  --pulse-color-code-text:        #111827;
+  --pulse-color-blockquote-border:#d1d5db;
+  --pulse-color-blockquote-bg:    #f9fafb;
+}
+
+/* ── Spacing Scale ───────────────────────────────────────────────────────── */
+:root {
+  --pulse-space-1:  4px;
+  --pulse-space-2:  8px;
+  --pulse-space-3:  12px;
+  --pulse-space-4:  16px;
+  --pulse-space-5:  20px;
+  --pulse-space-6:  24px;
+  --pulse-space-8:  32px;
+  --pulse-space-10: 40px;
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+:root {
+  --pulse-font-family-body:    system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --pulse-font-family-heading: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --pulse-font-family-mono:    'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  --pulse-font-size-base:  1rem;
+  --pulse-font-size-sm:    0.875rem;
+  --pulse-font-size-lg:    1.125rem;
+  --pulse-font-size-xl:    1.25rem;
+  --pulse-font-size-2xl:   1.5rem;
+  --pulse-font-size-3xl:   1.875rem;
+  --pulse-font-size-4xl:   2.25rem;
+
+  --pulse-font-weight-normal:   400;
+  --pulse-font-weight-medium:   500;
+  --pulse-font-weight-semibold: 600;
+  --pulse-font-weight-bold:     700;
+
+  --pulse-line-height-body:    1.7;
+  --pulse-line-height-heading: 1.25;
+  --pulse-line-height-code:    1.5;
+}
+
+/* ── Border Radius ───────────────────────────────────────────────────────── */
+:root {
+  --pulse-radius-sm:   4px;
+  --pulse-radius-md:   8px;
+  --pulse-radius-lg:   12px;
+  --pulse-radius-full: 9999px;
+}
+
+/* ── Shadows ─────────────────────────────────────────────────────────────── */
+:root {
+  --pulse-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --pulse-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+  --pulse-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+}
+
+/* ── Motion ──────────────────────────────────────────────────────────────── */
+:root {
+  --pulse-motion-duration-fast:  150ms;
+  --pulse-motion-duration-base:  250ms;
+  --pulse-motion-duration-slow:  400ms;
+  --pulse-motion-easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --pulse-motion-easing-out:     cubic-bezier(0, 0, 0.2, 1);
+  --pulse-motion-easing-in:      cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+:root {
+  --pulse-layout-max-width:      860px;
+  --pulse-layout-padding-inline: 24px;
+  --pulse-layout-block-gap:      20px;
+}
+
+/* ── Reduced-motion safety ───────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --pulse-motion-duration-fast: 0ms;
+    --pulse-motion-duration-base: 0ms;
+    --pulse-motion-duration-slow: 0ms;
+  }
+}

@@ -1,0 +1,1874 @@
+{
+  "entries": [
+    {
+      "slug": "comprehensive-guide-to-modern-web-development",
+      "title": "A Comprehensive Guide to Modern Web Development in 2025",
+      "status": "published",
+      "excerpt": "Explore the latest trends, tools, and best practices shaping web development today. From performance optimization to accessibility, learn what it takes to build exceptional web experiences.",
+      "eyebrow": "Featured Guide",
+      "author": "Sarah Chen",
+      "tags": [
+        "Web Development",
+        "JavaScript",
+        "Performance",
+        "Accessibility",
+        "Best Practices"
+      ],
+      "featured": true,
+      "seoTitle": "Modern Web Development Guide 2025 | Best Practices & Tools",
+      "seoDescription": "Complete guide to modern web development covering performance, accessibility, frameworks, and industry best practices. Learn from real-world examples and expert insights.",
+      "blocks": [
+        {
+          "id": "heading_1776711822968_75jaqmfax",
+          "type": "heading",
+          "data": {
+            "text": "A Comprehensive Guide to Modern Web Development in 2025",
+            "level": 1,
+            "anchorId": "a-comprehensive-guide-to-modern-web-development-in-2025"
+          }
+        },
+        {
+          "id": "text_1776711822969_k2x0ah0cw",
+          "type": "text",
+          "data": {
+            "text": "The web development landscape has evolved dramatically over the past few years. With new frameworks, tools, and best practices emerging constantly, staying current can feel overwhelming. This guide breaks down everything you need to know to build modern, performant, and accessible web applications.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776711822969_68vy8jmy6",
+          "type": "callout",
+          "data": {
+            "variant": "info",
+            "title": "What You'll Learn",
+            "body": "This comprehensive guide covers performance optimization, accessibility standards, modern JavaScript frameworks, and production-ready deployment strategies.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776711822969_0sqmjfv5y",
+          "type": "heading",
+          "data": {
+            "text": "The Foundation: Core Web Vitals",
+            "level": 2,
+            "anchorId": "the-foundation-core-web-vitals"
+          }
+        },
+        {
+          "id": "text_1776711822969_7i0hwqbre",
+          "type": "text",
+          "data": {
+            "text": "Google's Core Web Vitals have become the industry standard for measuring user experience. Understanding and optimizing these metrics is crucial for any modern web application.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "list_1776711822969_vpjk6u9zz",
+          "type": "list",
+          "data": {
+            "items": [
+              "Largest Contentful Paint (LCP): Measures loading performance",
+              "Interaction to Next Paint (INP): Measures interactivity",
+              "Cumulative Layout Shift (CLS): Measures visual stability"
+            ],
+            "ordered": false
+          }
+        },
+        {
+          "id": "text_1776711822969_raxulx5pu",
+          "type": "text",
+          "data": {
+            "text": "Each metric targets a specific aspect of user experience. Let's dive into how to optimize them.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776711822969_mnghh9tbs",
+          "type": "heading",
+          "data": {
+            "text": "Performance Optimization Strategies",
+            "level": 2,
+            "anchorId": "performance-optimization-strategies"
+          }
+        },
+        {
+          "id": "text_1776711822969_6j7f2fut5",
+          "type": "text",
+          "data": {
+            "text": "Performance isn't just about speed—it's about creating a smooth, responsive experience that keeps users engaged. Here are the key strategies:",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776711822969_shp3y1sbb",
+          "type": "heading",
+          "data": {
+            "text": "1. Code Splitting and Lazy Loading",
+            "level": 3,
+            "anchorId": "1-code-splitting-and-lazy-loading"
+          }
+        },
+        {
+          "id": "text_1776711822969_wkma1wj32",
+          "type": "text",
+          "data": {
+            "text": "Modern bundlers like Webpack and Vite make it easy to split your code into smaller chunks that load on demand.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "code_1776711822969_fbu0oj3f4",
+          "type": "code",
+          "data": {
+            "code": "// Dynamic import for route-based code splitting\nconst Dashboard = lazy(() => import('./pages/Dashboard'));\n\nfunction App() {\n  return (\n    <Suspense fallback={<LoadingSpinner />}>\n      <Routes>\n        <Route path=\"/dashboard\" element={<Dashboard />} />\n      </Routes>\n    </Suspense>\n  );\n}",
+            "language": "javascript",
+            "showLineNumbers": true
+          }
+        },
+        {
+          "id": "callout_1776711822969_ytpphje0g",
+          "type": "callout",
+          "data": {
+            "variant": "tip",
+            "title": "Pro Tip",
+            "body": "Combine route-based splitting with component-level lazy loading for maximum impact. Prioritize above-the-fold content and defer everything else.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776711822969_fasvik6c2",
+          "type": "heading",
+          "data": {
+            "text": "2. Image Optimization",
+            "level": 3,
+            "anchorId": "2-image-optimization"
+          }
+        },
+        {
+          "id": "text_1776711822969_g64joy6hw",
+          "type": "text",
+          "data": {
+            "text": "Images often account for the majority of page weight. Modern formats like WebP and AVIF offer significant size reductions without quality loss.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "code_1776711822969_df9pgk3rc",
+          "type": "code",
+          "data": {
+            "code": "<picture>\n  <source srcset=\"hero.avif\" type=\"image/avif\" />\n  <source srcset=\"hero.webp\" type=\"image/webp\" />\n  <img \n    src=\"hero.jpg\" \n    alt=\"Hero image\"\n    loading=\"lazy\"\n    width=\"1200\"\n    height=\"600\"\n  />\n</picture>",
+            "language": "html",
+            "showLineNumbers": true
+          }
+        },
+        {
+          "id": "heading_1776711822969_77nike72r",
+          "type": "heading",
+          "data": {
+            "text": "Accessibility: Building for Everyone",
+            "level": 2,
+            "anchorId": "accessibility-building-for-everyone"
+          }
+        },
+        {
+          "id": "text_1776711822969_d3jziv2cc",
+          "type": "text",
+          "data": {
+            "text": "Accessibility isn't optional—it's a fundamental requirement. WCAG 2.2 provides clear guidelines for creating inclusive web experiences.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "quote_1776711822969_eytit7zt2",
+          "type": "quote",
+          "data": {
+            "text": "The power of the Web is in its universality. Access by everyone regardless of disability is an essential aspect.",
+            "author": "Tim Berners-Lee, W3C Director"
+          }
+        },
+        {
+          "id": "list_1776711822969_qlw6hlm1q",
+          "type": "list",
+          "data": {
+            "items": [
+              "Use semantic HTML elements (header, nav, main, article)",
+              "Ensure sufficient color contrast (4.5:1 for normal text)",
+              "Provide keyboard navigation for all interactive elements",
+              "Include descriptive alt text for images",
+              "Test with screen readers regularly"
+            ],
+            "ordered": true
+          }
+        },
+        {
+          "id": "callout_1776711822969_cfyeau73t",
+          "type": "callout",
+          "data": {
+            "variant": "success",
+            "title": "Testing Tools",
+            "body": "Use axe DevTools, Lighthouse, and WAVE to catch accessibility issues early. Manual testing with keyboard navigation and screen readers is essential.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776711822969_kmth3cgtq",
+          "type": "heading",
+          "data": {
+            "text": "Modern Framework Landscape",
+            "level": 2,
+            "anchorId": "modern-framework-landscape"
+          }
+        },
+        {
+          "id": "text_1776711822969_8h602a7mj",
+          "type": "text",
+          "data": {
+            "text": "Choosing the right framework depends on your project requirements, team expertise, and performance goals. Here's a quick comparison:",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "list_1776711822969_9d9k6b8i3",
+          "type": "list",
+          "data": {
+            "items": [
+              "React: Largest ecosystem, flexible, component-based",
+              "Vue: Progressive framework, gentle learning curve",
+              "Svelte: Compile-time framework, minimal runtime",
+              "Next.js: React with SSR, SSG, and routing built-in",
+              "Astro: Content-focused, islands architecture"
+            ],
+            "ordered": false
+          }
+        },
+        {
+          "id": "text_1776711822969_efv6x7q5o",
+          "type": "text",
+          "data": {
+            "text": "Each framework has its strengths. React dominates the job market, Vue offers simplicity, Svelte provides performance, and Next.js excels at full-stack applications.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776711822969_k3zy0tmjz",
+          "type": "heading",
+          "data": {
+            "text": "SEO Best Practices",
+            "level": 2,
+            "anchorId": "seo-best-practices"
+          }
+        },
+        {
+          "id": "text_1776711822969_08dgf69ve",
+          "type": "text",
+          "data": {
+            "text": "Search engine optimization remains critical for discoverability. Modern SEO goes beyond keywords to encompass technical performance, structured data, and user experience.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "code_1776711822969_ize24youf",
+          "type": "code",
+          "data": {
+            "code": "// Example: JSON-LD structured data for articles\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Article\",\n  \"headline\": \"Modern Web Development Guide\",\n  \"author\": {\n    \"@type\": \"Person\",\n    \"name\": \"Sarah Chen\"\n  },\n  \"datePublished\": \"2025-04-16\",\n  \"image\": \"https://example.com/hero.jpg\",\n  \"publisher\": {\n    \"@type\": \"Organization\",\n    \"name\": \"Pulse\",\n    \"logo\": {\n      \"@type\": \"ImageObject\",\n      \"url\": \"https://example.com/logo.png\"\n    }\n  }\n}",
+            "language": "json",
+            "showLineNumbers": true
+          }
+        },
+        {
+          "id": "callout_1776711822969_wwlq1z6dx",
+          "type": "callout",
+          "data": {
+            "variant": "warning",
+            "title": "Important",
+            "body": "Core Web Vitals are now ranking factors. Fast, stable, interactive pages rank higher in search results.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776711822969_7do1t0l8v",
+          "type": "heading",
+          "data": {
+            "text": "Deployment and DevOps",
+            "level": 2,
+            "anchorId": "deployment-and-devops"
+          }
+        },
+        {
+          "id": "text_1776711822969_ty5gz0osc",
+          "type": "text",
+          "data": {
+            "text": "Modern deployment workflows emphasize automation, monitoring, and rapid iteration. CI/CD pipelines ensure code quality and enable confident releases.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "list_1776711822969_wsvyqtluz",
+          "type": "list",
+          "data": {
+            "items": [
+              "Use GitHub Actions or GitLab CI for automated testing",
+              "Deploy to edge networks (Vercel, Netlify, Cloudflare)",
+              "Implement feature flags for gradual rollouts",
+              "Monitor with tools like Sentry and LogRocket",
+              "Set up performance budgets and alerts"
+            ],
+            "ordered": true
+          }
+        },
+        {
+          "id": "heading_1776711822969_8z3avgzs0",
+          "type": "heading",
+          "data": {
+            "text": "Security Considerations",
+            "level": 2,
+            "anchorId": "security-considerations"
+          }
+        },
+        {
+          "id": "text_1776711822969_avl7497aq",
+          "type": "text",
+          "data": {
+            "text": "Security should be baked into every layer of your application. Common vulnerabilities like XSS, CSRF, and injection attacks can be prevented with proper practices.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "code_1776711822969_jt17uz7t9",
+          "type": "code",
+          "data": {
+            "code": "// Content Security Policy header\nContent-Security-Policy: \n  default-src 'self';\n  script-src 'self' 'unsafe-inline' https://trusted-cdn.com;\n  style-src 'self' 'unsafe-inline';\n  img-src 'self' data: https:;\n  font-src 'self' data:;\n  connect-src 'self' https://api.example.com;",
+            "language": "http",
+            "showLineNumbers": true
+          }
+        },
+        {
+          "id": "callout_1776711822969_s2gufn0gc",
+          "type": "callout",
+          "data": {
+            "variant": "warning",
+            "title": "Security Checklist",
+            "body": "Always sanitize user input, use HTTPS everywhere, implement CSP headers, keep dependencies updated, and conduct regular security audits.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776711822969_gazfgeksz",
+          "type": "heading",
+          "data": {
+            "text": "The Future of Web Development",
+            "level": 2,
+            "anchorId": "the-future-of-web-development"
+          }
+        },
+        {
+          "id": "text_1776711822969_wplqt5kz9",
+          "type": "text",
+          "data": {
+            "text": "Looking ahead, several trends are shaping the future of web development:",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "list_1776711822969_lojwk2a4d",
+          "type": "list",
+          "data": {
+            "items": [
+              "WebAssembly enabling near-native performance",
+              "Progressive Web Apps blurring the line with native apps",
+              "AI-assisted development tools and code generation",
+              "Edge computing bringing logic closer to users",
+              "Web3 and decentralized applications"
+            ],
+            "ordered": false
+          }
+        },
+        {
+          "id": "quote_1776711822969_3t61l1u3u",
+          "type": "quote",
+          "data": {
+            "text": "The best way to predict the future is to invent it.",
+            "author": "Alan Kay"
+          }
+        },
+        {
+          "id": "heading_1776711822969_oj5rdkl9s",
+          "type": "heading",
+          "data": {
+            "text": "Conclusion",
+            "level": 2,
+            "anchorId": "conclusion"
+          }
+        },
+        {
+          "id": "text_1776711822969_jh3lv83w5",
+          "type": "text",
+          "data": {
+            "text": "Modern web development is complex, but the tools and practices available today make it possible to build exceptional experiences. Focus on performance, accessibility, and user experience, and you'll create applications that stand the test of time.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "text_1776711822969_2mf2gg9jl",
+          "type": "text",
+          "data": {
+            "text": "Remember: the web is for everyone. Build with that principle in mind, and you'll create something truly valuable.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776711822969_5bwcunwa5",
+          "type": "callout",
+          "data": {
+            "variant": "success",
+            "title": "Next Steps",
+            "body": "Start by auditing your current projects with Lighthouse. Identify quick wins in performance and accessibility, then gradually adopt modern best practices.",
+            "icon": "💡"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-20T19:03:42.968Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-20T19:03:42.968Z",
+      "updatedAt": "2026-04-20T19:03:42.968Z"
+    },
+    {
+      "slug": "getting-started-with-typescript",
+      "title": "Getting Started with TypeScript in 2025",
+      "status": "published",
+      "excerpt": "Learn the fundamentals of TypeScript and why it's become essential for modern web development.",
+      "eyebrow": "Tutorial",
+      "author": "Alex Morgan",
+      "tags": [
+        "TypeScript",
+        "JavaScript",
+        "Web Development",
+        "Tutorial"
+      ],
+      "featured": false,
+      "seoTitle": "TypeScript Tutorial 2025 | Complete Beginner Guide",
+      "seoDescription": "Master TypeScript basics with this comprehensive guide. Learn types, interfaces, and best practices.",
+      "blocks": [
+        {
+          "id": "heading_1776721403841_rv4q1s55p",
+          "type": "heading",
+          "data": {
+            "text": "Getting Started with TypeScript in 2025",
+            "level": 1,
+            "anchorId": "getting-started-with-typescript-in-2025"
+          }
+        },
+        {
+          "id": "text_1776721403841_xerk6zlnr",
+          "type": "text",
+          "data": {
+            "text": "TypeScript has revolutionized how we write JavaScript. This guide will take you from zero to productive in TypeScript.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776721403841_mdtmmvm2n",
+          "type": "heading",
+          "data": {
+            "text": "Why TypeScript?",
+            "level": 2,
+            "anchorId": "why-typescript-"
+          }
+        },
+        {
+          "id": "text_1776721403841_19dqmq205",
+          "type": "text",
+          "data": {
+            "text": "TypeScript adds static typing to JavaScript, catching errors before runtime and improving developer experience.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776721403841_unlbta930",
+          "type": "callout",
+          "data": {
+            "variant": "tip",
+            "title": "Quick Tip",
+            "body": "Start with strict mode enabled to get the most benefit from TypeScript.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776721403841_5s4u12d2m",
+          "type": "heading",
+          "data": {
+            "text": "Installation",
+            "level": 2,
+            "anchorId": "installation"
+          }
+        },
+        {
+          "id": "text_1776721403841_xh7v4jlba",
+          "type": "text",
+          "data": {
+            "text": "Install TypeScript globally with npm: npm install -g typescript",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776721403841_173rrpeq0",
+          "type": "heading",
+          "data": {
+            "text": "Your First TypeScript File",
+            "level": 2,
+            "anchorId": "your-first-typescript-file"
+          }
+        },
+        {
+          "id": "text_1776721403841_qfbynujti",
+          "type": "text",
+          "data": {
+            "text": "Create a file with .ts extension and start writing type-safe code immediately.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-20T21:43:23.841Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-20T21:43:23.841Z",
+      "updatedAt": "2026-04-20T21:43:23.841Z"
+    },
+    {
+      "slug": "react-performance-optimization",
+      "title": "React Performance Optimization: Advanced Techniques",
+      "status": "published",
+      "excerpt": "Discover advanced strategies to make your React applications blazingly fast.",
+      "eyebrow": "Deep Dive",
+      "author": "Sarah Chen",
+      "tags": [
+        "React",
+        "Performance",
+        "JavaScript",
+        "Optimization"
+      ],
+      "featured": false,
+      "seoTitle": "React Performance Optimization Guide | Advanced Tips",
+      "seoDescription": "Learn advanced React performance optimization techniques including memoization, code splitting, and lazy loading.",
+      "blocks": [
+        {
+          "id": "heading_1776721403841_slgqw4k3p",
+          "type": "heading",
+          "data": {
+            "text": "React Performance Optimization: Advanced Techniques",
+            "level": 1,
+            "anchorId": "react-performance-optimization-advanced-techniques"
+          }
+        },
+        {
+          "id": "text_1776721403841_3ot3t9vul",
+          "type": "text",
+          "data": {
+            "text": "Performance is crucial for user experience. Let's explore advanced techniques to optimize React applications.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776721403841_2kq6hswt9",
+          "type": "heading",
+          "data": {
+            "text": "Memoization Strategies",
+            "level": 2,
+            "anchorId": "memoization-strategies"
+          }
+        },
+        {
+          "id": "text_1776721403841_92mx3zxop",
+          "type": "text",
+          "data": {
+            "text": "Use React.memo, useMemo, and useCallback strategically to prevent unnecessary re-renders.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776721403841_wyvjfngaf",
+          "type": "callout",
+          "data": {
+            "variant": "warning",
+            "title": "Warning",
+            "body": "Don't over-optimize! Measure first, then optimize based on actual bottlenecks.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776721403841_u4ortenzy",
+          "type": "heading",
+          "data": {
+            "text": "Code Splitting",
+            "level": 2,
+            "anchorId": "code-splitting"
+          }
+        },
+        {
+          "id": "text_1776721403841_oo2cfazr1",
+          "type": "text",
+          "data": {
+            "text": "Split your bundle into smaller chunks that load on demand using React.lazy and Suspense.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776721403841_sjh88gq45",
+          "type": "heading",
+          "data": {
+            "text": "Virtual Scrolling",
+            "level": 2,
+            "anchorId": "virtual-scrolling"
+          }
+        },
+        {
+          "id": "text_1776721403841_30ihwm4ng",
+          "type": "text",
+          "data": {
+            "text": "For long lists, implement virtual scrolling to render only visible items.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-20T21:43:23.841Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-20T21:43:23.841Z",
+      "updatedAt": "2026-04-20T21:43:23.841Z"
+    },
+    {
+      "slug": "css-grid-mastery",
+      "title": "CSS Grid Mastery: Building Complex Layouts",
+      "status": "published",
+      "excerpt": "Master CSS Grid and create sophisticated layouts with ease.",
+      "eyebrow": "Guide",
+      "author": "Jordan Lee",
+      "tags": [
+        "CSS",
+        "Web Development",
+        "Design",
+        "Layout"
+      ],
+      "featured": false,
+      "seoTitle": "CSS Grid Tutorial | Master Complex Layouts",
+      "seoDescription": "Complete CSS Grid guide with practical examples. Learn to build responsive, complex layouts easily.",
+      "blocks": [
+        {
+          "id": "heading_1776721403841_4au5oj8ty",
+          "type": "heading",
+          "data": {
+            "text": "CSS Grid Mastery: Building Complex Layouts",
+            "level": 1,
+            "anchorId": "css-grid-mastery-building-complex-layouts"
+          }
+        },
+        {
+          "id": "text_1776721403841_peu1l7hqc",
+          "type": "text",
+          "data": {
+            "text": "CSS Grid is the most powerful layout system in CSS. Let's master it together.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776721403841_bf0ulmxko",
+          "type": "heading",
+          "data": {
+            "text": "Grid Fundamentals",
+            "level": 2,
+            "anchorId": "grid-fundamentals"
+          }
+        },
+        {
+          "id": "text_1776721403841_h1bmmtq6o",
+          "type": "text",
+          "data": {
+            "text": "Understanding grid containers, grid items, and the grid track system is essential.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776721403841_yerqbg9t3",
+          "type": "heading",
+          "data": {
+            "text": "Responsive Grids",
+            "level": 2,
+            "anchorId": "responsive-grids"
+          }
+        },
+        {
+          "id": "text_1776721403841_erje576ld",
+          "type": "text",
+          "data": {
+            "text": "Use auto-fit, auto-fill, and minmax() to create responsive grids without media queries.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776721403841_kvn6azu88",
+          "type": "callout",
+          "data": {
+            "variant": "success",
+            "title": "Pro Tip",
+            "body": "Combine Grid with Flexbox for maximum layout flexibility.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776721403841_m2v1qyzgx",
+          "type": "heading",
+          "data": {
+            "text": "Real-World Examples",
+            "level": 2,
+            "anchorId": "real-world-examples"
+          }
+        },
+        {
+          "id": "text_1776721403841_xcct67qqh",
+          "type": "text",
+          "data": {
+            "text": "Let's build a magazine-style layout, dashboard, and image gallery using Grid.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-20T21:43:23.841Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-20T21:43:23.841Z",
+      "updatedAt": "2026-04-20T21:43:23.841Z"
+    },
+    {
+      "slug": "nodejs-microservices-architecture",
+      "title": "Building Microservices with Node.js",
+      "status": "published",
+      "excerpt": "Learn how to design and implement scalable microservices architecture using Node.js.",
+      "eyebrow": "Architecture",
+      "author": "Michael Torres",
+      "tags": [
+        "Node.js",
+        "Microservices",
+        "Backend",
+        "Architecture"
+      ],
+      "featured": false,
+      "seoTitle": "Node.js Microservices Architecture Guide",
+      "seoDescription": "Build scalable microservices with Node.js. Learn patterns, best practices, and deployment strategies.",
+      "blocks": [
+        {
+          "id": "heading_1776721403841_i1l33swcj",
+          "type": "heading",
+          "data": {
+            "text": "Building Microservices with Node.js",
+            "level": 1,
+            "anchorId": "building-microservices-with-node-js"
+          }
+        },
+        {
+          "id": "text_1776721403841_u1bic8sej",
+          "type": "text",
+          "data": {
+            "text": "Microservices architecture enables scalability and maintainability. Let's explore how to implement it with Node.js.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776721403841_wub45t53a",
+          "type": "heading",
+          "data": {
+            "text": "Service Design Principles",
+            "level": 2,
+            "anchorId": "service-design-principles"
+          }
+        },
+        {
+          "id": "text_1776721403841_vrvs0owdq",
+          "type": "text",
+          "data": {
+            "text": "Each microservice should have a single responsibility and communicate via well-defined APIs.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776721403841_8o14qwhqh",
+          "type": "callout",
+          "data": {
+            "variant": "warning",
+            "title": "Important",
+            "body": "Start with a monolith and split into microservices only when needed.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776721403841_57o2bcaba",
+          "type": "heading",
+          "data": {
+            "text": "Communication Patterns",
+            "level": 2,
+            "anchorId": "communication-patterns"
+          }
+        },
+        {
+          "id": "text_1776721403841_f1kmbksb5",
+          "type": "text",
+          "data": {
+            "text": "Choose between REST, GraphQL, or message queues based on your use case.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776721403841_mtcgdc7f6",
+          "type": "heading",
+          "data": {
+            "text": "Deployment Strategies",
+            "level": 2,
+            "anchorId": "deployment-strategies"
+          }
+        },
+        {
+          "id": "text_1776721403841_4ig8ualum",
+          "type": "text",
+          "data": {
+            "text": "Use Docker and Kubernetes for containerization and orchestration.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-20T21:43:23.841Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-20T21:43:23.841Z",
+      "updatedAt": "2026-04-20T21:43:23.841Z"
+    },
+    {
+      "slug": "web-accessibility-wcag",
+      "title": "Web Accessibility: WCAG 2.2 Compliance Guide",
+      "status": "published",
+      "excerpt": "Make your websites accessible to everyone with this comprehensive WCAG 2.2 guide.",
+      "eyebrow": "Best Practices",
+      "author": "Emma Wilson",
+      "tags": [
+        "Accessibility",
+        "Web Development",
+        "WCAG",
+        "Best Practices"
+      ],
+      "featured": false,
+      "seoTitle": "WCAG 2.2 Accessibility Guide | Complete Compliance",
+      "seoDescription": "Comprehensive guide to web accessibility and WCAG 2.2 compliance. Learn to build inclusive websites.",
+      "blocks": [
+        {
+          "id": "heading_1776721403841_568w6866d",
+          "type": "heading",
+          "data": {
+            "text": "Web Accessibility: WCAG 2.2 Compliance Guide",
+            "level": 1,
+            "anchorId": "web-accessibility-wcag-2-2-compliance-guide"
+          }
+        },
+        {
+          "id": "text_1776721403841_kxl2g6h88",
+          "type": "text",
+          "data": {
+            "text": "Accessibility is not optional. Learn how to make your websites usable by everyone.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776721403841_sewbw7c3p",
+          "type": "heading",
+          "data": {
+            "text": "WCAG Principles",
+            "level": 2,
+            "anchorId": "wcag-principles"
+          }
+        },
+        {
+          "id": "text_1776721403841_zfdo6rjk7",
+          "type": "text",
+          "data": {
+            "text": "Perceivable, Operable, Understandable, and Robust - the four pillars of accessibility.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776721403841_cupe8dtfj",
+          "type": "heading",
+          "data": {
+            "text": "Keyboard Navigation",
+            "level": 2,
+            "anchorId": "keyboard-navigation"
+          }
+        },
+        {
+          "id": "text_1776721403841_deinb5u7y",
+          "type": "text",
+          "data": {
+            "text": "Ensure all interactive elements are keyboard accessible with visible focus indicators.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776721403841_te1cbuy2c",
+          "type": "callout",
+          "data": {
+            "variant": "info",
+            "title": "Testing",
+            "body": "Use screen readers and keyboard-only navigation to test your site.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776721403841_rjyuuini8",
+          "type": "heading",
+          "data": {
+            "text": "Color Contrast",
+            "level": 2,
+            "anchorId": "color-contrast"
+          }
+        },
+        {
+          "id": "text_1776721403841_9tmwsdjc3",
+          "type": "text",
+          "data": {
+            "text": "Maintain at least 4.5:1 contrast ratio for normal text and 3:1 for large text.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-20T21:43:23.841Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-20T21:43:23.841Z",
+      "updatedAt": "2026-04-20T21:43:23.841Z"
+    },
+    {
+      "slug": "getting-started-with-typescript",
+      "title": "Getting Started with TypeScript in 2025",
+      "status": "published",
+      "excerpt": "Learn the fundamentals of TypeScript and why it's become essential for modern web development.",
+      "eyebrow": "Tutorial",
+      "author": "Alex Morgan",
+      "tags": [
+        "TypeScript",
+        "JavaScript",
+        "Web Development",
+        "Tutorial"
+      ],
+      "featured": false,
+      "seoTitle": "TypeScript Tutorial 2025 | Complete Beginner Guide",
+      "seoDescription": "Master TypeScript basics with this comprehensive guide. Learn types, interfaces, and best practices.",
+      "blocks": [
+        {
+          "id": "heading_1776766854718_9u1phf4sg",
+          "type": "heading",
+          "data": {
+            "text": "Getting Started with TypeScript in 2025",
+            "level": 1,
+            "anchorId": "getting-started-with-typescript-in-2025"
+          }
+        },
+        {
+          "id": "text_1776766854718_jbwottjj9",
+          "type": "text",
+          "data": {
+            "text": "TypeScript has revolutionized how we write JavaScript. This guide will take you from zero to productive in TypeScript.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776766854718_gxzwzpyxv",
+          "type": "heading",
+          "data": {
+            "text": "Why TypeScript?",
+            "level": 2,
+            "anchorId": "why-typescript-"
+          }
+        },
+        {
+          "id": "text_1776766854718_obfnx6kd6",
+          "type": "text",
+          "data": {
+            "text": "TypeScript adds static typing to JavaScript, catching errors before runtime and improving developer experience.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776766854718_cvksqifut",
+          "type": "callout",
+          "data": {
+            "variant": "tip",
+            "title": "Quick Tip",
+            "body": "Start with strict mode enabled to get the most benefit from TypeScript.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776766854718_0e5n32fob",
+          "type": "heading",
+          "data": {
+            "text": "Installation",
+            "level": 2,
+            "anchorId": "installation"
+          }
+        },
+        {
+          "id": "text_1776766854718_1d0n43rjh",
+          "type": "text",
+          "data": {
+            "text": "Install TypeScript globally with npm: npm install -g typescript",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776766854718_3f2gi9kt7",
+          "type": "heading",
+          "data": {
+            "text": "Your First TypeScript File",
+            "level": 2,
+            "anchorId": "your-first-typescript-file"
+          }
+        },
+        {
+          "id": "text_1776766854718_y9j39gwlh",
+          "type": "text",
+          "data": {
+            "text": "Create a file with .ts extension and start writing type-safe code immediately.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-21T10:20:54.718Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-21T10:20:54.718Z",
+      "updatedAt": "2026-04-21T10:20:54.718Z"
+    },
+    {
+      "slug": "react-performance-optimization",
+      "title": "React Performance Optimization: Advanced Techniques",
+      "status": "published",
+      "excerpt": "Discover advanced strategies to make your React applications blazingly fast.",
+      "eyebrow": "Deep Dive",
+      "author": "Sarah Chen",
+      "tags": [
+        "React",
+        "Performance",
+        "JavaScript",
+        "Optimization"
+      ],
+      "featured": false,
+      "seoTitle": "React Performance Optimization Guide | Advanced Tips",
+      "seoDescription": "Learn advanced React performance optimization techniques including memoization, code splitting, and lazy loading.",
+      "blocks": [
+        {
+          "id": "heading_1776766854718_g6h2xsw6p",
+          "type": "heading",
+          "data": {
+            "text": "React Performance Optimization: Advanced Techniques",
+            "level": 1,
+            "anchorId": "react-performance-optimization-advanced-techniques"
+          }
+        },
+        {
+          "id": "text_1776766854718_ypn8c1m2a",
+          "type": "text",
+          "data": {
+            "text": "Performance is crucial for user experience. Let's explore advanced techniques to optimize React applications.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776766854718_64xpa9d47",
+          "type": "heading",
+          "data": {
+            "text": "Memoization Strategies",
+            "level": 2,
+            "anchorId": "memoization-strategies"
+          }
+        },
+        {
+          "id": "text_1776766854718_ae1kv75bx",
+          "type": "text",
+          "data": {
+            "text": "Use React.memo, useMemo, and useCallback strategically to prevent unnecessary re-renders.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776766854718_piu9v3sre",
+          "type": "callout",
+          "data": {
+            "variant": "warning",
+            "title": "Warning",
+            "body": "Don't over-optimize! Measure first, then optimize based on actual bottlenecks.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776766854718_rur8sxr9e",
+          "type": "heading",
+          "data": {
+            "text": "Code Splitting",
+            "level": 2,
+            "anchorId": "code-splitting"
+          }
+        },
+        {
+          "id": "text_1776766854718_2be76dxc0",
+          "type": "text",
+          "data": {
+            "text": "Split your bundle into smaller chunks that load on demand using React.lazy and Suspense.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776766854718_3habp34zg",
+          "type": "heading",
+          "data": {
+            "text": "Virtual Scrolling",
+            "level": 2,
+            "anchorId": "virtual-scrolling"
+          }
+        },
+        {
+          "id": "text_1776766854718_vgt9ms8g5",
+          "type": "text",
+          "data": {
+            "text": "For long lists, implement virtual scrolling to render only visible items.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-21T10:20:54.718Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-21T10:20:54.718Z",
+      "updatedAt": "2026-04-21T10:20:54.718Z"
+    },
+    {
+      "slug": "css-grid-mastery",
+      "title": "CSS Grid Mastery: Building Complex Layouts",
+      "status": "published",
+      "excerpt": "Master CSS Grid and create sophisticated layouts with ease.",
+      "eyebrow": "Guide",
+      "author": "Jordan Lee",
+      "tags": [
+        "CSS",
+        "Web Development",
+        "Design",
+        "Layout"
+      ],
+      "featured": false,
+      "seoTitle": "CSS Grid Tutorial | Master Complex Layouts",
+      "seoDescription": "Complete CSS Grid guide with practical examples. Learn to build responsive, complex layouts easily.",
+      "blocks": [
+        {
+          "id": "heading_1776766854718_igzuanva5",
+          "type": "heading",
+          "data": {
+            "text": "CSS Grid Mastery: Building Complex Layouts",
+            "level": 1,
+            "anchorId": "css-grid-mastery-building-complex-layouts"
+          }
+        },
+        {
+          "id": "text_1776766854718_lmm39xh1o",
+          "type": "text",
+          "data": {
+            "text": "CSS Grid is the most powerful layout system in CSS. Let's master it together.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776766854718_iryp771qm",
+          "type": "heading",
+          "data": {
+            "text": "Grid Fundamentals",
+            "level": 2,
+            "anchorId": "grid-fundamentals"
+          }
+        },
+        {
+          "id": "text_1776766854718_oi7ah9jda",
+          "type": "text",
+          "data": {
+            "text": "Understanding grid containers, grid items, and the grid track system is essential.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776766854718_tbz3578og",
+          "type": "heading",
+          "data": {
+            "text": "Responsive Grids",
+            "level": 2,
+            "anchorId": "responsive-grids"
+          }
+        },
+        {
+          "id": "text_1776766854718_h7ozfepxi",
+          "type": "text",
+          "data": {
+            "text": "Use auto-fit, auto-fill, and minmax() to create responsive grids without media queries.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776766854718_ybd8n9p36",
+          "type": "callout",
+          "data": {
+            "variant": "success",
+            "title": "Pro Tip",
+            "body": "Combine Grid with Flexbox for maximum layout flexibility.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776766854718_1dxeabluj",
+          "type": "heading",
+          "data": {
+            "text": "Real-World Examples",
+            "level": 2,
+            "anchorId": "real-world-examples"
+          }
+        },
+        {
+          "id": "text_1776766854718_9uckpfe1e",
+          "type": "text",
+          "data": {
+            "text": "Let's build a magazine-style layout, dashboard, and image gallery using Grid.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-21T10:20:54.718Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-21T10:20:54.718Z",
+      "updatedAt": "2026-04-21T10:20:54.718Z"
+    },
+    {
+      "slug": "nodejs-microservices-architecture",
+      "title": "Building Microservices with Node.js",
+      "status": "published",
+      "excerpt": "Learn how to design and implement scalable microservices architecture using Node.js.",
+      "eyebrow": "Architecture",
+      "author": "Michael Torres",
+      "tags": [
+        "Node.js",
+        "Microservices",
+        "Backend",
+        "Architecture"
+      ],
+      "featured": false,
+      "seoTitle": "Node.js Microservices Architecture Guide",
+      "seoDescription": "Build scalable microservices with Node.js. Learn patterns, best practices, and deployment strategies.",
+      "blocks": [
+        {
+          "id": "heading_1776766854718_vtteeq5kk",
+          "type": "heading",
+          "data": {
+            "text": "Building Microservices with Node.js",
+            "level": 1,
+            "anchorId": "building-microservices-with-node-js"
+          }
+        },
+        {
+          "id": "text_1776766854718_9rl5pb30k",
+          "type": "text",
+          "data": {
+            "text": "Microservices architecture enables scalability and maintainability. Let's explore how to implement it with Node.js.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776766854718_15q44lwmz",
+          "type": "heading",
+          "data": {
+            "text": "Service Design Principles",
+            "level": 2,
+            "anchorId": "service-design-principles"
+          }
+        },
+        {
+          "id": "text_1776766854718_uvmrf7b6w",
+          "type": "text",
+          "data": {
+            "text": "Each microservice should have a single responsibility and communicate via well-defined APIs.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776766854718_3ilketp14",
+          "type": "callout",
+          "data": {
+            "variant": "warning",
+            "title": "Important",
+            "body": "Start with a monolith and split into microservices only when needed.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776766854718_o4tsvelty",
+          "type": "heading",
+          "data": {
+            "text": "Communication Patterns",
+            "level": 2,
+            "anchorId": "communication-patterns"
+          }
+        },
+        {
+          "id": "text_1776766854718_qv8dn499m",
+          "type": "text",
+          "data": {
+            "text": "Choose between REST, GraphQL, or message queues based on your use case.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776766854718_xztyotlij",
+          "type": "heading",
+          "data": {
+            "text": "Deployment Strategies",
+            "level": 2,
+            "anchorId": "deployment-strategies"
+          }
+        },
+        {
+          "id": "text_1776766854718_0f60tvt2h",
+          "type": "text",
+          "data": {
+            "text": "Use Docker and Kubernetes for containerization and orchestration.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-21T10:20:54.718Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-21T10:20:54.718Z",
+      "updatedAt": "2026-04-21T10:20:54.718Z"
+    },
+    {
+      "slug": "web-accessibility-wcag",
+      "title": "Web Accessibility: WCAG 2.2 Compliance Guide",
+      "status": "published",
+      "excerpt": "Make your websites accessible to everyone with this comprehensive WCAG 2.2 guide.",
+      "eyebrow": "Best Practices",
+      "author": "Emma Wilson",
+      "tags": [
+        "Accessibility",
+        "Web Development",
+        "WCAG",
+        "Best Practices"
+      ],
+      "featured": false,
+      "seoTitle": "WCAG 2.2 Accessibility Guide | Complete Compliance",
+      "seoDescription": "Comprehensive guide to web accessibility and WCAG 2.2 compliance. Learn to build inclusive websites.",
+      "blocks": [
+        {
+          "id": "heading_1776766854718_shuyz2swi",
+          "type": "heading",
+          "data": {
+            "text": "Web Accessibility: WCAG 2.2 Compliance Guide",
+            "level": 1,
+            "anchorId": "web-accessibility-wcag-2-2-compliance-guide"
+          }
+        },
+        {
+          "id": "text_1776766854718_oaptvlvco",
+          "type": "text",
+          "data": {
+            "text": "Accessibility is not optional. Learn how to make your websites usable by everyone.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776766854718_f92repydn",
+          "type": "heading",
+          "data": {
+            "text": "WCAG Principles",
+            "level": 2,
+            "anchorId": "wcag-principles"
+          }
+        },
+        {
+          "id": "text_1776766854718_v4lun9qqp",
+          "type": "text",
+          "data": {
+            "text": "Perceivable, Operable, Understandable, and Robust - the four pillars of accessibility.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "heading_1776766854718_hkohd7xf9",
+          "type": "heading",
+          "data": {
+            "text": "Keyboard Navigation",
+            "level": 2,
+            "anchorId": "keyboard-navigation"
+          }
+        },
+        {
+          "id": "text_1776766854718_rqg0qfahc",
+          "type": "text",
+          "data": {
+            "text": "Ensure all interactive elements are keyboard accessible with visible focus indicators.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        },
+        {
+          "id": "callout_1776766854718_2lxkmyjm4",
+          "type": "callout",
+          "data": {
+            "variant": "info",
+            "title": "Testing",
+            "body": "Use screen readers and keyboard-only navigation to test your site.",
+            "icon": "💡"
+          }
+        },
+        {
+          "id": "heading_1776766854718_yuq73gz86",
+          "type": "heading",
+          "data": {
+            "text": "Color Contrast",
+            "level": 2,
+            "anchorId": "color-contrast"
+          }
+        },
+        {
+          "id": "text_1776766854718_ahfgfpsxo",
+          "type": "text",
+          "data": {
+            "text": "Maintain at least 4.5:1 contrast ratio for normal text and 3:1 for large text.",
+            "marks": {
+              "bold": false,
+              "italic": false,
+              "underline": false,
+              "code": false
+            },
+            "align": "left"
+          }
+        }
+      ],
+      "publishedAt": "2026-04-21T10:20:54.718Z",
+      "scheduledAt": null,
+      "createdAt": "2026-04-21T10:20:54.718Z",
+      "updatedAt": "2026-04-21T10:20:54.718Z"
+    }
+  ],
+  "timeline": [
+    {
+      "id": "timeline_1776711822985_pn8ntsxyq",
+      "entrySlug": "comprehensive-guide-to-modern-web-development",
+      "type": "created",
+      "message": "Created comprehensive sample post with various block types",
+      "at": "2026-04-20T19:03:42.968Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776707375836_5co2rpbtv",
+      "entrySlug": "comprehensive-guide-to-modern-web-development",
+      "type": "created",
+      "message": "Created comprehensive sample post with various block types",
+      "at": "2026-04-20T17:49:35.833Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776721403852_sapjc6a94",
+      "entrySlug": "getting-started-with-typescript",
+      "type": "created",
+      "message": "Created post: Getting Started with TypeScript in 2025",
+      "at": "2026-04-20T21:43:23.841Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776721403852_l7nxw37o7",
+      "entrySlug": "react-performance-optimization",
+      "type": "created",
+      "message": "Created post: React Performance Optimization: Advanced Techniques",
+      "at": "2026-04-20T21:43:23.841Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776721403852_yxkgcqs51",
+      "entrySlug": "css-grid-mastery",
+      "type": "created",
+      "message": "Created post: CSS Grid Mastery: Building Complex Layouts",
+      "at": "2026-04-20T21:43:23.841Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776721403852_n3c256uw2",
+      "entrySlug": "nodejs-microservices-architecture",
+      "type": "created",
+      "message": "Created post: Building Microservices with Node.js",
+      "at": "2026-04-20T21:43:23.841Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776721403852_p6m70i88s",
+      "entrySlug": "web-accessibility-wcag",
+      "type": "created",
+      "message": "Created post: Web Accessibility: WCAG 2.2 Compliance Guide",
+      "at": "2026-04-20T21:43:23.841Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776766854730_3x4b7iv5f",
+      "entrySlug": "getting-started-with-typescript",
+      "type": "created",
+      "message": "Created post: Getting Started with TypeScript in 2025",
+      "at": "2026-04-21T10:20:54.718Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776766854730_c6f1gcb7q",
+      "entrySlug": "react-performance-optimization",
+      "type": "created",
+      "message": "Created post: React Performance Optimization: Advanced Techniques",
+      "at": "2026-04-21T10:20:54.718Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776766854730_0f1y9meok",
+      "entrySlug": "css-grid-mastery",
+      "type": "created",
+      "message": "Created post: CSS Grid Mastery: Building Complex Layouts",
+      "at": "2026-04-21T10:20:54.718Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776766854730_r4k8s99ka",
+      "entrySlug": "nodejs-microservices-architecture",
+      "type": "created",
+      "message": "Created post: Building Microservices with Node.js",
+      "at": "2026-04-21T10:20:54.718Z",
+      "actorId": "system"
+    },
+    {
+      "id": "timeline_1776766854730_l0ifoluw7",
+      "entrySlug": "web-accessibility-wcag",
+      "type": "created",
+      "message": "Created post: Web Accessibility: WCAG 2.2 Compliance Guide",
+      "at": "2026-04-21T10:20:54.718Z",
+      "actorId": "system"
+    }
+  ]
+}
