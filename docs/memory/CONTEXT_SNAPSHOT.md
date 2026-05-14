@@ -4,8 +4,8 @@
 > Update this at the end of every session.
 
 **Last Updated:** 2026-05-01  
-**Current Session:** Session 71 — L-1 Environment Setup & Bug Fixes (Completed)  
-**Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation (L-2 next)
+**Current Session:** Session 72 — L-2 Basic Blocks QA (In Progress)  
+**Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation (L-2 active)
 
 ---
 
@@ -128,4 +128,4 @@
 
 ---
 
-**Next Session Goal:** Start L-2 — Basic Blocks QA (Editor + Renderer). Manual verification of Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, Image blocks.
+**Next Session Goal:** Complete L-2 — collect user feedback on all basic blocks, log any defects, fix P0/P1 issues found.

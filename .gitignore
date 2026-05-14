@@ -3,3 +3,28 @@ coverage/
 dist/
 test-results/
 playwright-report/
+
+# Next.js build output
+.next/
+
+# Development databases
+*.db
+*.db-journal
+
+# Turbo/cache
+.turbo/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
