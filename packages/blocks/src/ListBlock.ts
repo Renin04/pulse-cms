@@ -7,6 +7,7 @@ export interface ListBlockData extends Record<string, unknown> {
   style?: "ordered" | "unordered";
   items: string[];
   start?: number;
+  align?: "left" | "center" | "right" | "justify";
 }
 
 const canonicalListBlockDataSchema = z
@@ -14,6 +15,7 @@ const canonicalListBlockDataSchema = z
     style: z.enum(["ordered", "unordered"]),
     items: z.array(z.string()),
     start: z.number().int().min(1).optional(),
+    align: z.enum(["left", "center", "right", "justify"]).optional(),
   })
   .strict();
 
@@ -57,13 +59,14 @@ export const ListBlock: BlockTypeDefinition<ListBlockData> = {
     const items = parsed.items
       .map((item) => `<li>${escapeHtml(item)}</li>`)
       .join("");
+    const alignAttr = parsed.align ? ` style="text-align: ${escapeHtml(parsed.align)};"` : "";
 
     if (parsed.style === "ordered") {
       const startAttribute = parsed.start ? ` start="${parsed.start}"` : "";
-      return `<ol${startAttribute} data-block-type="list">${items}</ol>`;
+      return `<ol${startAttribute} data-block-type="list"${alignAttr}>${items}</ol>`;
     }
 
-    return `<ul data-block-type="list">${items}</ul>`;
+    return `<ul data-block-type="list"${alignAttr}>${items}</ul>`;
   },
   serialize(data) {
     const parsed = listBlockDataSchema.parse(data);

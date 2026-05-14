@@ -1069,6 +1069,32 @@ img {
   line-height: 1.85;
 }
 
+/* Editor inline code */
+.pulse-editor code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background-color: var(--neutral-100);
+  color: var(--pulse-red-dark);
+  padding: 0.15em 0.4em;
+  border-radius: 0.35rem;
+  border: 1px solid var(--neutral-200);
+}
+
+/* Editor ref blocks */
+.pulse-editor-ref {
+  display: inline;
+  color: var(--pulse-red);
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 1px dashed rgba(255, 40, 0, 0.35);
+  padding: 0 1px;
+}
+
+.pulse-editor-ref:hover {
+  background-color: rgba(255, 40, 0, 0.06);
+  border-bottom-style: solid;
+}
+
 .studio-rendered [data-block-type='callout'] {
   margin: 1.5rem 0;
   border: 1px solid rgba(255, 40, 0, 0.18);

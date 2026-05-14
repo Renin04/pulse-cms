@@ -21,6 +21,7 @@ export const headingBlockDataSchema = z
       z.literal(6),
     ]),
     anchorId: z.string().optional(),
+    align: z.enum(["left", "center", "right", "justify"]).optional(),
   })
   .strict();
 
@@ -67,8 +68,9 @@ export const HeadingBlock: BlockTypeDefinition<HeadingBlockData> = {
     const parsed = headingBlockDataSchema.parse(data);
     const tag = `h${parsed.level}`;
     const anchorId = parsed.anchorId ?? toSlug(parsed.text);
+    const alignAttr = parsed.align ? ` style="text-align: ${escapeHtml(parsed.align)};"` : "";
 
-    return `<${tag} id="${escapeHtml(anchorId)}" data-block-type="heading">${renderInlineLinks(
+    return `<${tag} id="${escapeHtml(anchorId)}" data-block-type="heading"${alignAttr}>${renderInlineLinks(
       parsed.text,
     )}</${tag}>`;
   },

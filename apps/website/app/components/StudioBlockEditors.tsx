@@ -75,23 +75,42 @@ function parseRefAttrs(attrs: string): { text?: string; style?: string } {
   return result;
 }
 
+function escapeHtmlWithInlineCode(text: string): string {
+  let result = '';
+  let i = 0;
+  while (i < text.length) {
+    const backtick = text.indexOf('`', i);
+    if (backtick === -1) {
+      result += escapeHtml(text.slice(i));
+      break;
+    }
+    result += escapeHtml(text.slice(i, backtick));
+    const endBacktick = text.indexOf('`', backtick + 1);
+    if (endBacktick === -1) {
+      result += escapeHtml(text.slice(backtick));
+      break;
+    }
+    result += `<code>${escapeHtml(text.slice(backtick + 1, endBacktick))}</code>`;
+    i = endBacktick + 1;
+  }
+  return result.replace(/\n/g, '<br>');
+}
+
 export function markdownToHtml(text: string): string {
   const regex = /\[([^\]]+)\]\(([^)]+)\)(?:\{([^}]*)\})?/g;
   let html = '';
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-  let refIndex = 0;
 
   while ((match = regex.exec(text)) !== null) {
-    html += escapeHtml(text.slice(lastIndex, match.index)).replace(/\n/g, '<br>');
+    html += escapeHtmlWithInlineCode(text.slice(lastIndex, match.index));
     const label = match[1];
     const url = match[2];
     const attrs = match[3] || '';
 
     if (label === 'ref') {
-      refIndex++;
       const { text: refText, style } = parseRefAttrs(attrs);
-      html += `<span class="pulse-editor-ref" data-url="${escapeHtml(url)}" data-text="${escapeHtml(refText || '')}" data-style="${escapeHtml(style || 'numeric')}">${refIndex}</span>`;
+      html += `<span class="pulse-editor-ref" data-url="${escapeHtml(url)}" data-text="${escapeHtml(refText || '')}" data-style="${escapeHtml(style || 'numeric')}">${escapeHtml(refText || '')}</span>`;
     } else {
       const relMatch = attrs.match(/rel="([^"]*)"/);
       const rel = relMatch ? relMatch[1] : '';
@@ -100,7 +119,7 @@ export function markdownToHtml(text: string): string {
     lastIndex = match.index + match[0].length;
   }
 
-  html += escapeHtml(text.slice(lastIndex)).replace(/\n/g, '<br>');
+  html += escapeHtmlWithInlineCode(text.slice(lastIndex));
   return html;
 }
 
@@ -128,6 +147,12 @@ export function htmlToMarkdown(html: string): string {
     const rel = span.getAttribute('data-rel') || '';
     const relPart = rel ? `{rel="${rel}"}` : '';
     span.replaceWith(document.createTextNode(`[${text}](${url})${relPart}`));
+  });
+
+  // Convert <code> to backticks
+  div.querySelectorAll('code').forEach((code) => {
+    const content = code.textContent || '';
+    code.replaceWith(document.createTextNode(`\`${content}\``));
   });
 
   // Convert <br> to newlines
@@ -212,7 +237,8 @@ export function EditableHorizontalRule() {
 }
 
 export function EditableLink({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { text: string; url: string; openInNewTab: boolean; title?: string };
+  const data = block.data as { text: string; url: string; openInNewTab: boolean; title?: string; align?: string };
+  const align = data.align || 'left';
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
@@ -223,12 +249,26 @@ export function EditableLink({ block, adapter }: { block: Block<BlockData>; adap
         <Checkbox label="Open in new tab" checked={data.openInNewTab} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, openInNewTab: e.target.checked } }))} />
         <Input value={data.title || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Title (optional)" className="flex-1" />
       </div>
+      <div className="flex flex-wrap gap-2">
+        {(['left','center','right','justify'] as const).map((a) => (
+          <button
+            key={a}
+            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+            className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+              align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+            }`}
+          >
+            {a}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
 export function EditableImage({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { src: string | null; alt: string; caption?: string; width: number; height: number; fit: string };
+  const data = block.data as { src: string | null; alt: string; caption?: string; width: number; height: number; fit: string; align?: string };
+  const align = data.align || 'left';
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (file: File) => {
@@ -278,8 +318,21 @@ export function EditableImage({ block, adapter }: { block: Block<BlockData>; ada
           className="ml-2"
         />
       </div>
+      <div className="flex flex-wrap gap-2">
+        {(['left','center','right','justify'] as const).map((a) => (
+          <button
+            key={a}
+            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+            className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+              align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+            }`}
+          >
+            {a}
+          </button>
+        ))}
+      </div>
       {data.src && (
-        <img src={data.src} alt={data.alt} className="mt-2 h-32 w-full rounded-lg border border-[var(--neutral-200)] object-cover" />
+        <img src={data.src} alt={data.alt} className="mt-2 h-32 w-full rounded-lg border border-[var(--neutral-200)]" style={{ objectFit: data.fit as any }} />
       )}
     </div>
   );

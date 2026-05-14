@@ -19,6 +19,7 @@ export interface ImageBlockData extends Record<string, unknown> {
   fit: ImageFit;
   status: ImageStatus;
   errorMessage?: string;
+  align?: "left" | "center" | "right" | "justify";
 }
 
 export interface ImageUploadSuccess {
@@ -47,6 +48,7 @@ export const imageBlockDataSchema = z
     fit: z.enum(["cover", "contain", "fill"]),
     status: z.enum(["idle", "uploading", "ready", "error"]),
     errorMessage: z.string().optional(),
+    align: z.enum(["left", "center", "right", "justify"]).optional(),
   })
   .strict();
 
@@ -162,8 +164,10 @@ export const ImageBlock: BlockTypeDefinition<ImageBlockData> = {
     const attribution = attributionParts.length > 0 
       ? `<small class="image-attribution">${escapeHtml(attributionParts.join(" | "))}</small>` 
       : "";
+    
+    const alignStyle = parsed.align ? `text-align: ${parsed.align}; ` : "";
 
-    return `<figure data-block-type="image" data-status="${parsed.status}"><img src="${escapeHtml(
+    return `<figure data-block-type="image" data-status="${parsed.status}" style="${alignStyle}"><img src="${escapeHtml(
       parsed.src,
     )}" alt="${escapeHtml(parsed.alt)}"${titleAttr} width="${parsed.width}" height="${parsed.height}" style="object-fit:${parsed.fit}" />${captionHtml}${attribution}</figure>`;
   },

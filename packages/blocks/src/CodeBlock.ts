@@ -40,6 +40,7 @@ export const codeBlockDataSchema = z
     language: codeLanguageSchema,
     theme: z.string().default("github-light"),
     showLineNumbers: z.boolean().default(true),
+    align: z.enum(["left", "center", "right", "justify"]).optional(),
   })
   .strict() as z.ZodType<CodeBlockData>;
 

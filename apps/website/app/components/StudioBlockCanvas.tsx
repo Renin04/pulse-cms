@@ -483,6 +483,18 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     }
   }, [data.text]);
 
+  const marks = data.marks || {};
+  const markStyle: React.CSSProperties = {
+    textAlign: align as any,
+    fontFamily: marks.code ? 'monospace' : undefined,
+    backgroundColor: marks.code ? '#f3f4f6' : undefined,
+    padding: marks.code ? '0.15em 0.4em' : undefined,
+    borderRadius: marks.code ? '4px' : undefined,
+    fontWeight: marks.bold ? 'bold' : undefined,
+    fontStyle: marks.italic ? 'italic' : undefined,
+    textDecoration: marks.underline ? 'underline' : undefined,
+  };
+
   const openLinkModal = () => {
     const el = textRef.current;
     if (!el) return;
@@ -654,7 +666,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
           contentEditable
           suppressContentEditableWarning
           className="min-h-[1.5em] leading-relaxed text-[var(--neutral-700)] outline-empty"
-          style={{ textAlign: align as any }}
+          style={markStyle}
           onBlur={(e) => {
             const markdown = htmlToMarkdown(e.currentTarget.innerHTML);
             adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, text: markdown } }));
@@ -794,7 +806,8 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
 }
 
 function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { quote: string; citation?: string };
+  const data = block.data as { quote: string; citation?: string; align?: string };
+  const align = data.align || 'left';
   const quoteRef = useRef<HTMLParagraphElement>(null);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [linkModalText, setLinkModalText] = useState('');
@@ -970,7 +983,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
   };
 
   return (
-    <blockquote className="border-l-4 border-[var(--pulse-jasmine)] pl-4 italic text-[var(--neutral-700)]">
+    <blockquote className="border-l-4 border-[var(--pulse-jasmine)] pl-4 italic text-[var(--neutral-700)]" style={{ textAlign: align as any }}>
       <div className="flex items-start gap-2">
         <p
           ref={quoteRef}
@@ -1018,6 +1031,19 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
         placeholder="Citation (optional)"
         className="mt-2 w-full bg-transparent text-sm text-[var(--neutral-500)] outline-none placeholder:text-[var(--neutral-400)]"
       />
+      <div className="mt-2 flex flex-wrap gap-2">
+        {(['left','center','right','justify'] as const).map((a) => (
+          <button
+            key={a}
+            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+            className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+              align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+            }`}
+          >
+            {a}
+          </button>
+        ))}
+      </div>
       <LinkModal
         isOpen={linkModalOpen}
         onClose={() => setLinkModalOpen(false)}
@@ -1137,11 +1163,12 @@ function EditableCode({ block, adapter }: { block: Block<BlockData>; adapter: Ed
 }
 
 function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { style: 'ordered' | 'unordered'; items: string[] };
+  const data = block.data as { style: 'ordered' | 'unordered'; items: string[]; align?: string };
+  const align = data.align || 'left';
   const ListTag = data.style === 'ordered' ? 'ol' : 'ul';
   return (
     <div>
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
         {(['unordered', 'ordered'] as const).map((s) => (
           <button
             key={s}
@@ -1153,8 +1180,20 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
             {s === 'unordered' ? 'Bullet' : 'Numbered'}
           </button>
         ))}
+        <div className="h-4 w-px bg-[var(--neutral-200)]" />
+        {(['left','center','right','justify'] as const).map((a) => (
+          <button
+            key={a}
+            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+            className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+              align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+            }`}
+          >
+            {a}
+          </button>
+        ))}
       </div>
-      <ListTag className={data.style === 'ordered' ? 'list-decimal' : 'list-disc'}>
+      <ListTag className={data.style === 'ordered' ? 'list-decimal' : 'list-disc'} style={{ textAlign: align as any }}>
         {data.items.map((item, i) => (
           <li key={i} className="mb-2">
             <div className="flex items-start gap-2">
@@ -1437,7 +1476,7 @@ export default function StudioBlockCanvas({
 
   function parsePath(query: string): { category: string | null; blockQuery: string } {
     const trimmed = query.trim().toLowerCase();
-    const hasTrigger = trimmed.startsWith('/') || trimmed.startsWith('\\');
+    const hasTrigger = trimmed.startsWith('/');
     if (!hasTrigger) return { category: activeCategory === 'All' ? null : activeCategory, blockQuery: trimmed };
     const parts = trimmed.slice(1).split('/').filter(Boolean);
     if (parts.length === 0) return { category: null, blockQuery: '' };
@@ -1455,7 +1494,7 @@ export default function StudioBlockCanvas({
 
   function tabComplete(query: string): string {
     const trimmed = query.trim().toLowerCase();
-    const hasTrigger = trimmed.startsWith('/') || trimmed.startsWith('\\');
+    const hasTrigger = trimmed.startsWith('/');
     if (!hasTrigger) {
       const match = allDefs.find((d) => (blockTypeToLabel[d.type] || d.type).toLowerCase().startsWith(trimmed));
       return match ? `/${blockTypeToLabel[match.type] || match.type}`.toLowerCase().replace(/\s+/g, '-') : query;
@@ -1483,7 +1522,7 @@ export default function StudioBlockCanvas({
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === '/' || e.key === '\\') && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName || '')) {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName || '')) {
         e.preventDefault();
         setShowPalette(true);
       }
@@ -1555,7 +1594,7 @@ export default function StudioBlockCanvas({
 
   const breadcrumb = useMemo(() => {
     const trimmed = paletteQuery.trim().toLowerCase();
-    const hasTrigger = trimmed.startsWith('/') || trimmed.startsWith('\\');
+    const hasTrigger = trimmed.startsWith('/');
     if (!hasTrigger) return null;
     const parts = trimmed.slice(1).split('/').filter(Boolean);
     return parts;
@@ -1568,11 +1607,11 @@ export default function StudioBlockCanvas({
           Pulse editor canvas
         </p>
         <p className="mt-2 text-sm text-[var(--neutral-600)]">
-          Type <kbd className="rounded bg-white px-1 py-0.5 font-mono text-xs">/</kbd> or <kbd className="rounded bg-white px-1 py-0.5 font-mono text-xs">\</kbd> to open the command palette, or click "Add a block" below. Drag the handle on the left to reorder blocks. Type a position number and press Enter to move instantly.
+          Type <kbd className="rounded bg-white px-1 py-0.5 font-mono text-xs">/</kbd> to open the command palette, or click "Add a block" below. Drag the handle on the left to reorder blocks. Type a position number and press Enter to move instantly.
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="pulse-editor space-y-3">
         {blocks.map((block, i) => (
           <EditableBlock
             key={block.id}

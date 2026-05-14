@@ -19,6 +19,7 @@ export interface LinkBlockData extends Record<string, unknown> {
   openInNewTab: boolean;
   title?: string;
   rel?: string;
+  align?: "left" | "center" | "right" | "justify";
 }
 
 export const linkBlockDataSchema = z
@@ -30,6 +31,7 @@ export const linkBlockDataSchema = z
     openInNewTab: z.boolean(),
     title: z.string().optional(),
     rel: z.string().optional(),
+    align: z.enum(["left", "center", "right", "justify"]).optional(),
   })
   .strict();
 
@@ -55,10 +57,11 @@ export const LinkBlock: BlockTypeDefinition<LinkBlockData> = {
     const relValue =
       parsed.rel ?? (parsed.openInNewTab ? "noopener noreferrer" : undefined);
     const relAttribute = relValue ? ` rel="${escapeHtml(relValue)}"` : "";
+    const alignAttr = parsed.align ? ` style="text-align: ${escapeHtml(parsed.align)}; display: block;"` : "";
 
     return `<a data-block-type="link" href="${escapeHtml(
       parsed.url,
-    )}"${titleAttribute}${targetAttribute}${relAttribute}>${escapeHtml(parsed.text)}</a>`;
+    )}"${titleAttribute}${targetAttribute}${relAttribute}${alignAttr}>${escapeHtml(parsed.text)}</a>`;
   },
   serialize(data) {
     const parsed = linkBlockDataSchema.parse(data);
