@@ -3,8 +3,26 @@
 > Archive of all completed tasks from the backlog. Tasks are moved here when marked as ✅ in BACKLOG.md.
 > This file serves as a historical record of project progress.
 
-**Last Updated:** 2026-05-01  
-**Total Completed Tasks:** 391
+**Last Updated:** 2026-05-14  
+**Total Completed Tasks:** 396
+
+---
+
+## Launch Readiness Gate
+
+### Session L-2: Basic Blocks QA — *Completed: 2026-05-14*
+- ✅ Automated creation of L-2 test entry via CMS API with all 10 basic block types
+- ✅ Renderer verification (SSR + hydrated) for all basic blocks via Puppeteer DOM inspection
+- ✅ Mobile responsive verification at 375px viewport
+- ✅ Editor verification — all blocks load with correct editable fields and data
+- ✅ No P0/P1 defects found; `docs/launch/BUG_LOG.md` updated
+- ✅ `docs/launch/BLOCK_TEST_MATRIX.md` updated with automated test results
+
+**Files Updated:**
+- `docs/launch/BLOCK_TEST_MATRIX.md` — marked renderer, mobile, edit data as ✅ for all basic blocks
+- `docs/launch/BUG_LOG.md` — added L-2 automated QA notes
+- `docs/memory/CONTEXT_SNAPSHOT.md` — current session state updated
+- `backlog/BACKLOG.md` — L-2 task status updated
 
 ---
 

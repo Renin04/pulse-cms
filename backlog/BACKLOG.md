@@ -26,11 +26,13 @@ Closeout prompt: `docs/prompt/PHASE_LAUNCH_CLOSEOUT.md`
 - ✅ Harden build/test environment: fix root `npm run build` (L-0-001) and website snapshot test path (L-0-002).
 
 #### Session L-2 — Basic Blocks QA (Editor + Renderer)
-- ⬜ Manual verification: Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, Image.
-- ⬜ Validate insert via slash, shortcut, and context menu.
-- ⬜ Validate edit, copy/paste, save/load round-trip.
-- ⬜ Validate renderer SSR and hydrated output.
-- ⬜ Log defects in `docs/launch/BUG_LOG.md`.
+- ✅ Automated verification: Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, Image.
+- ✅ Validate renderer SSR and hydrated output (Puppeteer + DOM inspection).
+- ✅ Validate mobile rendering (375px viewport).
+- ✅ Validate edit data persistence (editor loads all blocks with correct fields).
+- ⬜ Manual verification: insert via slash, shortcut, and context menu.
+- ⬜ Manual verification: copy/paste round-trip.
+- ✅ Log defects in `docs/launch/BUG_LOG.md` (no P0/P1 defects found).
 
 #### Session L-3 — Media Blocks QA
 - ⬜ Manual verification: Image (extended metadata), Video, Audio, File, Embed.

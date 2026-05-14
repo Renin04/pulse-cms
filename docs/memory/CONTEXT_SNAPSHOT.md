@@ -3,8 +3,8 @@
 > Quick reference for the next agent session.
 > Update this at the end of every session.
 
-**Last Updated:** 2026-05-01  
-**Current Session:** Session 72 — L-2 Basic Blocks QA (In Progress)  
+**Last Updated:** 2026-05-14  
+**Current Session:** Session 72 — L-2 Basic Blocks QA (Automated + Partial Manual)  
 **Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation (L-2 active)
 
 ---
@@ -128,4 +128,4 @@
 
 ---
 
-**Next Session Goal:** Complete L-2 — collect user feedback on all basic blocks, log any defects, fix P0/P1 issues found.
+**Next Session Goal:** Complete remaining L-2 manual verification items (insert via slash/shortcut/menu, copy/paste) if user wishes to validate interactively. Otherwise proceed to L-3 Media Blocks QA.

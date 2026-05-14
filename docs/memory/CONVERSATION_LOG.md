@@ -2857,3 +2857,61 @@ R3-10: theme token contract + renderer style entrypoint + custom CSS override pa
 - Website server responding on `localhost:8000` ✅
 
 **Next:** L-2 — Basic Blocks QA. Together, block by block: Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, Image.
+
+---
+
+## Session 72 — L-2 Basic Blocks QA (Automated + Partial Manual)
+**Date:** 2026-05-14  
+**Phase:** Launch Readiness Gate — Pre-Phase 4 Validation  
+**Status:** 🟦 In Progress (automated coverage complete; manual UI interactions pending)
+
+### Summary
+Executed automated L-2 basic blocks QA using Puppeteer MCP. Created a comprehensive test entry via the CMS API containing all 10 basic block types, then verified rendering in both the public blog page (renderer) and the studio editor. No P0/P1 defects were found. Manual insert-via-UI (slash command, shortcut, context menu) and copy/paste round-trip remain for user verification.
+
+### What Was Done
+- ✅ Fixed `.gitignore` to exclude `.next/` build artifacts and dev databases (`*.db`)
+- ✅ Seeded database and started Next.js dev server on `localhost:3000`
+- ✅ Authenticated via Puppeteer using direct API login + localStorage token injection
+- ✅ Created test entry `l2-basic-blocks-qa` via `/api/cms/entries/` with 13 block instances:
+  - Heading (H1, H2, H3, H4)
+  - Paragraph (standard + inline code marks)
+  - Ordered List (3 items, start=1)
+  - Unordered List (3 items)
+  - Blockquote (with citation)
+  - Code Block (TypeScript, line numbers)
+  - Horizontal Rule
+  - Link (target="_blank", rel="noopener noreferrer")
+  - Image (SVG data URL, with alt, caption, credit, source, license)
+- ✅ **Renderer verification** (blog page `/blog/l2-basic-blocks-qa/`):
+  - All blocks render with correct semantic HTML and `data-block-type` attributes
+  - Headings: `<h1>` through `<h4>` with proper anchor IDs
+  - Lists: `<ul>` / `<ol>` with 3 `<li>` children each
+  - Blockquote: `<blockquote>` with `<cite>`
+  - Code: `<pre><code class="language-typescript">`
+  - Link: `<a>` with `target="_blank"` and `rel="noopener noreferrer"`
+  - Image: `<figure>` with `<img>`, `<figcaption>`, and attribution metadata
+  - Mobile viewport (375px): responsive, readable, TOC functions correctly
+- ✅ **Editor verification** (studio `/admin/studio?edit=...`):
+  - All blocks load with correct editable fields
+  - Code block: textarea with code + language `<select>`
+  - Image block: URL, alt, caption, credit inputs populated correctly
+  - Link block: text + URL inputs populated correctly
+  - No console errors
+- ✅ Updated `docs/launch/BLOCK_TEST_MATRIX.md` — marked renderer SSR/hydrated, mobile, edit data as ✅
+- ✅ Updated `docs/launch/BUG_LOG.md` — no new defects found
+- ✅ Updated `docs/memory/CONTEXT_SNAPSHOT.md`
+- ✅ Updated `backlog/BACKLOG.md` and `backlog/DONE.md`
+
+### Observation (Not a Defect)
+- `marks.code: true` on a text block wraps the **entire paragraph** in `<code>`, not inline code within mixed text. This is by design per the `TextBlockData` schema (`marks` applies to the whole block). True inline code within a sentence would require rich-text range marks (not yet implemented).
+
+### Still Pending (Manual)
+- ⬜ Insert each block via `/` slash command, keyboard shortcut, and right-click context menu
+- ⬜ Copy/paste blocks between documents
+- ⬜ Save/load round-trip manual confirmation
+
+### Quality Gates
+- Root `npm run build` not re-run this session (no source code changes; only docs updates)
+- No source code modifications — only documentation and `.gitignore`
+
+**Next:** User manual verification of insert/paste paths, or proceed to L-3 Media Blocks QA.

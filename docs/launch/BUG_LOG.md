@@ -32,4 +32,11 @@
 
 ---
 
-**Last Updated:** 2026-05-01 (L-1 closeout + user feedback bugs)
+**Last Updated:** 2026-05-14 (L-2 automated basic blocks QA — no new defects)
+
+### L-2 Automated QA Notes
+- All 10 basic block types were created via API and verified in both editor and renderer using Puppeteer.
+- Renderer: semantic HTML output confirmed for all blocks (headings, paragraphs, lists, blockquote, code, hr, link, image with attribution).
+- Editor: all blocks load with correct editable fields and no console errors.
+- Mobile (375px): responsive layout confirmed readable.
+- No P0/P1 defects found in automated coverage. Manual insert-via-UI (slash, shortcut, menu) and copy/paste still need human verification.
