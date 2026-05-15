@@ -2915,3 +2915,32 @@ Executed automated L-2 basic blocks QA using Puppeteer MCP. Created a comprehens
 - No source code modifications — only documentation and `.gitignore`
 
 **Next:** User manual verification of insert/paste paths, or proceed to L-3 Media Blocks QA.
+
+## Session 73 — 2026-05-15 — L-2 + L-3 Block QA via Puppeteer Automation
+
+**Goal:** Automate manual verification of L-2 Basic Blocks and L-3 Media Blocks using the puppeteer MCP.
+
+**What was done:**
+1. Built Next.js website (
+pm run build in pps/website)
+2. Started production server on port 3001 for puppeteer access
+3. Discovered /demo page has a full PulseDemoEditor with no auth gate — perfect for automated QA
+4. Created pps/website/scripts/block-qa-puppeteer.mjs — reusable Node.js puppeteer-core script that:
+   - Opens /demo
+   - Adds each block via the palette (search + click)
+   - Validates preview pane HTML length as proxy for correct rendering
+   - Takes screenshots for evidence
+5. First run: 11/12 PASS, Divider FAIL — root cause was lockTypeToLabel using horizontalrule instead of horizontal-rule
+6. Found same bug affecting 5 other hyphenated block types: math-equation, speech-bubble, efore-after, hero-section, nnotated-image
+7. Fixed all 6 mappings in both PulseDemoEditor.tsx and StudioBlockCanvas.tsx
+8. Rebuilt and re-ran: **12/12 PASS**
+9. All quality gates pass: lint, typecheck, build, test
+10. Committed changes, updated BUG_LOG, BACKLOG, DONE, CONTEXT_SNAPSHOT
+
+**Results:**
+- L-2 Basic Blocks (8/8): Heading, Paragraph, List, Quote, Code, Divider, Link, Image ✅
+- L-3 Media Blocks (4/4): Video, Audio, File, Embed ✅
+- Bug found & fixed: L-2-001 (hyphenated block type label keys)
+- Screenshots: docs/launch/qa-screenshots/
+
+**Next:** L-4 Interactive Blocks QA.

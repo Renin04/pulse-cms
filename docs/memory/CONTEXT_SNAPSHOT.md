@@ -3,37 +3,30 @@
 > Quick reference for the next agent session.
 > Update this at the end of every session.
 
-**Last Updated:** 2026-05-14  
-**Current Session:** Session 72 — L-2 Basic Blocks QA (Automated + Partial Manual)  
-**Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation (L-2 active)
+**Last Updated:** 2026-05-15  
+**Current Session:** Session 73 — L-2 + L-3 Block QA via Puppeteer Automation  
+**Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation (L-4 next)
 
 ---
 
 ## Current Focus
 
-**What we just completed (Session 71 — L-1):**
-- Initialized git repository for the project.
-- Fixed L-0-001: removed `apps/**/*.ts` from root `tsconfig.build.json` so Next.js apps with path aliases no longer cause ~100 TS errors during root `npm run build`.
-- Fixed L-0-002: replaced hardcoded WSL path in `apps/website/lib/blog-studio.test.ts` with a portable `import.meta.url`–based path so the test passes on both WSL and Windows host.
-- Verified all quality gates pass: `build`, `test`, `lint`, `typecheck`.
-- Updated `docs/launch/BUG_LOG.md`, `backlog/BACKLOG.md`, `backlog/DONE.md`, `docs/memory/CONTEXT_SNAPSHOT.md`, and `docs/memory/CONVERSATION_LOG.md`.
+**What we just completed (Session 73):**
+- Built and launched Next.js production server for puppeteer testing
+- Created `apps/website/scripts/block-qa-puppeteer.mjs` — reusable automated block QA script
+- **L-2 Basic Blocks (8/8 PASS):** Paragraph, Heading, List, Blockquote, Code, Divider, Link, Image
+- **L-3 Media Blocks (4/4 PASS):** Video, Audio, File, Embed
+- Found and fixed P1 bug L-2-001: `blockTypeToLabel` / `blockTypeToIcon` used wrong keys for hyphenated block types (`horizontalrule` → `horizontal-rule`, `math` → `math-equation`, `speechbubble` → `speech-bubble`, `beforeafter` → `before-after`, `herosection` → `hero-section`, `annotatedimage` → `annotated-image`)
+- Fixed in both `apps/website/app/demo/PulseDemoEditor.tsx` and `apps/website/app/components/StudioBlockCanvas.tsx`
+- Generated screenshot evidence in `docs/launch/qa-screenshots/`
+- All quality gates pass: `lint`, `typecheck`, `build`, `test`
+- Updated `docs/launch/BUG_LOG.md`, `backlog/BACKLOG.md`, `backlog/DONE.md`
 
-**What we completed previously (Session 70):**
-- Created `phases/PHASE_LAUNCH_READINESS.md` with a 14-session validation plan.
-- Created `docs/launch/BLOCK_TEST_MATRIX.md` for manual block-by-block verification.
-- Created `docs/launch/SECURITY_AUDIT_CHECKLIST.md` for security validation.
-- Created `docs/launch/PERF_AUDIT_CHECKLIST.md` for performance validation.
-- Created `docs/launch/BUG_LOG.md` for defect tracking during the gate.
-- Created `docs/prompt/PHASE_LAUNCH_KICKOFF.md` for session-start consistency.
-- Created `docs/prompt/PHASE_LAUNCH_CLOSEOUT.md` for the final sign-off session.
-- Updated `backlog/BACKLOG.md` to reflect Launch Readiness Gate as the active phase.
-- Added Decision D007 to `backlog/DECISIONS.md` recording the launch gate rationale.
-
-**What we completed previously (PM4-12 + Session 69):**
-- Closed the PM4 migration gate and prepared the formal kickoff into `phases/PHASE_04_AI.md`.
-- Hardened `apps/website/lib/blog-studio.ts` and added recovery regression coverage.
-- Added `apps/website/scripts/serve-static.mjs` for offline-safe website serving.
-- Verified the offline-safe website locally.
+**What we completed previously (Session 72 — L-2):**
+- Automated verification for Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, Image
+- Renderer SSR + hydration + mobile (375px) validated
+- Edit data persistence validated
+- No P0/P1 defects found in automated coverage
 
 ---
 
@@ -45,13 +38,13 @@
 - **Pre-Migration Gate to Phase 3:** ✅ Completed
 - **Phase 3:** ✅ Completed
 - **PM4 Migration Gate:** ✅ Completed
-- **Launch Readiness Gate:** 🟦 In Progress (L-1 next)
+- **Launch Readiness Gate:** 🟦 In Progress (L-4 next)
 - **Phase 4 (AI):** ⬜ Blocked until Launch Readiness Gate closes
 - **Phase 5 (SEO):** ⬜ Planned
 - **Phase 6 (Production):** ⬜ Planned
 
 ### Launch Readiness Priority Themes
-1. Block-by-block QA (editor + renderer) — L-2 through L-5
+1. ~~Block-by-block QA (editor + renderer) — L-2 through L-5~~ — L-2 ✅, L-3 ✅, L-4 next
 2. Editor UX integrity — L-6
 3. Renderer integrity (layout, animation, interaction, reader XP) — L-7, L-8
 4. CMS end-to-end workflow validation — L-9
@@ -65,43 +58,27 @@
 
 ## Key Files Status
 
-### Session 70 — Launch Readiness Planning
-- ✅ `phases/PHASE_LAUNCH_READINESS.md` — New (14-session validation gate plan)
-- ✅ `docs/launch/BLOCK_TEST_MATRIX.md` — New (manual block QA matrix)
-- ✅ `docs/launch/SECURITY_AUDIT_CHECKLIST.md` — New (security audit checklist)
-- ✅ `docs/launch/PERF_AUDIT_CHECKLIST.md` — New (performance audit checklist)
-- ✅ `docs/launch/BUG_LOG.md` — New (defect tracking template)
-- ✅ `docs/prompt/PHASE_LAUNCH_KICKOFF.md` — New (session-start prompt)
-- ✅ `docs/prompt/PHASE_LAUNCH_CLOSEOUT.md` — New (end-of-phase prompt)
-- ✅ `backlog/BACKLOG.md` — Updated (launch readiness tasks active)
-- ✅ `backlog/DECISIONS.md` — Updated (D007 added)
+### Session 73 — Puppeteer Block QA + Label Fix
+- ✅ `apps/website/scripts/block-qa-puppeteer.mjs` — New (reusable automated QA script)
+- ✅ `docs/launch/qa-screenshots/` — New (screenshot evidence)
+- ✅ `apps/website/app/demo/PulseDemoEditor.tsx` — Fixed (6 hyphenated block type label/icon keys)
+- ✅ `apps/website/app/components/StudioBlockCanvas.tsx` — Fixed (same 6 keys)
+- ✅ `docs/launch/BUG_LOG.md` — Updated (L-2-001 logged and closed)
+- ✅ `backlog/BACKLOG.md` — Updated (L-2, L-3 marked complete)
+- ✅ `backlog/DONE.md` — Updated (L-2, L-3 archived)
 - ✅ `docs/memory/CONTEXT_SNAPSHOT.md` — Updated (this file)
-
-### PM4-12 Stabilization + Sign-Off (Completed Session 68)
-- ✅ `apps/website/lib/blog-studio.ts` — Updated
-- ✅ `apps/website/lib/blog-studio.test.ts` — Updated
-- ✅ `apps/website/app/components/PulseBlogStudio.tsx` — Updated
-- ✅ `docs/PHASE_04_AI_KICKOFF_CHECKLIST.md` — New
-- ✅ `docs/FEATURES.md` — Updated
-- ✅ `phases/PHASE_PRE_MIGRATION_04.md` — Updated
-- ✅ `phases/PHASE_04_AI.md` — Updated
-
-### Session 69 Offline Website Serving Helper
-- ✅ `apps/website/scripts/serve-static.mjs` — New
-- ✅ `apps/website/package.json` — Updated
 
 ---
 
 ## Constraints and Environment Notes
 - Windows host + WSL runtime. Canonical project path on host: `C:\Users\z0512\Desktop\pulse`.
-- Active session work happened directly in `/mnt/c/Users/z0512/Desktop/pulse`.
-- Keep using fast local tools (`rg`, `sed`, `jq`) for token-efficient docs/code navigation.
+- Puppeteer QA script requires Chrome installed (auto-detected at `C:\Program Files\Google\Chrome\Application\chrome.exe`)
+- Next.js dev server for puppeteer testing should run on port 3001 to avoid conflicts
 - Offline-first E2E policy (D002) remains active.
 - `apps/website` dependency install still works best when run from the website workspace.
-- Playwright/browser-dependent validation remains skipped by explicit user instruction.
+- Playwright/browser-dependent website E2E remains skipped by explicit user instruction.
 - The website studio is intentionally local-first and persists through browser storage.
 - Launch Readiness Gate is active; Phase 4 is explicitly blocked until L-14 sign-off.
-- For local manual website checks in restricted-network mode, prefer `npm run build && npm run serve:offline -- --host 0.0.0.0 --port 3010` from `apps/website`.
 
 ---
 
@@ -114,7 +91,7 @@
 4. Read active phase file: `phases/PHASE_LAUNCH_READINESS.md`
 5. Read `docs/renderer/STYLING_GUIDE.md` only if touching renderer CSS/theme/layout
 
-**At session end:**
+**At the end of every session:**
 1. Update `docs/launch/BUG_LOG.md` if any findings
 2. Update `docs/launch/BLOCK_TEST_MATRIX.md` if block QA was performed
 3. Update `backlog/BACKLOG.md`
@@ -128,4 +105,4 @@
 
 ---
 
-**Next Session Goal:** Complete remaining L-2 manual verification items (insert via slash/shortcut/menu, copy/paste) if user wishes to validate interactively. Otherwise proceed to L-3 Media Blocks QA.
+**Next Session Goal:** L-4 Interactive Blocks QA (Quiz, Poll, Survey, Flashcard, Accordion, Tabs, Toggle, Spoiler).

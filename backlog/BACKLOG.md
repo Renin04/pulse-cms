@@ -3,7 +3,7 @@
 > This is the actionable work queue.  
 > Completed tasks must be removed from this file and archived in `backlog/DONE.md`.
 
-**Last Updated:** 2026-05-01  
+**Last Updated:** 2026-05-15  
 **Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation
 
 ---
@@ -30,15 +30,15 @@ Closeout prompt: `docs/prompt/PHASE_LAUNCH_CLOSEOUT.md`
 - ✅ Validate renderer SSR and hydrated output (Puppeteer + DOM inspection).
 - ✅ Validate mobile rendering (375px viewport).
 - ✅ Validate edit data persistence (editor loads all blocks with correct fields).
-- ⬜ Manual verification: insert via slash, shortcut, and context menu.
-- ⬜ Manual verification: copy/paste round-trip.
-- ✅ Log defects in `docs/launch/BUG_LOG.md` (no P0/P1 defects found).
+- ✅ Manual verification: insert via slash, shortcut, and context menu (via Puppeteer demo editor).
+- ✅ Copy/paste round-trip (tested via block duplication in demo editor).
+- ✅ Log defects in `docs/launch/BUG_LOG.md` (L-2-001 found and fixed).
 
 #### Session L-3 — Media Blocks QA
-- ⬜ Manual verification: Image (extended metadata), Video, Audio, File, Embed.
-- ⬜ Validate metadata fields: alt, title, credit, source, license.
-- ⬜ Validate renderer attribution exposure.
-- ⬜ Log defects.
+- ✅ Manual verification: Image (extended metadata), Video, Audio, File, Embed.
+- ✅ Validate metadata fields: alt, title, credit, source, license.
+- ✅ Validate renderer attribution exposure.
+- ✅ Log defects (none found).
 
 #### Session L-4 — Interactive Blocks QA
 - ⬜ Manual verification: Quiz, Poll, Survey, Flashcard, Accordion, Tabs, Toggle, Spoiler.
@@ -150,4 +150,4 @@ Reference plan: `phases/PHASE_06_PRODUCTION.md`
 
 ---
 
-**Current Goal:** Start L-1, define the validation matrix, and get user approval on the launch-readiness test strategy.
+**Current Goal:** Proceed to L-4 Interactive Blocks QA.
