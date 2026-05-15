@@ -1,6 +1,16 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import PulseBlogStudio from '../components/PulseBlogStudio';
 import StudioAuthGate from '../components/StudioAuthGate';
+
+export const metadata: Metadata = {
+  title: 'Studio',
+  description: 'The Pulse content studio — create, edit, and publish interactive blog posts.',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function StudioPage() {
   return (

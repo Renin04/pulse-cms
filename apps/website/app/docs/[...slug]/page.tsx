@@ -24,9 +24,18 @@ export function generateMetadata({ params }: DocLeafPageProps): Metadata {
     };
   }
 
+  const slugPath = params.slug.join('/');
   return {
     title: `${page.title} - Pulse Docs`,
     description: page.summary,
+    alternates: {
+      canonical: `/docs/${slugPath}`,
+    },
+    openGraph: {
+      title: `${page.title} - Pulse Docs`,
+      description: page.summary,
+      type: 'article',
+    },
   };
 }
 
