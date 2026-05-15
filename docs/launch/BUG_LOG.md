@@ -60,6 +60,20 @@
 - No console errors or broken asset references observed (only benign `favicon.ico` 404 and expected `example.com` placeholder image 404s from default block data).
 - Mobile viewport screenshots confirm responsive rendering for all blocks.
 
+### L-7 Renderer Layout & Responsive QA Notes (Session 78)
+- **Breakpoints tested:** 375px (mobile), 768px (tablet), 1024px (desktop), 1400px (wide)
+- **Method:** Puppeteer MCP screenshots + DOM measurement on `/blog/l5-advanced-blocks-qa/`
+- **Results:**
+  - ✅ No horizontal overflow at any breakpoint
+  - ✅ Sidebar correctly stacks below article at <1024px, appears beside at ≥1024px
+  - ✅ All 17 advanced blocks fit within article container at all breakpoints
+  - ✅ Article width scales: ~326px @375px, ~703px @768px, ~627px @1024px (with sidebar), ~709px @1400px
+  - ⚠️ Tables lack `overflow-x: auto` wrapper — wide tables may break layout if content exceeds container
+  - ⚠️ Renderer layout modes (single/multi-column/grid/manga/sticky) exist in `@pulse/renderer` but are NOT wired into the blog post rendering pipeline (`entry-adapter.ts` uses plain `<div class="studio-rendered">`)
+  - ⚠️ Manga layout CSS does not reduce columns on small viewports (`grid-template-columns: repeat(var(--pulse-layout-manga-columns), minmax(0, 1fr))`)
+  - ⚠️ No container queries — all responsive behavior is viewport-based
+  - ⚠️ Sticky sidebar layout has no mobile fallback (<1024px reverts to single column but sticky content is still present)
+
 ### L-6 Editor Core UX QA Notes (Session 78)
 - **Verification method:** Puppeteer MCP on live `/demo` editor at `localhost:3001`.
 - **Features tested:**

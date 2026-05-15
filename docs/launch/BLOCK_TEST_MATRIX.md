@@ -91,6 +91,35 @@
 | Context menu (right-click) | contextmenu event | ❌ | Not implemented |
 | Undo/Redo (`Ctrl+Z/Y`) | Puppeteer keydown | ❌ | Infrastructure exists but unwired (L-6-001) |
 
+## Renderer Layout & Responsive (L-7)
+
+| Breakpoint | Viewport | Article Width | Sidebar | Horizontal Scroll | Status |
+|------------|----------|---------------|---------|-------------------|--------|
+| Mobile | 375px | ~326px | Stacked below | None | ✅ PASS |
+| Tablet | 768px | ~703px | Stacked below | None | ✅ PASS |
+| Desktop | 1024px | ~627px | Beside (288px) | None | ✅ PASS |
+| Wide | 1400px | ~709px | Beside (288px) | None | ✅ PASS |
+
+| Block Type | 375px | 768px | 1024px | 1400px | Notes |
+|------------|-------|-------|--------|--------|-------|
+| Table | ✅ | ✅ | ✅ | ✅ | No overflow wrapper; may scroll if content wide |
+| Chart | ✅ | ✅ | ✅ | ✅ | Canvas/SVG scales to container |
+| Map | ✅ | ✅ | ✅ | ✅ | Placeholder only |
+| Math Equation | ✅ | ✅ | ✅ | ✅ | Inline rendering |
+| Diagram | ✅ | ✅ | ✅ | ✅ | Code block with overflow-x: auto |
+| Manga Panel | ✅ | ✅ | ✅ | ✅ | Grid layout; no column reduction on mobile |
+| Speech Bubble | ✅ | ✅ | ✅ | ✅ | Flexible width |
+| Card | ✅ | ✅ | ✅ | ✅ | Content reflows |
+| Gallery | ✅ | ✅ | ✅ | ✅ | Placeholder images |
+| Carousel | ✅ | ✅ | ✅ | ✅ | Basic structure |
+| Timeline | ✅ | ✅ | ✅ | ✅ | Vertical layout |
+| Comparison | ✅ | ✅ | ✅ | ✅ | Table-based |
+| Before/After | ✅ | ✅ | ✅ | ✅ | Slider component |
+| Hero Section | ✅ | ✅ | ✅ | ✅ | Flexible height |
+| Annotated Image | ✅ | ✅ | ✅ | ✅ | Placeholder only |
+| Callout | ✅ | ✅ | ✅ | ✅ | Border box styling |
+| Alert | ✅ | ✅ | ✅ | ✅ | Border box styling |
+
 ---
 
 **Last Updated:** 2026-05-15  
