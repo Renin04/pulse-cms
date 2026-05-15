@@ -130,26 +130,38 @@ export const SurveyBlock: BlockTypeDefinition<SurveyBlockData> = {
   },
   render(data) {
     const parsed = surveyBlockDataSchema.parse(data);
+    const formId = `survey-${Math.random().toString(36).slice(2, 8)}`;
     const questions = parsed.questions
       .map((question) => {
+        const qName = `q_${question.id}`;
         if (question.type === "rating") {
-          return `<li data-question-type="rating">${escapeHtml(question.prompt)} (1-${question.scaleMax})</li>`;
+          const inputs = Array.from({ length: question.scaleMax ?? 5 }, (_, i) => {
+            const val = i + 1;
+            return `<label style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;border:1px solid var(--neutral-200);margin-right:6px;"><input type="radio" name="${qName}" value="${val}" ${question.required ? 'required' : ''} style="cursor:pointer;" /> ${val}</label>`;
+          }).join("");
+          return `<div style="margin-bottom:16px;"><p style="font-weight:600;margin-bottom:8px;">${escapeHtml(question.prompt)} ${question.required ? '<span style="color:#dc2626;">*</span>' : ''}</p><div style="display:flex;flex-wrap:wrap;gap:4px;">${inputs}</div></div>`;
         }
 
-        if (question.type === "single" || question.type === "multi") {
-          return `<li data-question-type="${question.type}">${escapeHtml(question.prompt)}: ${escapeHtml(
-            (question.options ?? []).join(", "),
-          )}</li>`;
+        if (question.type === "single") {
+          const inputs = (question.options ?? []).map((opt) => {
+            return `<label style="cursor:pointer;display:block;padding:6px 10px;border-radius:6px;border:1px solid var(--neutral-200);margin-bottom:6px;"><input type="radio" name="${qName}" value="${escapeHtml(opt)}" ${question.required ? 'required' : ''} style="cursor:pointer;margin-right:8px;" /> ${escapeHtml(opt)}</label>`;
+          }).join("");
+          return `<div style="margin-bottom:16px;"><p style="font-weight:600;margin-bottom:8px;">${escapeHtml(question.prompt)} ${question.required ? '<span style="color:#dc2626;">*</span>' : ''}</p>${inputs}</div>`;
         }
 
-        return `<li data-question-type="text">${escapeHtml(question.prompt)}</li>`;
+        if (question.type === "multi") {
+          const inputs = (question.options ?? []).map((opt) => {
+            return `<label style="cursor:pointer;display:block;padding:6px 10px;border-radius:6px;border:1px solid var(--neutral-200);margin-bottom:6px;"><input type="checkbox" name="${qName}" value="${escapeHtml(opt)}" style="cursor:pointer;margin-right:8px;" /> ${escapeHtml(opt)}</label>`;
+          }).join("");
+          return `<div style="margin-bottom:16px;"><p style="font-weight:600;margin-bottom:8px;">${escapeHtml(question.prompt)} ${question.required ? '<span style="color:#dc2626;">*</span>' : ''}</p>${inputs}</div>`;
+        }
+
+        return `<div style="margin-bottom:16px;"><label style="font-weight:600;display:block;margin-bottom:8px;">${escapeHtml(question.prompt)} ${question.required ? '<span style="color:#dc2626;">*</span>' : ''}</label><textarea name="${qName}" ${question.required ? 'required' : ''} placeholder="Your answer..." style="width:100%;min-height:80px;padding:10px;border-radius:8px;border:1px solid var(--neutral-200);resize:vertical;"></textarea></div>`;
       })
       .join("");
-    const description = parsed.description ? `<p>${escapeHtml(parsed.description)}</p>` : "";
+    const description = parsed.description ? `<p style="margin-bottom:16px;color:var(--neutral-600);">${escapeHtml(parsed.description)}</p>` : "";
 
-    return `<section data-block-type="survey"><h3>${escapeHtml(
-      parsed.title,
-    )}</h3>${description}<ol>${questions}</ol></section>`;
+    return `<section data-block-type="survey" class="pulse-survey"><h3 style="margin-bottom:12px;">${escapeHtml(parsed.title)}</h3>${description}<form id="${formId}" onsubmit="event.preventDefault();var btn=this.querySelector('button');btn.textContent='✅ Submitted!';btn.disabled=true;btn.style.opacity='0.6';" style="max-width:600px;">${questions}<button type="submit" style="padding:10px 24px;border-radius:10px;background:var(--pulse-black);color:#fff;font-weight:600;border:none;cursor:pointer;">Submit</button></form></section>`;
   },
   serialize(data) {
     const parsed = surveyBlockDataSchema.parse(data);

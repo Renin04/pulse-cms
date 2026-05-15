@@ -31,6 +31,7 @@
 | L-0-002 | L-1 | — | Website test | Replaced hardcoded WSL path in `blog-studio.test.ts` with `join(dirname(fileURLToPath(import.meta.url)), '../public/blog-snapshot.json')`. | `apps/website/lib/blog-studio.test.ts` passes (9/9). |
 | L-1-004 | L-1 | P1 | Editor UX / Studio | Added `\` key handler to `StudioBlockCanvas.tsx` (line 1484), updated `parsePath`, `tabComplete`, and `breadcrumb` to treat `\` identically to `/`, and updated help text + input placeholder. | Website rebuilt and restarted. `\` now opens palette. |
 | L-2-001 | L-2 | P1 | Editor UX / Demo | `blockTypeToLabel` and `blockTypeToIcon` maps used wrong keys for hyphenated block types (`horizontalrule` instead of `horizontal-rule`, `math` instead of `math-equation`, etc.). This caused the block palette to show fallback names and prevented search from finding blocks like Divider, Equation, Speech Bubble, Before/After, Hero Section, Annotated Image. | Commit a5cbe3c | Puppeteer QA script |
+| L-4-001 | L-4 | P0 | Interactive Blocks | 5 interactive block renderers (Quiz, Poll, Survey, Tabs, Spoiler) emitted inline `<script>` tags that React's `dangerouslySetInnerHTML` strips, leaving static HTML with zero client-side interactivity. | Removed dead scripts from block renderers; added client-side hydration `useEffect` in `PulseDemoEditor.tsx` and `PulseBlogStudio.tsx` that wires event listeners after React renders. | Puppeteer click-verification script `block-qa-l4-interactive.mjs` — 8/8 PASS |
 
 ---
 
@@ -43,3 +44,9 @@
 - All blocks render correctly in the preview pane with semantic HTML
 - One P1 bug found and fixed during testing: hyphenated block type label keys
 - Screenshots saved to `docs/launch/qa-screenshots/`
+
+### L-4 Interactive Blocks QA Notes (Session 76)
+- **Root cause identified:** Inline `<script>` tags in block renderers are stripped by React `dangerouslySetInnerHTML`. Previous QA only checked HTML string length, not actual click behavior.
+- **Fix:** Removed dead inline scripts from 5 block renderers; added client-side hydration `useEffect` in `PulseDemoEditor.tsx` and `PulseBlogStudio.tsx`.
+- **Verification script:** `apps/website/scripts/block-qa-l4-interactive.mjs` performs real browser clicks and verifies DOM mutations.
+- **L-4 Interactive Blocks (8/8 PASS):** Quiz, Poll, Survey, Tabs, Spoiler, Flashcard, Accordion, Toggle

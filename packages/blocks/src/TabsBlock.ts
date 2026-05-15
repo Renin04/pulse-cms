@@ -118,19 +118,21 @@ export const TabsBlock: BlockTypeDefinition<TabsBlockData> = {
   render(data) {
     const parsed = tabsBlockDataSchema.parse(data);
     const activeTabId = parsed.activeTabId ?? parsed.tabs[0].id;
+    const tabsId = `tabs-${Math.random().toString(36).slice(2, 8)}`;
     const nav = parsed.tabs
       .map(
         (tab) =>
-          `<button data-tab-id="${escapeHtml(tab.id)}" data-active="${String(
-            tab.id === activeTabId,
-          )}">${escapeHtml(tab.label)}</button>`,
+          `<button type="button" data-tab-id="${escapeHtml(tab.id)}" class="pulse-tab-btn" style="padding:8px 16px;border-radius:8px 8px 0 0;border:1px solid var(--neutral-200);border-bottom:none;background:${tab.id === activeTabId ? '#fff' : 'var(--neutral-50)'};cursor:pointer;font-weight:${tab.id === activeTabId ? '600' : '400'};color:${tab.id === activeTabId ? 'var(--pulse-black)' : 'var(--neutral-500)'};">${escapeHtml(tab.label)}</button>`,
       )
       .join("");
-    const activeTab = parsed.tabs.find((tab) => tab.id === activeTabId) ?? parsed.tabs[0];
+    const panels = parsed.tabs
+      .map(
+        (tab) =>
+          `<div data-tab-panel="${escapeHtml(tab.id)}" style="display:${tab.id === activeTabId ? 'block' : 'none'};padding:16px;border:1px solid var(--neutral-200);border-radius:0 8px 8px 8px;background:#fff;"><p style="white-space:pre-wrap;">${escapeHtml(tab.content)}</p></div>`,
+      )
+      .join("");
 
-    return `<section data-block-type="tabs"><nav>${nav}</nav><article>${escapeHtml(
-      activeTab.content,
-    )}</article></section>`;
+    return `<section data-block-type="tabs" id="${tabsId}" class="pulse-tabs"><nav style="display:flex;gap:4px;border-bottom:1px solid var(--neutral-200);">${nav}</nav>${panels}</section>`;
   },
   serialize(data) {
     const parsed = tabsBlockDataSchema.parse(data);

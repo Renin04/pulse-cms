@@ -462,6 +462,158 @@ export default function PulseBlogStudio() {
   }, [selectedEntry?.slug, selectedEntry?.updatedAt])
 
   const previewHtml = useMemo(() => renderStudioBlocksHtml(editorBlocks), [editorBlocks])
+
+  // Hydrate interactive blocks after preview renders (React strips inline scripts from dangerouslySetInnerHTML)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const preview = document.querySelector('[class*="prose prose-sm"]') || document.querySelector('[class*="mt-6"]');
+      if (!preview) return;
+
+      // --- Quiz ---
+      preview.querySelectorAll('.pulse-quiz').forEach((quiz) => {
+        if ((quiz as any).__hydrated) return;
+        (quiz as any).__hydrated = true;
+        const opts = quiz.querySelectorAll('.pulse-quiz-option');
+        const res = quiz.querySelector('.pulse-quiz-result') as HTMLElement | null;
+        opts.forEach((l) => {
+          l.addEventListener('click', (e) => {
+            if ((e.target as HTMLElement).tagName === 'INPUT') {
+              opts.forEach((o) => {
+                (o as HTMLElement).style.borderColor = 'var(--neutral-200)';
+                (o as HTMLElement).style.background = 'transparent';
+                const ex = o.parentElement?.querySelector('.pulse-quiz-explanation') as HTMLElement | null;
+                if (ex) ex.style.display = 'none';
+              });
+              const selected = quiz.querySelectorAll('input:checked');
+              let allCorrect = true;
+              let anySelected = false;
+              selected.forEach((s) => {
+                anySelected = true;
+                const li = s.closest('li');
+                const isCorrect = li?.getAttribute('data-correct') === 'true';
+                const label = s.closest('label') as HTMLElement;
+                if (isCorrect) {
+                  label.style.borderColor = '#059669';
+                  label.style.background = '#ecfdf5';
+                  const ex = li?.querySelector('.pulse-quiz-explanation') as HTMLElement | null;
+                  if (ex) ex.style.display = 'block';
+                } else {
+                  label.style.borderColor = '#dc2626';
+                  label.style.background = '#fef2f2';
+                  allCorrect = false;
+                }
+              });
+              if (anySelected && res) {
+                const correctCount = quiz.querySelectorAll('li[data-correct="true"]').length;
+                if (allCorrect && selected.length === correctCount) {
+                  res.textContent = '✅ Correct!';
+                  res.style.color = '#059669';
+                } else {
+                  res.textContent = '❌ Some answers are incorrect. Try again.';
+                  res.style.color = '#dc2626';
+                }
+                res.style.display = 'block';
+              }
+            }
+          });
+        });
+      });
+
+      // --- Poll ---
+      preview.querySelectorAll('.pulse-poll').forEach((poll) => {
+        if ((poll as any).__hydrated) return;
+        (poll as any).__hydrated = true;
+        const btns = poll.querySelectorAll('.pulse-poll-btn');
+        let voted = false;
+        btns.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            if (voted) return;
+            voted = true;
+            const li = btn.closest('li');
+            const clickedId = li?.getAttribute('data-option-id');
+            const lis = Array.from(poll.querySelectorAll('li'));
+            let total = 0;
+            lis.forEach((l) => {
+              let v = parseInt(l.getAttribute('data-votes') || '0', 10);
+              if (l.getAttribute('data-option-id') === clickedId) v += 1;
+              l.setAttribute('data-votes', String(v));
+              total += v;
+            });
+            lis.forEach((l) => {
+              const v = parseInt(l.getAttribute('data-votes') || '0', 10);
+              const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+              const bar = l.querySelector('.pulse-poll-bar') as HTMLElement | null;
+              const pctLabel = l.querySelector('.pulse-poll-pct') as HTMLElement | null;
+              if (bar) bar.style.width = pct + '%';
+              if (pctLabel) pctLabel.textContent = pct + '%';
+              (l.querySelector('button') as HTMLElement).style.cursor = 'default';
+            });
+            (btn as HTMLElement).style.borderColor = 'var(--pulse-red)';
+            (btn as HTMLElement).style.background = '#fff1f2';
+          });
+        });
+      });
+
+      // --- Tabs ---
+      preview.querySelectorAll('.pulse-tabs').forEach((sec) => {
+        if ((sec as any).__hydrated) return;
+        (sec as any).__hydrated = true;
+        const btns = sec.querySelectorAll('.pulse-tab-btn');
+        const panels = sec.querySelectorAll('[data-tab-panel]');
+        btns.forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const tid = btn.getAttribute('data-tab-id');
+            btns.forEach((b) => {
+              (b as HTMLElement).style.background = 'var(--neutral-50)';
+              (b as HTMLElement).style.fontWeight = '400';
+              (b as HTMLElement).style.color = 'var(--neutral-500)';
+            });
+            (btn as HTMLElement).style.background = '#fff';
+            (btn as HTMLElement).style.fontWeight = '600';
+            (btn as HTMLElement).style.color = 'var(--pulse-black)';
+            panels.forEach((p) => {
+              (p as HTMLElement).style.display = p.getAttribute('data-tab-panel') === tid ? 'block' : 'none';
+            });
+          });
+        });
+      });
+
+      // --- Spoiler ---
+      preview.querySelectorAll('.pulse-spoiler').forEach((sec) => {
+        if ((sec as any).__hydrated) return;
+        (sec as any).__hydrated = true;
+        const btn = sec.querySelector('.pulse-spoiler-btn') as HTMLElement | null;
+        const content = sec.querySelector('.pulse-spoiler-content') as HTMLElement | null;
+        const icon = sec.querySelector('.pulse-spoiler-icon') as HTMLElement | null;
+        if (!btn || !content || !icon) return;
+        let revealed = sec.getAttribute('data-revealed') === 'true';
+        btn.addEventListener('click', () => {
+          revealed = !revealed;
+          content.style.display = revealed ? 'block' : 'none';
+          icon.style.transform = revealed ? 'rotate(90deg)' : 'rotate(0deg)';
+          sec.setAttribute('data-revealed', String(revealed));
+        });
+      });
+
+      // --- Survey ---
+      preview.querySelectorAll('.pulse-survey form').forEach((form) => {
+        if ((form as any).__hydrated) return;
+        (form as any).__hydrated = true;
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const btn = form.querySelector('button[type="submit"]') as HTMLElement | null;
+          if (btn) {
+            btn.textContent = '✅ Submitted!';
+            btn.setAttribute('disabled', 'true');
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'default';
+          }
+        });
+      });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [previewHtml]);
+
   const currentStatus = selectedEntry?.status ?? 'draft'
 
   function updateDraft<K extends keyof DraftFormState>(field: K, value: DraftFormState[K]) {

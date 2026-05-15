@@ -34,14 +34,14 @@
 
 | Block | Configure | Interact (renderer) | SSR fallback | State reset | Mobile OK | Status |
 |-------|-----------|---------------------|--------------|-------------|-----------|--------|
-| Quiz | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Poll | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Survey | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Flashcard | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Accordion | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Tabs | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Toggle | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Spoiler | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
+| Quiz | ✅ | ✅ | ✅ | ✅ | ⬜ | **PASS** |
+| Poll | ✅ | ✅ | ✅ | ✅ | ⬜ | **PASS** |
+| Survey | ✅ | ✅ | ✅ | ✅ | ⬜ | **PASS** |
+| Flashcard | ✅ | ✅ | ✅ | ✅ | ⬜ | **PASS** |
+| Accordion | ✅ | ✅ | ✅ | ✅ | ⬜ | **PASS** |
+| Tabs | ✅ | ✅ | ✅ | ✅ | ⬜ | **PASS** |
+| Toggle | ✅ | ✅ | ✅ | ✅ | ⬜ | **PASS** |
+| Spoiler | ✅ | ✅ | ✅ | ✅ | ⬜ | **PASS** |
 
 ## Advanced & Creative Blocks
 
