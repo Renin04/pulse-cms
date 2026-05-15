@@ -62,8 +62,8 @@
 | Gallery | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
 | Carousel | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
 | Annotated Image | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
-| Callout | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Alert | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
+| Callout | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Alert | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
 
 ## Branching & Conditional
 
