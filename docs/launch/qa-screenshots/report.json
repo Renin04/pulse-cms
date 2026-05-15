@@ -1,0 +1,107 @@
+{
+  "date": "2026-05-15T10:36:37.682Z",
+  "results": [
+    {
+      "phase": "L-2",
+      "type": "heading",
+      "search": "Heading",
+      "label": "Heading",
+      "status": "PASS",
+      "previewHtmlLength": 142
+    },
+    {
+      "phase": "L-2",
+      "type": "text",
+      "search": "Paragraph",
+      "label": "Paragraph",
+      "status": "PASS",
+      "previewHtmlLength": 173
+    },
+    {
+      "phase": "L-2",
+      "type": "list",
+      "search": "List",
+      "label": "List",
+      "status": "PASS",
+      "previewHtmlLength": 224
+    },
+    {
+      "phase": "L-2",
+      "type": "blockquote",
+      "search": "Quote",
+      "label": "Quote",
+      "status": "PASS",
+      "previewHtmlLength": 291
+    },
+    {
+      "phase": "L-2",
+      "type": "code",
+      "search": "Code",
+      "label": "Code",
+      "status": "PASS",
+      "previewHtmlLength": 419
+    },
+    {
+      "phase": "L-2",
+      "type": "horizontal-rule",
+      "search": "Divider",
+      "label": "Divider",
+      "status": "PASS",
+      "previewHtmlLength": 458
+    },
+    {
+      "phase": "L-2",
+      "type": "link",
+      "search": "Link",
+      "label": "Link",
+      "status": "PASS",
+      "previewHtmlLength": 562
+    },
+    {
+      "phase": "L-2",
+      "type": "image",
+      "search": "Image",
+      "label": "Image",
+      "status": "PASS",
+      "previewHtmlLength": 652
+    },
+    {
+      "phase": "L-3",
+      "type": "video",
+      "search": "Video",
+      "label": "Video",
+      "status": "PASS",
+      "previewHtmlLength": 812
+    },
+    {
+      "phase": "L-3",
+      "type": "audio",
+      "search": "Audio",
+      "label": "Audio",
+      "status": "PASS",
+      "previewHtmlLength": 971
+    },
+    {
+      "phase": "L-3",
+      "type": "file",
+      "search": "File",
+      "label": "File",
+      "status": "PASS",
+      "previewHtmlLength": 1101
+    },
+    {
+      "phase": "L-3",
+      "type": "embed",
+      "search": "Embed",
+      "label": "Embed",
+      "status": "PASS",
+      "previewHtmlLength": 1497
+    }
+  ],
+  "summary": {
+    "pass": 12,
+    "warn": 0,
+    "fail": 0,
+    "total": 12
+  }
+}

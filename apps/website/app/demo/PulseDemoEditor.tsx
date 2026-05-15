@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -61,19 +61,19 @@ const blockTypeToIcon: Record<string, React.ElementType> = {
   spoiler: EyeOff,
   chart: BarChart3,
   map: Map,
-  math: Calculator,
+  'math-equation': Calculator,
   diagram: Monitor,
   manga: LayoutGrid,
-  speechbubble: MessageSquare,
+  'speech-bubble': MessageSquare,
   card: Layers,
   gallery: ImageIcon,
   carousel: Monitor,
   flashcard: BookOpen,
   timeline: Clock,
   comparison: GitBranch,
-  beforeafter: Share2,
-  herosection: Star,
-  annotatedimage: ImageIcon,
+  'before-after': Share2,
+  'hero-section': Star,
+  'annotated-image': ImageIcon,
   embed: Globe,
   file: FileText,
   link: Bookmark,
@@ -100,23 +100,23 @@ const blockTypeToLabel: Record<string, string> = {
   spoiler: 'Spoiler',
   chart: 'Chart',
   map: 'Map',
-  math: 'Equation',
+  'math-equation': 'Equation',
   diagram: 'Diagram',
   manga: 'Manga Panel',
-  speechbubble: 'Speech Bubble',
+  'speech-bubble': 'Speech Bubble',
   card: 'Card',
   gallery: 'Gallery',
   carousel: 'Carousel',
   flashcard: 'Flashcard',
   timeline: 'Timeline',
   comparison: 'Comparison',
-  beforeafter: 'Before / After',
-  herosection: 'Hero Section',
-  annotatedimage: 'Annotated Image',
+  'before-after': 'Before / After',
+  'hero-section': 'Hero Section',
+  'annotated-image': 'Annotated Image',
   embed: 'Embed',
   file: 'File',
   link: 'Link',
-  horizontalrule: 'Divider',
+  'horizontal-rule': 'Divider',
 };
 
 function getBlockDefaultData(type: string): BlockData {
@@ -143,7 +143,7 @@ function renderPreviewHtml(blocks: Block<BlockData>[]): string {
   return renderer.renderDocument(blocks).html;
 }
 
-// ─── Editable block components ───
+// â”€â”€â”€ Editable block components â”€â”€â”€
 
 function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
   const data = block.data as { text: string; level: number };
@@ -1380,7 +1380,7 @@ function EditableBlock({
   );
 }
 
-// ─── Main Demo Editor ───
+// â”€â”€â”€ Main Demo Editor â”€â”€â”€
 
 export default function PulseDemoEditor() {
   ensureRegistry();
@@ -1520,7 +1520,7 @@ export default function PulseDemoEditor() {
                 Editor Canvas
               </span>
               <span className="text-xs text-[var(--neutral-500)]">
-                {blocks.length} blocks · {blocks.reduce((acc, b) => acc + JSON.stringify(b.data).length, 0)} chars
+                {blocks.length} blocks Â· {blocks.reduce((acc, b) => acc + JSON.stringify(b.data).length, 0)} chars
               </span>
             </div>
 

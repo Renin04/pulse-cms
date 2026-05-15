@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -46,19 +46,19 @@ const blockTypeToIcon: Record<string, React.ElementType> = {
   spoiler: EyeOff,
   chart: BarChart3,
   map: Map,
-  math: Calculator,
+  'math-equation': Calculator,
   diagram: Monitor,
   manga: LayoutGrid,
-  speechbubble: MessageSquare,
+  'speech-bubble': MessageSquare,
   card: Layers,
   gallery: ImageIcon,
   carousel: Monitor,
   flashcard: BookOpen,
   timeline: Clock,
   comparison: GitBranch,
-  beforeafter: Share2,
-  herosection: Star,
-  annotatedimage: ImageIcon,
+  'before-after': Share2,
+  'hero-section': Star,
+  'annotated-image': ImageIcon,
   embed: Globe,
   file: FileText,
   link: Bookmark,
@@ -85,23 +85,23 @@ const blockTypeToLabel: Record<string, string> = {
   spoiler: 'Spoiler',
   chart: 'Chart',
   map: 'Map',
-  math: 'Equation',
+  'math-equation': 'Equation',
   diagram: 'Diagram',
   manga: 'Manga Panel',
-  speechbubble: 'Speech Bubble',
+  'speech-bubble': 'Speech Bubble',
   card: 'Card',
   gallery: 'Gallery',
   carousel: 'Carousel',
   flashcard: 'Flashcard',
   timeline: 'Timeline',
   comparison: 'Comparison',
-  beforeafter: 'Before / After',
-  herosection: 'Hero Section',
-  annotatedimage: 'Annotated Image',
+  'before-after': 'Before / After',
+  'hero-section': 'Hero Section',
+  'annotated-image': 'Annotated Image',
   embed: 'Embed',
   file: 'File',
   link: 'Link',
-  horizontalrule: 'Divider',
+  'horizontal-rule': 'Divider',
 };
 
 function getBlockDefaultData(type: string): BlockData {
@@ -123,7 +123,7 @@ export function createStudioBlock(type: string, dataOverrides?: Record<string, u
   };
 }
 
-// ─── Editable block components ───
+// â”€â”€â”€ Editable block components â”€â”€â”€
 
 function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
   const data = block.data as { text: string; level: number };
@@ -1454,7 +1454,7 @@ function EditableBlock({
   );
 }
 
-// ─── Main Canvas Component ───
+// â”€â”€â”€ Main Canvas Component â”€â”€â”€
 
 export default function StudioBlockCanvas({
   adapter,
