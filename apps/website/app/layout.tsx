@@ -1,5 +1,5 @@
 import localFont from 'next/font/local';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import SmartNavigationWrapper from './components/SmartNavigationWrapper';
 import Navigation from './components/Navigation';
@@ -34,6 +34,13 @@ const bahnschrift = localFont({
 });
 
 const siteUrl = getSiteUrl();
+
+export const viewport: Viewport = {
+  themeColor: '#FF2800',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
