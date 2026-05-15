@@ -54,6 +54,7 @@
 ### L-5 Advanced & Creative Blocks QA Notes (Session 77)
 - **Verification script:** `apps/website/scripts/block-qa-l5-advanced.mjs` inserts each block via slash palette, asserts semantic HTML structure, screenshots desktop (1400px) and mobile (375px), and monitors console/network errors.
 - **L-5 Advanced Blocks (15/15 PASS):** Table, Chart, Map, Math Equation, Diagram, Manga Panel, Speech Bubble, Card, Gallery, Carousel, Timeline, Comparison, Before/After, Hero Section, Annotated Image.
-- All blocks produce valid semantic HTML (`<figure>`, `<section>`, `<article>`, `<table>`, `<ol>`, etc.).
-- No console errors or broken asset references observed (only benign `favicon.ico` 404).
+- **Demo Editor (Puppeteer MCP):** All 15 blocks inserted via `/` palette, preview HTML verified for correct semantic tags and data attributes. Desktop + mobile screenshots captured.
+- **Blog Post (Puppeteer MCP):** Created a real published blog post (`/blog/l5-advanced-blocks-qa/`) via Prisma with all 15 advanced blocks. All blocks rendered correctly in the `studio-rendered` article container with identical HTML structure to the demo editor preview.
+- No console errors or broken asset references observed (only benign `favicon.ico` 404 and expected `example.com` placeholder image 404s from default block data).
 - Mobile viewport screenshots confirm responsive rendering for all blocks.
