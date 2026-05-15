@@ -427,11 +427,26 @@ export default function PulseBlogStudio() {
         handleSave()
         e.preventDefault(); return
       }
-      // Allow browser defaults for: Ctrl/Cmd+Z (undo), +C (copy), +V (paste), +X (cut), +A (select all)
+      // Undo / Redo
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        editorAdapter?.undo()
+        return
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        editorAdapter?.redo()
+        return
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault()
+        editorAdapter?.redo()
+        return
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [focusMode, handleSave])
+  }, [focusMode, handleSave, editorAdapter])
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('pulse-focus-mode', { detail: { active: focusMode } }))
@@ -454,6 +469,7 @@ export default function PulseBlogStudio() {
     const adapter = createEditorStateAdapter<StudioBlock>({
       document: { id: selectedEntry.slug, metadata: { title: selectedEntry.title }, blocks: selectedEntry.blocks },
     })
+    adapter.enableHistory(50)
     const sync = () => { setEditorBlocks(adapter.getSnapshot().document.blocks) }
     sync()
     const unsub = adapter.subscribe(() => { sync(); setIsDirty(true) })

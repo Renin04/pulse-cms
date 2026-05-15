@@ -351,7 +351,8 @@ async function testUndoRedo(page) {
   results.undoWorked = afterUndoCount === beforeCount;
 
   console.log('     results:', JSON.stringify(results));
-  return { status: 'INFO', details: results };
+  const pass = results.undoWorked;
+  return { status: pass ? 'PASS' : 'FAIL', details: results };
 }
 
 async function run() {

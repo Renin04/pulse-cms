@@ -1479,11 +1479,19 @@ img {
 }
 
 /* Tables */
+.studio-rendered figure:has(> table),
+.studio-rendered .pulse-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
 .studio-rendered table {
   width: 100%;
   margin: 2rem 0;
   border-collapse: collapse;
   font-size: 0.95rem;
+  min-width: 320px;
 }
 
 .studio-rendered thead {

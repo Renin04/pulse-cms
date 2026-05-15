@@ -47,7 +47,7 @@
 
 | Block | Insert | Configure | Renderer output | Lazy loaded | Mobile OK | Status |
 |-------|--------|-----------|-----------------|-------------|-----------|--------|
-| Table | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Table | ✅ | ✅ | ✅ | ✅ | ✅ | **PASS** |
 | Chart | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
 | Map | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
 | Math Equation | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
@@ -85,11 +85,11 @@
 | Preview toggle | Click "Hide preview" | ✅ | Button text toggles to "Show preview" |
 | Reset canvas | Click "Reset" | ⚠️ | Clears most blocks but leaves 2 default blocks |
 | Keyboard shortcut `/` | Puppeteer keydown | ✅ | Opens command palette |
-| Keyboard shortcut `Escape` | Puppeteer keydown | ❌ | Does NOT close palette (documented gap) |
+| Keyboard shortcut `Escape` | Puppeteer keydown | ✅ | Closes palette correctly |
 | Multi-select (Shift+click) | Puppeteer mouse event | ❌ | Not implemented |
 | Drag & drop reordering | DragEvent simulation | ❌ | Not functional via DnD library |
 | Context menu (right-click) | contextmenu event | ❌ | Not implemented |
-| Undo/Redo (`Ctrl+Z/Y`) | Puppeteer keydown | ❌ | Infrastructure exists but unwired (L-6-001) |
+| Undo/Redo (`Ctrl+Z/Y`) | Puppeteer keydown | ✅ | Works after wiring HistoryState (fixed L-6-001) |
 
 ## Renderer Layout & Responsive (L-7)
 

@@ -1402,6 +1402,7 @@ export default function PulseDemoEditor() {
         ],
       },
     });
+    adapterRef.current.enableHistory(50);
   }
   const adapter = adapterRef.current;
 
@@ -1422,10 +1423,26 @@ export default function PulseDemoEditor() {
       if (e.key === 'Escape') {
         setShowPalette(false);
       }
+      // Undo / Redo
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        adapter.undo();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        adapter.redo();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        adapter.redo();
+        return;
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [adapter]);
 
   const previewHtml = useMemo(() => renderPreviewHtml(blocks), [blocks]);
 
@@ -1616,6 +1633,7 @@ export default function PulseDemoEditor() {
         blocks: [createDemoBlock('heading'), createDemoBlock('text')],
       },
     });
+    next.enableHistory(50);
     adapterRef.current = next;
     setBlocks(next.getSnapshot().document.blocks);
   };

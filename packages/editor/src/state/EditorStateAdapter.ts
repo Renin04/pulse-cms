@@ -9,6 +9,7 @@ import {
   type SelectionClearReason,
   type SelectionRange,
 } from "../../../core/src/state/SelectionState";
+import { HistoryState } from "../../../core/src/state/HistoryState";
 import type { Block, BlockData } from "../../../core/src/types/block";
 import type { EditorStateSnapshot } from "../types";
 
@@ -35,11 +36,77 @@ export class EditorStateAdapter<
   private readonly selectionState: SelectionState;
   private readonly listeners = new Set<EditorStateChangeListener<TBlock>>();
   private focusedBlockId: string | null = null;
+  private history: HistoryState<EditorStateSnapshot<TBlock>> | null = null;
+  private isUndoing = false;
 
   constructor(options: CreateEditorStateOptions<TBlock> = {}) {
     this.documentState = options.documentState ?? new DocumentState<TBlock>(options.document);
     this.selectionState = options.selectionState ?? new SelectionState();
     this.ensureValidFocus();
+  }
+
+  enableHistory(limit = 50): void {
+    if (this.history) return;
+    this.history = new HistoryState(this.getSnapshot(), { limit });
+  }
+
+  disableHistory(): void {
+    this.history = null;
+  }
+
+  canUndo(): boolean {
+    return this.history?.canUndo() ?? false;
+  }
+
+  canRedo(): boolean {
+    return this.history?.canRedo() ?? false;
+  }
+
+  undo(): EditorStateSnapshot<TBlock> | null {
+    if (!this.history || !this.history.canUndo()) return null;
+    this.isUndoing = true;
+    const snapshot = this.history.undo();
+    this.restoreFromSnapshot(snapshot.present);
+    this.isUndoing = false;
+    return this.emitChange("document");
+  }
+
+  redo(): EditorStateSnapshot<TBlock> | null {
+    if (!this.history || !this.history.canRedo()) return null;
+    this.isUndoing = true;
+    const snapshot = this.history.redo();
+    this.restoreFromSnapshot(snapshot.present);
+    this.isUndoing = false;
+    return this.emitChange("document");
+  }
+
+  private restoreFromSnapshot(snapshot: EditorStateSnapshot<TBlock>): void {
+    // Restore document state
+    const currentBlocks = this.documentState.getBlocks();
+    const newBlocks = snapshot.document.blocks;
+    // Clear and re-insert blocks
+    for (const block of [...currentBlocks].reverse()) {
+      this.documentState.removeBlock(block.id);
+    }
+    for (const block of newBlocks) {
+      this.documentState.insertBlock(block);
+    }
+    // Restore selection
+    if (snapshot.selection?.range) {
+      this.selectionState.setRange(snapshot.selection.range);
+    } else if (snapshot.selection?.cursor) {
+      this.selectionState.setCursor(snapshot.selection.cursor.blockId, snapshot.selection.cursor.offset);
+    } else if (snapshot.selection?.multiBlockIds && snapshot.selection.multiBlockIds.length > 0) {
+      this.selectionState.selectBlocks(snapshot.selection.multiBlockIds);
+    } else {
+      this.selectionState.clear("programmatic");
+    }
+    this.focusedBlockId = snapshot.focusedBlockId;
+  }
+
+  private pushHistory(): void {
+    if (!this.history || this.isUndoing) return;
+    this.history.push(this.getSnapshot());
   }
 
   getDocumentState(): DocumentState<TBlock> {
@@ -118,25 +185,33 @@ export class EditorStateAdapter<
   insertBlock(block: TBlock, index?: number): EditorStateSnapshot<TBlock> {
     this.documentState.insertBlock(block, index);
     this.ensureValidFocus();
-    return this.emitChange("document");
+    const snapshot = this.emitChange("document");
+    this.pushHistory();
+    return snapshot;
   }
 
   updateBlock(blockId: string, updater: BlockUpdater<TBlock>): EditorStateSnapshot<TBlock> {
     this.documentState.updateBlock(blockId, updater);
     this.ensureValidFocus();
-    return this.emitChange("document");
+    const snapshot = this.emitChange("document");
+    this.pushHistory();
+    return snapshot;
   }
 
   removeBlock(blockId: string): EditorStateSnapshot<TBlock> {
     this.documentState.removeBlock(blockId);
     this.ensureValidFocus();
-    return this.emitChange("document");
+    const snapshot = this.emitChange("document");
+    this.pushHistory();
+    return snapshot;
   }
 
   moveBlock(blockId: string, toIndex: number): EditorStateSnapshot<TBlock> {
     this.documentState.moveBlock(blockId, toIndex);
     this.ensureValidFocus();
-    return this.emitChange("document");
+    const snapshot = this.emitChange("document");
+    this.pushHistory();
+    return snapshot;
   }
 
   markDocumentSaved(savedAt?: string): EditorStateSnapshot<TBlock> {
@@ -155,7 +230,9 @@ export class EditorStateAdapter<
   ): EditorStateSnapshot<TBlock> {
     this.documentState.importBlocks(serialized, options);
     this.ensureValidFocus();
-    return this.emitChange("document");
+    const snapshot = this.emitChange("document");
+    this.pushHistory();
+    return snapshot;
   }
 
   setSelectionRange(range: SelectionRange): EditorStateSnapshot<TBlock> {

@@ -20,6 +20,9 @@
 | ID | Session | Severity | Block/Feature | Description | Repro Steps | Owner | Status |
 |----|---------|----------|---------------|-------------|-------------|-------|--------|
 | L-1-003 | L-1 | P2 | Homepage / Marketing | `SplashCursor.tsx` and `ReactBitsInfiniteMenu.tsx` spam `WebGL: INVALID_ENUM: activeTexture: texture unit out of range` in browser console on homepage load. Does not break functionality but degrades console hygiene. | Open `http://localhost:8000/` in browser → open DevTools Console. | — | Open |
+| L-6-001 | L-6 | P1 | Editor UX / Undo-Redo | `HistoryState.ts` engine exists but `EditorStateAdapter` never wires it. No `adapter.undo()`/`redo()` methods. Keyboard shortcuts `Ctrl+Z`/`Ctrl+Y` do nothing. | Wire `HistoryState` into `EditorStateAdapter`, push snapshots on insert/update/remove/move/import, add `undo()`/`redo()`/`canUndo()`/`canRedo()` methods. Enable history in `PulseDemoEditor.tsx` and `PulseBlogStudio.tsx`. Add `Ctrl+Z`/`Ctrl+Shift+Z`/`Ctrl+Y` keyboard handlers. | Commit tbd | Puppeteer `block-qa-l6-editor-ux.mjs` |
+| L-7-001 | L-7 | P1 | Renderer / Responsive | Tables lack `overflow-x: auto` wrapper — wide tables may break layout if content exceeds container. | Add `.studio-rendered figure:has(> table)` and `.pulse-table-wrapper` with `overflow-x: auto` in `globals.css`. | Commit tbd | Puppeteer `block-qa-l7-responsive.mjs` |
+| L-7-002 | L-7 | P2 | Renderer / Responsive | Manga layout CSS does not reduce columns on small viewports (`grid-template-columns: repeat(var(--pulse-layout-manga-columns), minmax(0, 1fr))`). | Add `@media (max-width: 767px)` to cap manga columns at 2 in `layout-modes.css`. | Commit tbd | Puppeteer `block-qa-l7-responsive.mjs` |
 
 ---
 
@@ -68,10 +71,10 @@
   - ✅ Sidebar correctly stacks below article at <1024px, appears beside at ≥1024px
   - ✅ All 17 advanced blocks fit within article container at all breakpoints
   - ✅ Article width scales: ~326px @375px, ~703px @768px, ~627px @1024px (with sidebar), ~709px @1400px
-  - ⚠️ Tables lack `overflow-x: auto` wrapper — wide tables may break layout if content exceeds container
+  - ✅ Tables lack `overflow-x: auto` wrapper — **FIXED** in L-7-001. Added `figure:has(> table)` and `.pulse-table-wrapper` with `overflow-x: auto`.
   - ⚠️ Renderer layout modes (single/multi-column/grid/manga/sticky) exist in `@pulse/renderer` but are NOT wired into the blog post rendering pipeline (`entry-adapter.ts` uses plain `<div class="studio-rendered">`)
-  - ⚠️ Manga layout CSS does not reduce columns on small viewports (`grid-template-columns: repeat(var(--pulse-layout-manga-columns), minmax(0, 1fr))`)
-  - ⚠️ No container queries — all responsive behavior is viewport-based
+  - ✅ Manga layout CSS does not reduce columns on small viewports — **FIXED** in L-7-002. Added `@media (max-width: 767px)` to cap columns at 2.
+  - ⚠️ No container queries — all responsive behavior is viewport-based (design limitation)
   - ⚠️ Sticky sidebar layout has no mobile fallback (<1024px reverts to single column but sticky content is still present)
 
 ### L-6 Editor Core UX QA Notes (Session 78)
@@ -84,8 +87,8 @@
   - ✅ Block reordering — hover action bar → chevron up/down swaps block positions
   - ✅ Preview toggle — "Hide preview" / "Show preview" button toggles preview panel
   - ⚠️ Reset canvas — clears most blocks but leaves 2 default blocks (heading + paragraph)
-  - ❌ Escape to close palette — palette stays open (no Escape handler)
-  - ❌ Multi-select (Shift+click) — not implemented
-  - ❌ Drag & drop reordering — DnD library events not functional via simulation
-  - ❌ Context menu (right-click) — not implemented
-  - ❌ Undo/Redo (`Ctrl+Z/Y`) — `HistoryState.ts` engine exists but `EditorStateAdapter` never wires it. No `adapter.undo()`/`redo()` methods. Known architectural gap, not a launch blocker.
+  - ✅ Escape to close palette — works correctly
+  - ❌ Multi-select (Shift+click) — not implemented (architectural gap)
+  - ❌ Drag & drop reordering — DnD library exists but not wired to React components (architectural gap)
+  - ❌ Context menu (right-click) — not implemented (architectural gap)
+  - ✅ Undo/Redo (`Ctrl+Z/Y`) — **FIXED** in L-6-001. `HistoryState` wired into `EditorStateAdapter`, keyboard shortcuts work in demo and studio.

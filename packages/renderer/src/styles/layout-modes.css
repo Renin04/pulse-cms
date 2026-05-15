@@ -80,6 +80,13 @@
   gap: var(--pulse-layout-manga-gap);
 }
 
+@media (max-width: 767px) {
+  .pulse-layout--manga .pulse-layout__inner,
+  .pulse-manga-grid {
+    grid-template-columns: repeat(min(var(--pulse-layout-manga-columns), 2), minmax(0, 1fr));
+  }
+}
+
 .pulse-manga-panel {
   display: block;
   min-width: 0;
