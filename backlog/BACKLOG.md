@@ -41,16 +41,16 @@ Closeout prompt: `docs/prompt/PHASE_LAUNCH_CLOSEOUT.md`
 - âœ… Log defects (none found).
 
 #### Session L-4 â€” Interactive Blocks QA
-- â¬œ Manual verification: Quiz, Poll, Survey, Flashcard, Accordion, Tabs, Toggle, Spoiler.
-- â¬œ Validate interactivity in renderer and SSR fallback.
-- â¬œ Log defects.
+- âœ… Manual verification: Quiz, Poll, Survey, Flashcard, Accordion, Tabs, Toggle, Spoiler.
+- âœ… Validate interactivity in renderer and SSR fallback.
+- âœ… Log defects.
 
 #### Session L-5 â€” Advanced & Creative Blocks QA
-- â¬œ Manual verification: Table, Chart, Map, Code Playground, Math, Diagram, Timeline,
+- âœ… Manual verification: Table, Chart, Map, Code Playground, Math, Diagram, Timeline,
   Comparison, Before/After, Manga, Speech Bubble, Callout, Alert, Card, Hero, Gallery,
   Carousel, Annotated Image.
-- â¬œ Validate lazy loading for heavy blocks.
-- â¬œ Log defects.
+- âœ… Validate lazy loading for heavy blocks.
+- âœ… Log defects.
 
 #### Session L-6 â€” Editor Core UX QA
 - â¬œ Validate slash commands, backslash macros, shortcuts, context menus, toolbar.

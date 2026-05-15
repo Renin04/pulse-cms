@@ -3,30 +3,31 @@
 > Quick reference for the next agent session.
 > Update this at the end of every session.
 
-**Last Updated:** 2026-05-15  
-**Current Session:** Session 73 — L-2 + L-3 Block QA via Puppeteer Automation  
-**Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation (L-4 next)
+**Last Updated:** 2026-05-15
+**Current Session:** Session 77 — L-5 Advanced & Creative Blocks QA (Complete)
+**Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation (L-6 next)
 
 ---
 
 ## Current Focus
 
-**What we just completed (Session 73):**
-- Built and launched Next.js production server for puppeteer testing
-- Created `apps/website/scripts/block-qa-puppeteer.mjs` — reusable automated block QA script
-- **L-2 Basic Blocks (8/8 PASS):** Paragraph, Heading, List, Blockquote, Code, Divider, Link, Image
-- **L-3 Media Blocks (4/4 PASS):** Video, Audio, File, Embed
-- Found and fixed P1 bug L-2-001: `blockTypeToLabel` / `blockTypeToIcon` used wrong keys for hyphenated block types (`horizontalrule` → `horizontal-rule`, `math` → `math-equation`, `speechbubble` → `speech-bubble`, `beforeafter` → `before-after`, `herosection` → `hero-section`, `annotatedimage` → `annotated-image`)
-- Fixed in both `apps/website/app/demo/PulseDemoEditor.tsx` and `apps/website/app/components/StudioBlockCanvas.tsx`
-- Generated screenshot evidence in `docs/launch/qa-screenshots/`
-- All quality gates pass: `lint`, `typecheck`, `build`, `test`
-- Updated `docs/launch/BUG_LOG.md`, `backlog/BACKLOG.md`, `backlog/DONE.md`
+**What we just completed (Session 77):**
+- L-5 Advanced & Creative Blocks QA — all 17 blocks verified
+- Puppeteer MCP testing in demo editor preview pane, editor panel, and live blog post
+- Created `apps/website/scripts/block-qa-l5-advanced.mjs` — automated QA script
+- Created test blog post `/blog/l5-advanced-blocks-qa/` with all 17 advanced blocks via Prisma
+- Verified no placeholders in editor panel; all blocks have dedicated editable UI
+- Desktop (1400px) and mobile (375px) screenshots captured
+- Updated `docs/launch/BLOCK_TEST_MATRIX.md` — all 17 marked PASS
+- Updated `docs/launch/BUG_LOG.md` — L-5 session notes appended
+- Committed all changes
 
-**What we completed previously (Session 72 — L-2):**
-- Automated verification for Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, Image
-- Renderer SSR + hydration + mobile (375px) validated
-- Edit data persistence validated
-- No P0/P1 defects found in automated coverage
+**Previous sessions completed:**
+- L-1: Test Strategy & Environment Setup ✅
+- L-2: Basic Blocks QA (8/8 PASS) ✅
+- L-3: Media Blocks QA (4/4 PASS) ✅
+- L-4: Interactive Blocks QA (8/8 PASS) ✅
+- L-5: Advanced & Creative Blocks QA (17/17 PASS) ✅
 
 ---
 
@@ -38,14 +39,14 @@
 - **Pre-Migration Gate to Phase 3:** ✅ Completed
 - **Phase 3:** ✅ Completed
 - **PM4 Migration Gate:** ✅ Completed
-- **Launch Readiness Gate:** 🟦 In Progress (L-4 next)
+- **Launch Readiness Gate:** 🟦 In Progress (L-6 next)
 - **Phase 4 (AI):** ⬜ Blocked until Launch Readiness Gate closes
 - **Phase 5 (SEO):** ⬜ Planned
 - **Phase 6 (Production):** ⬜ Planned
 
 ### Launch Readiness Priority Themes
-1. ~~Block-by-block QA (editor + renderer) — L-2 through L-5~~ — L-2 ✅, L-3 ✅, L-4 next
-2. Editor UX integrity — L-6
+1. ~~Block-by-block QA (editor + renderer) — L-2 through L-5~~ — ALL COMPLETE ✅
+2. Editor UX integrity — L-6 — NEXT
 3. Renderer integrity (layout, animation, interaction, reader XP) — L-7, L-8
 4. CMS end-to-end workflow validation — L-9
 5. Website/blog dogfooding — L-10
@@ -58,15 +59,16 @@
 
 ## Key Files Status
 
-### Session 73 — Puppeteer Block QA + Label Fix
-- ✅ `apps/website/scripts/block-qa-puppeteer.mjs` — New (reusable automated QA script)
-- ✅ `docs/launch/qa-screenshots/` — New (screenshot evidence)
-- ✅ `apps/website/app/demo/PulseDemoEditor.tsx` — Fixed (6 hyphenated block type label/icon keys)
-- ✅ `apps/website/app/components/StudioBlockCanvas.tsx` — Fixed (same 6 keys)
-- ✅ `docs/launch/BUG_LOG.md` — Updated (L-2-001 logged and closed)
-- ✅ `backlog/BACKLOG.md` — Updated (L-2, L-3 marked complete)
-- ✅ `backlog/DONE.md` — Updated (L-2, L-3 archived)
-- ✅ `docs/memory/CONTEXT_SNAPSHOT.md` — Updated (this file)
+### Session 77 — L-5 Advanced Blocks QA
+- ✅ `apps/website/scripts/block-qa-l5-advanced.mjs` — New
+- ✅ `apps/website/scripts/create-l5-test-entry.mjs` — New
+- ✅ `apps/website/scripts/add-callout-alert-to-l5.mjs` — New
+- ✅ `apps/website/scripts/get-content-types.mjs` — New
+- ✅ `docs/launch/qa-screenshots/L-5-*` — New (35 screenshots)
+- ✅ `docs/launch/BLOCK_TEST_MATRIX.md` — Updated (17/17 PASS)
+- ✅ `docs/launch/BUG_LOG.md` — Updated (L-5 notes)
+- ✅ `backlog/BACKLOG.md` — Updated (L-4, L-5 marked complete)
+- ✅ `backlog/DONE.md` — Updated (L-4, L-5 archived)
 
 ---
 
@@ -105,4 +107,4 @@
 
 ---
 
-**Next Session Goal:** L-4 Interactive Blocks QA (Quiz, Poll, Survey, Flashcard, Accordion, Tabs, Toggle, Spoiler).
+**Next Session Goal:** L-6 Editor Core UX QA (slash commands, shortcuts, context menus, toolbar, DnD, clipboard, undo/redo, multi-select, block search, templates).

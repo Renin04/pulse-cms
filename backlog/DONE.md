@@ -3,7 +3,7 @@
 > Archive of all completed tasks from the backlog. Tasks are moved here when marked as âœ… in BACKLOG.md.
 > This file serves as a historical record of project progress.
 
-**Last Updated:** 2026-05-14  
+**Last Updated:** 2026-05-15  
 **Total Completed Tasks:** 396
 
 ---
@@ -1139,3 +1139,28 @@
 
 **Next:** L-2 â€” Basic Blocks QA (Editor + Renderer).
 
+
+
+### Session L-4: Interactive Blocks QA — Completed: 2026-05-15
+- ✅ Quiz, Poll, Survey, Tabs, Spoiler, Flashcard, Accordion, Toggle — all verified via Puppeteer MCP
+- ✅ Real browser click verification for interactive DOM mutations
+- ✅ Client-side hydration confirmed after React renders
+- ✅ No defects found; 8/8 PASS
+
+**Files Created:**
+- `apps/website/scripts/block-qa-l4-interactive.mjs` — Click-verification QA script
+
+### Session L-5: Advanced & Creative Blocks QA — Completed: 2026-05-15
+- ✅ All 17 advanced blocks verified via Puppeteer MCP in demo editor preview + editor panel + live blog post
+- ✅ Table, Chart, Map, Math Equation, Diagram, Manga Panel, Speech Bubble, Card, Gallery, Carousel, Timeline, Comparison, Before/After, Hero Section, Annotated Image, Callout, Alert
+- ✅ No placeholders found in editor panel; all blocks have dedicated editable UI components
+- ✅ Blog post `/blog/l5-advanced-blocks-qa/` created via Prisma with all 17 blocks; renders correctly
+- ✅ Desktop (1400px) and mobile (375px) screenshots captured for all blocks
+- ✅ No console errors or broken assets (only benign favicon.ico 404)
+
+**Files Created:**
+- `apps/website/scripts/block-qa-l5-advanced.mjs` — Advanced blocks QA script
+- `apps/website/scripts/create-l5-test-entry.mjs` — Blog post seed script
+- `apps/website/scripts/add-callout-alert-to-l5.mjs` — Callout/Alert append script
+- `apps/website/scripts/get-content-types.mjs` — Content type lookup script
+- `docs/launch/qa-screenshots/L-5-*` — 35 screenshots
