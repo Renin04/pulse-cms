@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowRight, Sparkles } from 'lucide-react';
@@ -7,6 +8,18 @@ import GlitchText from './components/GlitchText';
 import HeroHeadline from './components/HeroHeadline';
 import PulseStarButton from './components/PulseStarButton';
 import SplashCursor from './components/SplashCursor';
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: fine) and (min-width: 1024px)');
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return isDesktop;
+}
 
 // Below-the-fold sections — lazy-loaded to reduce TBT and improve LCP
 const ProblemSection = dynamic(() => import('./components/ProblemSection'), { ssr: false });
@@ -19,16 +32,19 @@ const DynamicCTA = dynamic(() => import('./components/DynamicCTA'), { ssr: false
 const Footer = dynamic(() => import('./components/Footer'), { ssr: false });
 
 export default function HomePage() {
+  const isDesktop = useIsDesktop();
   return (
     <>
-      <SplashCursor
-        BACK_COLOR={{ r: 0.14, g: 0.05, b: 0.05 }}
-        DENSITY_DISSIPATION={4}
-        VELOCITY_DISSIPATION={2.5}
-        SPLAT_RADIUS={0.18}
-        SPLAT_FORCE={5000}
-        COLOR_UPDATE_SPEED={8}
-      />
+      {isDesktop && (
+        <SplashCursor
+          BACK_COLOR={{ r: 0.14, g: 0.05, b: 0.05 }}
+          DENSITY_DISSIPATION={4}
+          VELOCITY_DISSIPATION={2.5}
+          SPLAT_RADIUS={0.18}
+          SPLAT_FORCE={5000}
+          COLOR_UPDATE_SPEED={8}
+        />
+      )}
 
       <main id="main-content">
       {/* ─── HERO ─── */}
