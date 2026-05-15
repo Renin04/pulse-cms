@@ -22,7 +22,7 @@ export default function DocLeafContent({ page }: DocLeafContentProps) {
     <>
       <Navigation />
 
-      <main className="min-h-screen bg-gradient-to-b from-white via-[#fff9eb] to-[#fff9eb] pt-28">
+      <main id="main-content" className="min-h-screen bg-gradient-to-b from-white via-[#fff9eb] to-[#fff9eb] pt-28">
         {/* Header */}
         <section className="relative overflow-hidden border-b border-black/5">
           <div className="pointer-events-none absolute inset-0">

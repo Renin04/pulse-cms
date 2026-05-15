@@ -181,7 +181,7 @@ export default function AdminContentPage() {
             className="w-full rounded-xl border border-[var(--neutral-200)] bg-white py-2.5 pl-10 pr-10 text-sm text-[var(--pulse-black)] outline-none transition-colors focus:border-[var(--pulse-red)] focus:ring-2 focus:ring-[var(--pulse-red)]/10"
           />
           {search && (
-            <button
+            <button type="button"
               onClick={() => { setSearch(''); setPage(1); }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--neutral-400)] hover:text-[var(--pulse-black)]"
             >
@@ -215,35 +215,35 @@ export default function AdminContentPage() {
               <span className="text-xs font-semibold text-[var(--pulse-red)]">
                 {selectedIds.size} selected
               </span>
-              <button
+              <button type="button"
                 onClick={() => handleBulkAction('publish')}
                 className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
               >
                 <CheckCircle2 className="h-3 w-3" />
                 Publish
               </button>
-              <button
+              <button type="button"
                 onClick={() => handleBulkAction('unpublish')}
                 className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
               >
                 <PenLine className="h-3 w-3" />
                 Unpublish
               </button>
-              <button
+              <button type="button"
                 onClick={() => handleBulkAction('archive')}
                 className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-100"
               >
                 <Archive className="h-3 w-3" />
                 Archive
               </button>
-              <button
+              <button type="button"
                 onClick={() => handleBulkAction('delete')}
                 className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-100"
               >
                 <Trash2 className="h-3 w-3" />
                 Delete
               </button>
-              <button
+              <button type="button"
                 onClick={clearSelection}
                 className="ml-auto text-xs font-medium text-[var(--neutral-500)] hover:text-[var(--pulse-black)]"
               >
@@ -298,7 +298,7 @@ export default function AdminContentPage() {
               <thead className="bg-[var(--neutral-50)]">
                 <tr>
                   <th className="px-4 py-3 text-left">
-                    <button
+                    <button type="button"
                       onClick={toggleSelectAll}
                       className="flex items-center gap-1 text-[var(--neutral-600)] transition-colors hover:text-[var(--pulse-black)]"
                       title={allSelected ? 'Deselect all' : 'Select all'}
@@ -336,7 +336,7 @@ export default function AdminContentPage() {
                       className={`transition-colors ${isSelected ? 'bg-[var(--pulse-red)]/5' : 'hover:bg-[var(--neutral-50)]'}`}
                     >
                       <td className="px-4 py-3">
-                        <button
+                        <button type="button"
                           onClick={() => toggleSelect(entry.id)}
                           className="text-[var(--neutral-400)] transition-colors hover:text-[var(--pulse-red)]"
                         >
@@ -390,7 +390,7 @@ export default function AdminContentPage() {
                           >
                             <Edit className="h-4 w-4" />
                           </Link>
-                          <button
+                          <button type="button"
                             onClick={() => handleDelete(entry.id)}
                             className="rounded-lg p-1.5 text-[var(--neutral-600)] transition-colors hover:bg-red-50 hover:text-red-600"
                             title="Delete"
@@ -415,7 +415,7 @@ export default function AdminContentPage() {
               return (
                 <div key={entry.id} className={`p-4 ${isSelected ? 'bg-[var(--pulse-red)]/5' : ''}`}>
                   <div className="flex items-start gap-3">
-                    <button
+                    <button type="button"
                       onClick={() => toggleSelect(entry.id)}
                       className="mt-0.5 text-[var(--neutral-400)] transition-colors hover:text-[var(--pulse-red)]"
                     >
@@ -457,7 +457,7 @@ export default function AdminContentPage() {
                           <Edit className="h-3 w-3" />
                           Edit
                         </Link>
-                        <button
+                        <button type="button"
                           onClick={() => handleDelete(entry.id)}
                           className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600"
                         >
@@ -481,7 +481,7 @@ export default function AdminContentPage() {
                 <span className="ml-1 text-[var(--neutral-400)]">({pagination.total} total)</span>
               </p>
               <div className="flex gap-2">
-                <button
+                <button type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
                   className="inline-flex items-center gap-1 rounded-lg border border-[var(--neutral-200)] px-3 py-1.5 text-xs font-medium text-[var(--pulse-black)] transition-colors hover:bg-[var(--neutral-50)] disabled:opacity-40"
@@ -489,7 +489,7 @@ export default function AdminContentPage() {
                   <ChevronLeft className="h-3.5 w-3.5" />
                   Previous
                 </button>
-                <button
+                <button type="button"
                   onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                   disabled={page >= pagination.totalPages}
                   className="inline-flex items-center gap-1 rounded-lg border border-[var(--neutral-200)] px-3 py-1.5 text-xs font-medium text-[var(--pulse-black)] transition-colors hover:bg-[var(--neutral-50)] disabled:opacity-40"

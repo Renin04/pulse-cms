@@ -107,7 +107,7 @@ export const CarouselBlock: BlockTypeDefinition<CarouselBlockData> = {
     const slides = parsed.slides
       .map((slide, index) => {
         const media = slide.mediaUrl
-          ? `<img src="${escapeHtml(slide.mediaUrl)}" alt="${escapeHtml(slide.title ?? `Slide ${index + 1}`)}" />`
+          ? `<img src="${escapeHtml(slide.mediaUrl)}" alt="${escapeHtml(slide.title ?? `Slide ${index + 1}`)}" loading="lazy" decoding="async" />`
           : "";
         const title = slide.title ? `<h4>${escapeHtml(slide.title)}</h4>` : "";
         const body = slide.body ? `<p>${escapeHtml(slide.body)}</p>` : "";

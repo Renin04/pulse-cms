@@ -111,7 +111,7 @@ export const AnnotatedImageBlock: BlockTypeDefinition<AnnotatedImageBlockData> =
 
     return `<figure data-block-type="annotated-image"><div data-hotspot-layer="true"><img src="${escapeHtml(
       parsed.imageUrl,
-    )}" alt="${escapeHtml(parsed.alt)}" />${hotspots}</div>${caption}</figure>`;
+    )}" alt="${escapeHtml(parsed.alt)}" loading="lazy" decoding="async" />${hotspots}</div>${caption}</figure>`;
   },
   serialize(data) {
     const parsed = annotatedImageBlockDataSchema.parse(data);

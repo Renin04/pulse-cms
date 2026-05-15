@@ -80,6 +80,7 @@ function FooterColumn({ column }: { column: (typeof footerColumns)[number] }) {
   return (
     <div className="border-b border-white/10 sm:border-none">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between py-4 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[var(--pulse-jasmine)] sm:hidden"
       >
@@ -162,7 +163,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-white/10">
         <div className="container flex flex-col items-center gap-3 py-5 sm:flex-row sm:justify-between">
-          <p className="text-xs text-white/35">
+          <p className="text-xs text-white/60">
             © {new Date().getFullYear()} Pulse Studio. All rights reserved.
           </p>
           <div className="hidden sm:flex items-center gap-5">

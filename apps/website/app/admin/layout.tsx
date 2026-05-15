@@ -87,6 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               Pulse CMS
             </Link>
             <button
+              type="button"
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden text-[var(--neutral-600)]"
             >
@@ -125,6 +126,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="text-xs text-[var(--neutral-500)] truncate">{user?.email}</p>
             </div>
             <button
+              type="button"
               onClick={logout}
               className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-[var(--neutral-600)] transition-colors hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-red)]"
             >
@@ -139,13 +141,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex flex-1 flex-col">
         {/* Mobile header */}
         <header className="flex items-center gap-4 border-b border-[var(--neutral-200)] bg-white px-4 py-3 lg:hidden">
-          <button onClick={() => setSidebarOpen(true)} className="text-[var(--neutral-600)]">
+          <button type="button" onClick={() => setSidebarOpen(true)} className="text-[var(--neutral-600)]">
             <Menu className="h-6 w-6" />
           </button>
           <span className="font-semibold text-[var(--pulse-black)]">Pulse CMS</span>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 lg:p-8">{children}</main>
+        <main id="main-content" className="flex-1 overflow-auto p-4 lg:p-8">{children}</main>
       </div>
     </div>
   );

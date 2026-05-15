@@ -7,7 +7,7 @@ export default function BlogPreviewPage() {
   return (
     <>
       <Navigation />
-      <main>
+      <main id="main-content">
         <Suspense fallback={null}>
           <StudioBlogPreview />
         </Suspense>

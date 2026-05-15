@@ -94,7 +94,7 @@ export default function AdminUsersPage() {
               : 'Manage users and roles'}
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => setCreating(true)}
           className="btn btn-primary text-sm"
         >
@@ -148,14 +148,14 @@ export default function AdminUsersPage() {
             </div>
           </div>
           <div className="mt-4 flex gap-2">
-            <button
+            <button type="button"
               onClick={handleCreate}
               className="btn btn-primary text-sm"
             >
               <Save className="h-4 w-4" />
               Create User
             </button>
-            <button
+            <button type="button"
               onClick={() => setCreating(false)}
               className="btn btn-ghost text-sm"
             >
@@ -191,7 +191,7 @@ export default function AdminUsersPage() {
           <p className="mt-1 max-w-sm text-center text-sm text-[var(--neutral-600)]">
             Add users to collaborate on content. Each user can have different roles and permissions.
           </p>
-          <button
+          <button type="button"
             onClick={() => setCreating(true)}
             className="btn btn-primary mt-5 text-sm"
           >
@@ -267,14 +267,14 @@ export default function AdminUsersPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex justify-end gap-1">
-                              <button
+                              <button type="button"
                                 onClick={() => handleUpdate(user.id)}
                                 className="rounded-lg bg-emerald-50 p-1.5 text-emerald-700 transition-colors hover:bg-emerald-100"
                                 title="Save"
                               >
                                 <Save className="h-4 w-4" />
                               </button>
-                              <button
+                              <button type="button"
                                 onClick={() => setEditingId(null)}
                                 className="rounded-lg bg-[var(--neutral-100)] p-1.5 text-[var(--neutral-600)] transition-colors hover:bg-[var(--neutral-200)]"
                                 title="Cancel"
@@ -331,7 +331,7 @@ export default function AdminUsersPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                              <button
+                              <button type="button"
                                 onClick={() => {
                                   setEditingId(user.id);
                                   setEditData({ email: user.email, displayName: user.displayName || '', status: user.status });
@@ -341,7 +341,7 @@ export default function AdminUsersPage() {
                               >
                                 <Edit className="h-4 w-4" />
                               </button>
-                              <button
+                              <button type="button"
                                 onClick={() => handleDelete(user.id)}
                                 className="rounded-lg p-1.5 text-[var(--neutral-600)] transition-colors hover:bg-red-50 hover:text-red-600"
                                 title="Delete"

@@ -42,6 +42,7 @@ function BlockBuilderDemo() {
         <div className="relative flex-1">
           <input
             readOnly
+            aria-label="AI prompt input"
             value={phase >= 1 ? placeholder : ''}
             className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none"
           />
@@ -83,7 +84,7 @@ function AIWriterDemo() {
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-white/10 bg-white p-4">
-      <div className="text-[11px] font-semibold text-[var(--neutral-400)]">AI Writer</div>
+      <div className="text-[11px] font-semibold text-[var(--neutral-500)]">AI Writer</div>
       <div className="mt-2 text-sm text-[var(--pulse-black)]">
         Kyoto is beautiful in spring.
       </div>
@@ -129,7 +130,7 @@ function AIImageDemo() {
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[var(--neutral-50)] p-4">
-      <div className="text-[11px] font-semibold text-[var(--neutral-400)]">AI Image</div>
+      <div className="text-[11px] font-semibold text-[var(--neutral-500)]">AI Image</div>
       <div className="mt-2 flex aspect-[4/3] items-center justify-center rounded-lg bg-gradient-to-br from-[var(--pulse-jasmine)]/30 to-[var(--pulse-red)]/10">
         <AnimatePresence>
           {!loaded ? (

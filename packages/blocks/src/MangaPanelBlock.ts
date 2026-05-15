@@ -119,7 +119,7 @@ export const MangaPanelBlock: BlockTypeDefinition<MangaPanelBlockData> = {
     const panels = parsed.panels
       .map((panel) => {
         const image = panel.imageUrl
-          ? `<img src="${escapeHtml(panel.imageUrl)}" alt="${escapeHtml(panel.caption ?? "Panel")}" />`
+          ? `<img src="${escapeHtml(panel.imageUrl)}" alt="${escapeHtml(panel.caption ?? "Panel")}" loading="lazy" decoding="async" />`
           : '<div data-placeholder="true">Panel</div>';
         const caption = panel.caption ? `<figcaption>${escapeHtml(panel.caption)}</figcaption>` : "";
         const dialogue = panel.dialogue

@@ -168,6 +168,7 @@ export type { TimelineBlockData, TimelineEntry } from "./TimelineBlock";
 export { ToggleBlock, toggleBlockDataSchema, toggleDefaultState } from "./ToggleBlock";
 export type { ToggleBlockData } from "./ToggleBlock";
 export type { BlockTypeDefinition, BlockRenderContext } from "./types";
+export { escapeHtml, sanitizeUrl } from "./types";
 export { VideoBlock, videoBlockDataSchema } from "./VideoBlock";
 export type { VideoBlockData, VideoProvider } from "./VideoBlock";
 

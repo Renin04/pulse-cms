@@ -105,7 +105,7 @@ export const GalleryBlock: BlockTypeDefinition<GalleryBlockData> = {
         const caption = image.caption ? `<figcaption>${escapeHtml(image.caption)}</figcaption>` : "";
         return `<figure><img src="${escapeHtml(image.src)}" alt="${escapeHtml(
           image.alt,
-        )}" />${caption}</figure>`;
+        )}" loading="lazy" decoding="async" />${caption}</figure>`;
       })
       .join("");
 

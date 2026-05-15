@@ -1,19 +1,22 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { ArrowRight, Sparkles } from 'lucide-react';
-import Footer from './components/Footer';
 import GlitchText from './components/GlitchText';
 import HeroHeadline from './components/HeroHeadline';
 import PulseStarButton from './components/PulseStarButton';
 import SplashCursor from './components/SplashCursor';
-import HowItWorks from './components/HowItWorks';
-import AIFeatures from './components/AIFeatures';
-import SEOFeatures from './components/SEOFeatures';
-import DeveloperFeatures from './components/DeveloperFeatures';
-import DynamicCTA from './components/DynamicCTA';
-import ProblemSection from './components/ProblemSection';
-import FeaturePlayground from './components/FeaturePlayground';
+
+// Below-the-fold sections — lazy-loaded to reduce TBT and improve LCP
+const ProblemSection = dynamic(() => import('./components/ProblemSection'), { ssr: false });
+const FeaturePlayground = dynamic(() => import('./components/FeaturePlayground'), { ssr: false });
+const HowItWorks = dynamic(() => import('./components/HowItWorks'), { ssr: false });
+const AIFeatures = dynamic(() => import('./components/AIFeatures'), { ssr: false });
+const SEOFeatures = dynamic(() => import('./components/SEOFeatures'), { ssr: false });
+const DeveloperFeatures = dynamic(() => import('./components/DeveloperFeatures'), { ssr: false });
+const DynamicCTA = dynamic(() => import('./components/DynamicCTA'), { ssr: false });
+const Footer = dynamic(() => import('./components/Footer'), { ssr: false });
 
 export default function HomePage() {
   return (
@@ -27,7 +30,7 @@ export default function HomePage() {
         COLOR_UPDATE_SPEED={8}
       />
 
-
+      <main id="main-content">
       {/* ─── HERO ─── */}
       <section className="relative min-h-screen overflow-hidden bg-gradient-to-b from-white via-[#fff9eb] to-white">
         <div className="pointer-events-none absolute inset-0">
@@ -73,19 +76,13 @@ export default function HomePage() {
       </section>
 
       <ProblemSection />
-
       <FeaturePlayground />
-
       <HowItWorks />
-
       <AIFeatures />
-
       <SEOFeatures />
-
       <DeveloperFeatures />
-
       <DynamicCTA />
-
+      </main>
       <Footer />
     </>
   );

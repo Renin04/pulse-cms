@@ -1,6 +1,6 @@
 import type { Block, BlockData, EntryStatus } from "@pulse/core";
 import { PulseRenderer, RendererRegistry, registerBuiltinRenderers } from "@pulse/renderer";
-import { formatReferenceNumber } from "@pulse/blocks";
+import { formatReferenceNumber, sanitizeUrl } from "@pulse/blocks";
 import type { EntryDetail } from "./api-client";
 
 export interface AdaptedBlogEntry {
@@ -84,6 +84,7 @@ function renderInlineContent(text: string, refCounter: { value: number }): strin
     const url = match[2];
     const attrs = match[3] || "";
 
+    const safeUrl = sanitizeUrl(url);
     if (label === "ref") {
       refCounter.value++;
       const textMatch = attrs.match(/text="([^"]*)"/);
@@ -92,12 +93,18 @@ function renderInlineContent(text: string, refCounter: { value: number }): strin
       const style = (styleMatch ? styleMatch[1] : "numeric") as RefStyle;
       const num = formatReferenceNumber(refCounter.value, style);
       const titleAttr = refText ? ` title="${escapeHtml(refText)}"` : "";
-      result += `<sup class="pulse-reference"><a href="${escapeHtml(url)}"${titleAttr}>${num}</a></sup>`;
-    } else {
+      if (safeUrl) {
+        result += `<sup class="pulse-reference"><a href="${escapeHtml(safeUrl)}"${titleAttr}>${num}</a></sup>`;
+      } else {
+        result += escapeAndBreaks(match[0]);
+      }
+    } else if (safeUrl) {
       const relMatch = attrs.match(/rel="([^"]*)"/);
       const rel = relMatch ? relMatch[1] : "";
       const relAttr = rel ? ` rel="${escapeHtml(rel)}"` : "";
-      result += `<a href="${escapeHtml(url)}" class="pulse-inline-link"${relAttr}>${escapeHtml(label)}</a>`;
+      result += `<a href="${escapeHtml(safeUrl)}" class="pulse-inline-link"${relAttr}>${escapeHtml(label)}</a>`;
+    } else {
+      result += escapeAndBreaks(match[0]);
     }
     lastIndex = match.index + match[0].length;
   }

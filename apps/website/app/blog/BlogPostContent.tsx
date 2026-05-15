@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, Clock3, Tag, User } from 'lucide-react';
 import { getBlogFeaturedMedia } from '../../lib/blog-feature-media';
 import { formatDisplayDate } from '../../lib/site-content';
 import { useBackendBlogEntry } from '../../lib/use-backend-entries';
+import type { AdaptedBlogEntry } from '../../lib/entry-adapter';
 
 import SpotlightCard from '../components/SpotlightCard';
 import ReadingProgress from '../components/ReadingProgress';
@@ -15,12 +16,20 @@ import ShareButtons from '../components/ShareButtons';
 import ReadingModeControls from '../components/ReadingModeControls';
 import RelatedPosts from '../components/RelatedPosts';
 
-export default function BlogPostContent({ slug }: { slug: string }) {
-  const { entry, loading } = useBackendBlogEntry(slug);
+export default function BlogPostContent({
+  slug,
+  entry: serverEntry,
+}: {
+  slug?: string;
+  entry?: AdaptedBlogEntry | null;
+}) {
+  const { entry: clientEntry, loading } = useBackendBlogEntry(slug ?? null);
+
+  const entry = serverEntry ?? clientEntry;
 
   const featuredMedia = useMemo(() => (entry ? getBlogFeaturedMedia(entry as unknown as any) : null), [entry]);
 
-  if (loading) {
+  if (!serverEntry && loading) {
     return (
       <div className="flex h-[50vh] items-center justify-center bg-[#f8f6f2]">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-[var(--neutral-200)] border-t-[var(--pulse-red)]" />
@@ -85,7 +94,7 @@ export default function BlogPostContent({ slug }: { slug: string }) {
       <Script
         id="article-structured-data"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
       />
 
       {/* Hero header */}
@@ -148,6 +157,10 @@ export default function BlogPostContent({ slug }: { slug: string }) {
                 <img
                   src={featuredMedia.src}
                   alt={featuredMedia.alt}
+                  width={1200}
+                  height={496}
+                  loading="eager"
+                  decoding="async"
                   className="h-[18rem] w-full object-cover sm:h-[24rem] lg:h-[31rem]"
                 />
               </figure>

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { jsonResponse, handleApiError, ApiError } from "@/lib/api-utils";
+import { verifyPreviewToken } from "@/lib/auth";
 
 function serializeEntry(entry: any) {
   const { taxonomyLinks, ...rest } = entry;
@@ -26,12 +27,16 @@ export async function GET(
   try {
     const { token } = await params;
 
-    // NOTE: In production, this token should be a signed JWT or cryptographically
-    // secure token that is verified before returning draft content. For MVP,
-    // we accept any string and try to resolve it to an entry by ID or slug,
-    // returning the entry regardless of publication status.
-    let entry = await prisma.entry.findUnique({
-      where: { id: token },
+    // Verify the signed preview token
+    let entryId: string;
+    try {
+      entryId = await verifyPreviewToken(token);
+    } catch {
+      throw new ApiError("UNAUTHORIZED", "Invalid or expired preview token", 401);
+    }
+
+    const entry = await prisma.entry.findUnique({
+      where: { id: entryId },
       include: {
         contentType: true,
         author: { select: { id: true, displayName: true, email: true } },
@@ -44,23 +49,6 @@ export async function GET(
         },
       },
     });
-
-    if (!entry) {
-      entry = await prisma.entry.findFirst({
-        where: { slug: token },
-        include: {
-          contentType: true,
-          author: { select: { id: true, displayName: true, email: true } },
-          taxonomyLinks: {
-            include: {
-              term: {
-                include: { taxonomy: true },
-              },
-            },
-          },
-        },
-      });
-    }
 
     if (!entry) {
       throw new ApiError("NOT_FOUND", "Entry not found", 404);

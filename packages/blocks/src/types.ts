@@ -22,6 +22,24 @@ export function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+const ALLOWED_INLINE_PROTOCOLS = new Set(["http:", "https:", "mailto:", "tel:"]);
+
+export function sanitizeUrl(url: string): string | null {
+  if (!url) return null;
+  // Allow relative URLs (start with / or #)
+  if (url.startsWith("/") || url.startsWith("#")) return url;
+  try {
+    const parsed = new URL(url);
+    if (ALLOWED_INLINE_PROTOCOLS.has(parsed.protocol)) {
+      return url;
+    }
+  } catch {
+    // Not a valid absolute URL — treat as relative path if it doesn't contain a colon
+    if (!url.includes(":")) return url;
+  }
+  return null;
+}
+
 export function parseJson<TData>(content: string): TData {
   try {
     return JSON.parse(content) as TData;

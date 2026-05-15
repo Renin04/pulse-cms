@@ -167,9 +167,21 @@ export const ImageBlock: BlockTypeDefinition<ImageBlockData> = {
     
     const alignStyle = parsed.align ? `text-align: ${parsed.align}; ` : "";
 
+    // Sanitize dimensions to prevent extreme aspect ratios causing layout shifts
+    const MAX_DIM = 10000;
+    const MIN_DIM = 10;
+    let w = parsed.width;
+    let h = parsed.height;
+    const aspectRatio = w / h;
+    if (w > MAX_DIM || h > MAX_DIM || w < MIN_DIM || h < MIN_DIM || aspectRatio > 10 || aspectRatio < 0.1) {
+      w = 0;
+      h = 0;
+    }
+    const sizeAttr = w && h ? ` width="${w}" height="${h}"` : "";
+
     return `<figure data-block-type="image" data-status="${parsed.status}" style="${alignStyle}"><img src="${escapeHtml(
       parsed.src,
-    )}" alt="${escapeHtml(parsed.alt)}"${titleAttr} width="${parsed.width}" height="${parsed.height}" style="object-fit:${parsed.fit}" />${captionHtml}${attribution}</figure>`;
+    )}" alt="${escapeHtml(parsed.alt)}"${titleAttr}${sizeAttr} loading="lazy" decoding="async" style="object-fit:${parsed.fit}" />${captionHtml}${attribution}</figure>`;
   },
   serialize(data) {
     const parsed = imageBlockDataSchema.parse(data);

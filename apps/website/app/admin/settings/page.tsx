@@ -103,7 +103,7 @@ export default function AdminSettingsPage() {
                 {allTags.map((tag) => {
                   const isSelected = featuredTags.includes(tag);
                   return (
-                    <button
+                    <button type="button"
                       key={tag}
                       onClick={() => toggleTag(tag)}
                       className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all ${
@@ -128,7 +128,7 @@ export default function AdminSettingsPage() {
                   Saved successfully
                 </span>
               )}
-              <button
+              <button type="button"
                 onClick={saveFeaturedTags}
                 disabled={allTags.length === 0}
                 className="inline-flex items-center gap-2 rounded-xl bg-[var(--pulse-red)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--pulse-black)] disabled:cursor-not-allowed disabled:opacity-50"
@@ -226,7 +226,7 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            <button
+            <button type="button"
               onClick={savePassword}
               disabled={!newPassword || !confirmPassword}
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--pulse-black)] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--pulse-red)] disabled:cursor-not-allowed disabled:opacity-50"

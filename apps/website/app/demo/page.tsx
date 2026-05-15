@@ -6,7 +6,9 @@ import PulseDemoEditor from './PulseDemoEditor';
 export default function DemoPage() {
   return (
     <>
-      <PulseDemoEditor />
+      <main id="main-content">
+        <PulseDemoEditor />
+      </main>
       <Footer />
     </>
   );

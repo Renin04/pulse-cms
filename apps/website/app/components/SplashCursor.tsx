@@ -28,6 +28,9 @@ function SplashCursor({
 
     // Track if the effect is still active for cleanup
     let isActive = true;
+    let initHandle: number | null = null;
+
+    const runInit = () => {
 
     function pointerPrototype() {
       this.id = -1;
@@ -1026,10 +1029,25 @@ function SplashCursor({
     window.addEventListener('touchend', handleTouchEnd);
 
     updateFrame();
+    };
+
+    // Defer WebGL initialization until after critical rendering (LCP)
+    if ('requestIdleCallback' in window) {
+      initHandle = window.requestIdleCallback(runInit, { timeout: 2000 });
+    } else {
+      initHandle = window.setTimeout(runInit, 1500);
+    }
 
     // Cleanup function
     return () => {
       isActive = false;
+      if (initHandle !== null) {
+        if ('cancelIdleCallback' in window) {
+          window.cancelIdleCallback(initHandle);
+        } else {
+          window.clearTimeout(initHandle);
+        }
+      }
 
       // Cancel animation frame
       if (animationFrameId.current) {

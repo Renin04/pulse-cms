@@ -331,6 +331,7 @@ export function CodePlaygroundDemo() {
               ))}
             </div>
             <textarea
+              aria-label="Code editor"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               className="flex-1 bg-transparent p-3 font-mono text-sm text-[#a5ffce] outline-none placeholder:text-white/20"
@@ -482,6 +483,7 @@ export function AiBuilderDemo() {
         <div className="flex gap-2">
           <div className="relative flex-1">
             <input
+              aria-label="Block generation prompt"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && generate()}

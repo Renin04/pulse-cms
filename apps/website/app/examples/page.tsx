@@ -24,7 +24,7 @@ export default function ExamplesPage() {
   return (
     <>
 
-      <main className="min-h-screen bg-[var(--neutral-50)] pt-28">
+      <main id="main-content" className="min-h-screen bg-[var(--neutral-50)] pt-28">
         <section className="bg-white">
           <div className="container py-16">
             <div className="mx-auto max-w-3xl text-center">

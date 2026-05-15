@@ -142,6 +142,7 @@ export default function BlogPage() {
     <>
 
 
+      <main id="main-content">
       {/* ─── Hero + Search + Filter Combined ─── */}
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#151516_0%,#0d0d0e_100%)] pt-28 pb-12 sm:pt-32 sm:pb-16">
         <div className="pointer-events-none absolute inset-0 opacity-40">
@@ -505,19 +506,20 @@ export default function BlogPage() {
               />
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--pulse-red)] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[var(--pulse-red)]/90 hover:shadow-lg hover:shadow-[var(--pulse-red)]/20"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--pulse-red-dark)] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[var(--pulse-red-dark)]/90 hover:shadow-lg hover:shadow-[var(--pulse-red-dark)]/20"
               >
                 <TrendingUp className="h-4 w-4" />
                 Subscribe
               </button>
             </form>
-            <p className="mt-3 text-xs text-[var(--neutral-400)]">
+            <p className="mt-3 text-xs text-[var(--neutral-500)]">
               No spam. Unsubscribe anytime.
             </p>
           </div>
         </div>
       </section>
 
+      </main>
       <Footer />
     </>
   );

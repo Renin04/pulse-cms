@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Footer from '../../components/Footer';
 import BlogPostContent from '../BlogPostContent';
 import { getBlogFeaturedMedia } from '../../../lib/blog-feature-media';
+import { adaptEntryDetail } from '../../../lib/entry-adapter';
 import { prisma } from '../../../lib/db';
 
 interface BlogPostPageProps {
@@ -11,7 +12,44 @@ interface BlogPostPageProps {
   };
 }
 
-async function getPublishedEntryBySlug(slug: string) {
+async function getFullEntryBySlug(slug: string) {
+  try {
+    const entry = await prisma.entry.findFirst({
+      where: { slug, status: 'published' },
+      include: {
+        contentType: true,
+        author: { select: { id: true, displayName: true, email: true } },
+        taxonomyLinks: {
+          include: {
+            term: { include: { taxonomy: true } },
+          },
+        },
+      },
+    });
+    if (!entry) return null;
+
+    // Serialize exactly like the content API does
+    const serialized = {
+      ...entry,
+      fieldValues: entry.fieldValues ? JSON.parse(entry.fieldValues) : null,
+      blocks: entry.blocks ? JSON.parse(entry.blocks) : null,
+      metadata: entry.metadata ? JSON.parse(entry.metadata) : null,
+      taxonomyTerms: entry.taxonomyLinks?.map((link: any) => ({
+        id: link.term.id,
+        name: link.term.name,
+        slug: link.term.slug,
+        taxonomyId: link.term.taxonomyId,
+        taxonomyName: link.term.taxonomy.name,
+      })) ?? [],
+    };
+
+    return adaptEntryDetail(serialized as any);
+  } catch {
+    return null;
+  }
+}
+
+async function getMetaEntryBySlug(slug: string) {
   try {
     const entry = await prisma.entry.findFirst({
       where: { slug, status: 'published' },
@@ -46,7 +84,7 @@ async function getPublishedEntryBySlug(slug: string) {
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  const post = await getPublishedEntryBySlug(params.slug);
+  const post = await getMetaEntryBySlug(params.slug);
 
   if (!post) {
     return {
@@ -96,7 +134,6 @@ export async function generateStaticParams() {
     });
     return entries.map((entry) => ({ slug: entry.slug }));
   } catch {
-    // Fallback to snapshot file if DB is unavailable during build
     try {
       const fs = await import('fs');
       const path = await import('path');
@@ -112,15 +149,21 @@ export async function generateStaticParams() {
   }
 }
 
-export default function BlogPostPage({ params }: BlogPostPageProps) {
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
   if (!params.slug) {
+    notFound();
+  }
+
+  const entry = await getFullEntryBySlug(params.slug);
+
+  if (!entry) {
     notFound();
   }
 
   return (
     <>
-      <main>
-        <BlogPostContent slug={params.slug} />
+      <main id="main-content">
+        <BlogPostContent entry={entry} />
       </main>
       <Footer />
     </>

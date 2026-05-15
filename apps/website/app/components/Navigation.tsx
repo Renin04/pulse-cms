@@ -125,6 +125,7 @@ export default function Navigation() {
         <div className="flex items-center justify-between border-b border-white/10 bg-[#151516]/90 px-4 py-3 backdrop-blur-md">
           <BrandMark variant="wordmark" className="block" imageClassName="w-[5rem]" />
           <button
+            type="button"
             onClick={() => setMobileOpen(true)}
             className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white transition-colors active:bg-white/20"
             aria-label="Open menu"
@@ -161,6 +162,7 @@ export default function Navigation() {
           <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <span className="text-sm font-bold uppercase tracking-widest text-[var(--pulse-jasmine)]">Menu</span>
             <button
+              type="button"
               onClick={() => setMobileOpen(false)}
               className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white transition-colors active:bg-white/20"
               aria-label="Close menu"

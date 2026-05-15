@@ -7,8 +7,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email } = body;
 
-    if (!email) {
-      throw new ApiError("INVALID_INPUT", "Email is required", 400);
+    if (!email || typeof email !== "string") {
+      throw new ApiError("INVALID_INPUT", "Valid email is required", 400);
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
@@ -17,15 +17,16 @@ export async function POST(req: NextRequest) {
       return jsonResponse({ success: true, message: "If an account exists, a reset email has been sent." });
     }
 
-    // In production, generate a secure token and send email
-    // For now, return a mock token for development
-    const resetToken = `dev-token-${user.id}-${Date.now()}`;
+    // Generate a cryptographically secure reset token
+    const _resetToken = crypto.randomUUID();
+
+    // TODO: Store token hash in DB with expiry and send via email
+    // For now, token is generated but not exposed in the response
+    console.log("[password-reset] Token generated for user", user.id, _resetToken.slice(0, 8));
 
     return jsonResponse({
       success: true,
       message: "If an account exists, a reset email has been sent.",
-      // Only included in dev mode
-      devToken: resetToken,
     });
   } catch (err) {
     return handleApiError(err);

@@ -111,7 +111,7 @@ export default function AdminTaxonomiesPage() {
               : 'Manage tags, categories, and labels'}
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => setCreating(true)}
           className="inline-flex items-center gap-2 rounded-xl bg-[var(--pulse-red)] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[var(--pulse-black)] hover:shadow-lg"
         >
@@ -196,14 +196,14 @@ export default function AdminTaxonomiesPage() {
             </div>
           </div>
           <div className="mt-4 flex gap-2">
-            <button
+            <button type="button"
               onClick={handleCreate}
               className="inline-flex items-center gap-2 rounded-xl bg-[var(--pulse-red)] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--pulse-black)]"
             >
               <Save className="h-4 w-4" />
               Save Taxonomy
             </button>
-            <button
+            <button type="button"
               onClick={() => setCreating(false)}
               className="inline-flex items-center gap-2 rounded-xl border border-[var(--neutral-200)] px-5 py-2.5 text-sm font-medium text-[var(--neutral-600)] transition-colors hover:bg-[var(--neutral-50)]"
             >
@@ -239,7 +239,7 @@ export default function AdminTaxonomiesPage() {
           <p className="mt-1 max-w-sm text-center text-sm text-[var(--neutral-600)]">
             Create your first taxonomy to organize content with tags, categories, or labels.
           </p>
-          <button
+          <button type="button"
             onClick={() => setCreating(true)}
             className="btn btn-primary mt-5 text-sm"
           >
@@ -291,14 +291,14 @@ export default function AdminTaxonomiesPage() {
                         placeholder="Description"
                       />
                       <div className="flex gap-2">
-                        <button
+                        <button type="button"
                           onClick={() => handleUpdate(taxonomy.id)}
                           className="rounded-lg bg-emerald-50 p-2 text-emerald-700 transition-colors hover:bg-emerald-100"
                           title="Save"
                         >
                           <Save className="h-4 w-4" />
                         </button>
-                        <button
+                        <button type="button"
                           onClick={() => setEditingId(null)}
                           className="rounded-lg bg-[var(--neutral-100)] p-2 text-[var(--neutral-700)] transition-colors hover:bg-[var(--neutral-200)]"
                           title="Cancel"
@@ -309,7 +309,7 @@ export default function AdminTaxonomiesPage() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-4 px-4 py-3">
-                      <button
+                      <button type="button"
                         onClick={() => toggleExpand(taxonomy.id)}
                         className="rounded p-1 text-[var(--neutral-400)] transition-colors hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)]"
                         title={isExpanded ? 'Collapse terms' : 'Expand terms'}
@@ -336,7 +336,7 @@ export default function AdminTaxonomiesPage() {
                         </span>
                       </div>
                       <div className="flex gap-1">
-                        <button
+                        <button type="button"
                           onClick={() => {
                             setEditingId(taxonomy.id);
                             setEditData({
@@ -350,7 +350,7 @@ export default function AdminTaxonomiesPage() {
                         >
                           <Edit className="h-4 w-4" />
                         </button>
-                        <button
+                        <button type="button"
                           onClick={() => handleDelete(taxonomy.id)}
                           className="rounded-lg p-1.5 text-[var(--neutral-600)] transition-colors hover:bg-red-50 hover:text-red-600"
                           title="Delete"
@@ -381,14 +381,14 @@ export default function AdminTaxonomiesPage() {
                         placeholder="Slug"
                       />
                       <div className="flex gap-2">
-                        <button
+                        <button type="button"
                           onClick={() => handleUpdate(taxonomy.id)}
                           className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-50 py-2 text-sm font-medium text-emerald-700"
                         >
                           <Save className="h-4 w-4" />
                           Save
                         </button>
-                        <button
+                        <button type="button"
                           onClick={() => setEditingId(null)}
                           className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[var(--neutral-200)] py-2 text-sm font-medium text-[var(--neutral-600)]"
                         >
@@ -414,13 +414,13 @@ export default function AdminTaxonomiesPage() {
                           )}
                         </div>
                         <div className="ml-3 flex gap-1">
-                          <button
+                          <button type="button"
                             onClick={() => toggleExpand(taxonomy.id)}
                             className="rounded-lg p-1.5 text-[var(--neutral-600)] transition-colors hover:bg-[var(--neutral-100)]"
                           >
                             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                           </button>
-                          <button
+                          <button type="button"
                             onClick={() => {
                               setEditingId(taxonomy.id);
                               setEditData({
@@ -433,7 +433,7 @@ export default function AdminTaxonomiesPage() {
                           >
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button
+                          <button type="button"
                             onClick={() => handleDelete(taxonomy.id)}
                             className="rounded-lg p-1.5 text-[var(--neutral-600)] transition-colors hover:bg-red-50 hover:text-red-600"
                           >
@@ -457,7 +457,7 @@ export default function AdminTaxonomiesPage() {
                             className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--neutral-200)] bg-white px-3 py-1 text-xs font-medium text-[var(--pulse-black)] transition-all hover:border-red-200 hover:bg-red-50"
                           >
                             <span>{term.name}</span>
-                            <button
+                            <button type="button"
                               onClick={() => handleDeleteTerm(taxonomy.id, term.id, term.name)}
                               className="rounded-full p-0.5 text-[var(--neutral-400)] opacity-0 transition-all group-hover:opacity-100 hover:bg-red-100 hover:text-red-600"
                               title="Delete term"
@@ -501,7 +501,7 @@ export default function AdminTaxonomiesPage() {
                         placeholder="slug (auto)"
                         className="w-32 rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-1.5 text-sm outline-none focus:border-[var(--pulse-red)]"
                       />
-                      <button
+                      <button type="button"
                         onClick={() => handleCreateTerm(taxonomy.id)}
                         disabled={!termInput.name.trim()}
                         className="inline-flex items-center gap-1 rounded-lg bg-[var(--pulse-black)] px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[var(--pulse-red)] disabled:opacity-40"

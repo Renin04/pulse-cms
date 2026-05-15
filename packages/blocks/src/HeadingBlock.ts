@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { BlockTypeDefinition } from "./types";
-import { escapeHtml, parseJson } from "./types";
+import { escapeHtml, parseJson, sanitizeUrl } from "./types";
 
 export interface HeadingBlockData extends Record<string, unknown> {
   text: string;
@@ -43,7 +43,12 @@ function renderInlineLinks(text: string): string {
   while ((match = linkRegex.exec(text)) !== null) {
     result += escapeHtml(text.slice(lastIndex, match.index));
     const relAttr = match[3] ? ` rel="${escapeHtml(match[3])}"` : "";
-    result += `<a href="${escapeHtml(match[2])}" class="pulse-inline-link"${relAttr}>${escapeHtml(match[1])}</a>`;
+    const safeUrl = sanitizeUrl(match[2]);
+    if (safeUrl) {
+      result += `<a href="${escapeHtml(safeUrl)}" class="pulse-inline-link"${relAttr}>${escapeHtml(match[1])}</a>`;
+    } else {
+      result += escapeHtml(match[0]);
+    }
     lastIndex = match.index + match[0].length;
   }
 

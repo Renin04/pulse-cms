@@ -71,9 +71,9 @@ export const BeforeAfterBlock: BlockTypeDefinition<BeforeAfterBlockData> = {
       String(parsed.position),
     )}"><figure><img src="${escapeHtml(parsed.beforeUrl)}" alt="${escapeHtml(
       parsed.beforeLabel,
-    )}" /><figcaption>${escapeHtml(parsed.beforeLabel)}</figcaption></figure><figure><img src="${escapeHtml(
+    )}" loading="lazy" decoding="async" /><figcaption>${escapeHtml(parsed.beforeLabel)}</figcaption></figure><figure><img src="${escapeHtml(
       parsed.afterUrl,
-    )}" alt="${escapeHtml(parsed.afterLabel)}" /><figcaption>${escapeHtml(
+    )}" alt="${escapeHtml(parsed.afterLabel)}" loading="lazy" decoding="async" /><figcaption>${escapeHtml(
       parsed.afterLabel,
     )}</figcaption></figure></section>`;
   },

@@ -146,13 +146,13 @@ function EditImageForm({
       </div>
 
       <div className="flex gap-2 pt-2">
-        <button
+        <button type="button"
           onClick={handleSave}
           className="flex-1 rounded-lg bg-[var(--pulse-black)] px-4 py-2 text-xs font-bold text-white hover:bg-[var(--pulse-red)] transition-colors"
         >
           Save Changes
         </button>
-        <button
+        <button type="button"
           onClick={onCancel}
           className="rounded-lg border border-[var(--neutral-200)] bg-white px-4 py-2 text-xs font-bold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] transition-colors"
         >
@@ -248,7 +248,7 @@ export default function AdminMediaPage() {
             className="w-full rounded-xl border border-[var(--neutral-200)] bg-white py-2.5 pl-10 pr-10 text-sm text-[var(--pulse-black)] outline-none transition-colors focus:border-[var(--pulse-red)] focus:ring-2 focus:ring-[var(--pulse-red)]/10"
           />
           {search && (
-            <button
+            <button type="button"
               onClick={() => { setSearch(''); setPage(1); }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--neutral-400)] hover:text-[var(--pulse-black)]"
             >
@@ -350,7 +350,7 @@ export default function AdminMediaPage() {
 
                     {/* Hover overlay actions */}
                     <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/30 opacity-0 backdrop-blur-[2px] transition-opacity group-hover:opacity-100">
-                      <button
+                      <button type="button"
                         onClick={(e) => { e.stopPropagation(); setPreviewItem(item); }}
                         className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--pulse-black)] shadow-sm transition-transform hover:scale-110"
                         title="View"
@@ -358,7 +358,7 @@ export default function AdminMediaPage() {
                         <Eye className="h-4 w-4" />
                       </button>
                       {isImage && (
-                        <button
+                        <button type="button"
                           onClick={(e) => { e.stopPropagation(); setEditItem(item); }}
                           className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[var(--pulse-black)] shadow-sm transition-transform hover:scale-110"
                           title="Edit"
@@ -390,7 +390,7 @@ export default function AdminMediaPage() {
                           className="w-full rounded-lg border border-[var(--neutral-200)] px-2 py-1 text-xs outline-none focus:border-[var(--pulse-red)]"
                           autoFocus
                         />
-                        <button
+                        <button type="button"
                           onClick={() => handleRename(item.id)}
                           className="rounded-lg p-1 text-emerald-600 hover:bg-emerald-50"
                           title="Save"
@@ -410,7 +410,7 @@ export default function AdminMediaPage() {
                     {/* Bottom action row */}
                     <div className="mt-2 flex items-center justify-between">
                       <div className="flex gap-1">
-                        <button
+                        <button type="button"
                           onClick={() => startRename(item)}
                           className="rounded p-1 text-[var(--neutral-400)] transition-colors hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)]"
                           title="Rename"
@@ -427,7 +427,7 @@ export default function AdminMediaPage() {
                           <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
-                      <button
+                      <button type="button"
                         onClick={() => handleDelete(item.id)}
                         className="rounded p-1 text-[var(--neutral-400)] transition-colors hover:bg-red-50 hover:text-red-600"
                         title="Delete"
@@ -450,7 +450,7 @@ export default function AdminMediaPage() {
                 <span className="ml-1 text-[var(--neutral-400)]">({pagination.total} total)</span>
               </p>
               <div className="flex gap-2">
-                <button
+                <button type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
                   className="inline-flex items-center gap-1 rounded-lg border border-[var(--neutral-200)] px-3 py-1.5 text-xs font-medium text-[var(--pulse-black)] transition-colors hover:bg-[var(--neutral-50)] disabled:opacity-40"
@@ -458,7 +458,7 @@ export default function AdminMediaPage() {
                   <ChevronLeft className="h-3.5 w-3.5" />
                   Previous
                 </button>
-                <button
+                <button type="button"
                   onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                   disabled={page >= pagination.totalPages}
                   className="inline-flex items-center gap-1 rounded-lg border border-[var(--neutral-200)] px-3 py-1.5 text-xs font-medium text-[var(--pulse-black)] transition-colors hover:bg-[var(--neutral-50)] disabled:opacity-40"
@@ -484,7 +484,7 @@ export default function AdminMediaPage() {
           >
             <div className="flex items-center justify-between border-b border-[var(--neutral-200)] px-4 py-3">
               <p className="text-sm font-semibold text-[var(--pulse-black)]">Edit Image</p>
-              <button
+              <button type="button"
                 onClick={() => setEditItem(null)}
                 className="rounded-lg p-2 text-[var(--neutral-600)] transition-colors hover:bg-[var(--neutral-100)]"
               >
@@ -533,7 +533,7 @@ export default function AdminMediaPage() {
                 >
                   <Download className="h-4 w-4" />
                 </a>
-                <button
+                <button type="button"
                   onClick={() => setPreviewItem(null)}
                   className="rounded-lg p-2 text-[var(--neutral-600)] transition-colors hover:bg-[var(--neutral-100)]"
                 >

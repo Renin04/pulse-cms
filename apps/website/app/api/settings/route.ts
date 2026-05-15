@@ -5,8 +5,16 @@ import { jsonResponse, handleApiError, requireAuthAndPermission, ApiError, logAu
 export async function GET(req: NextRequest) {
   try {
     const category = req.nextUrl.searchParams.get("category");
+    // Only allow public access to specific safe categories
+    const publicCategories = ["site", "seo", "social", "branding"];
+    const isPublic = category ? publicCategories.includes(category) : false;
+
+    if (!isPublic) {
+      await requireAuthAndPermission(req, "settings.manage");
+    }
+
     const settings = await prisma.siteSetting.findMany({
-      where: category ? { category } : undefined,
+      where: category ? { category } : isPublic ? { category: { in: publicCategories } } : undefined,
       orderBy: { key: "asc" },
     });
 

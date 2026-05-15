@@ -1,12 +1,19 @@
 import { SignJWT, jwtVerify } from "jose";
 import { compare, hash } from "bcryptjs";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "pulse-local-dev-secret-change-in-production"
-);
-const JWT_REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET || "pulse-local-refresh-secret-change-in-production"
-);
+function getJwtSecret(name: string): Uint8Array {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `Missing required environment variable: ${name}. ` +
+      `Set a strong random secret (e.g. openssl rand -base64 32)`
+    );
+  }
+  return new TextEncoder().encode(value);
+}
+
+const JWT_SECRET = getJwtSecret("JWT_SECRET");
+const JWT_REFRESH_SECRET = getJwtSecret("JWT_REFRESH_SECRET");
 
 export async function hashPassword(password: string): Promise<string> {
   return hash(password, 12);
@@ -75,4 +82,23 @@ export function requireAnyRole(ctx: AuthContext, roles: string[]): void {
   if (!roles.some((r) => ctx.roles.includes(r))) {
     throw new Error(`Forbidden: requires one of roles [${roles.join(", ")}]`);
   }
+}
+
+// Preview tokens — signed JWTs for temporary draft access
+const PREVIEW_SECRET = getJwtSecret("JWT_SECRET");
+
+export async function createPreviewToken(entryId: string): Promise<string> {
+  return new SignJWT({ entryId, type: "preview" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("1h")
+    .sign(PREVIEW_SECRET);
+}
+
+export async function verifyPreviewToken(token: string): Promise<string> {
+  const { payload } = await jwtVerify(token, PREVIEW_SECRET, { clockTolerance: 60 });
+  if (payload.type !== "preview" || !payload.entryId || typeof payload.entryId !== "string") {
+    throw new Error("Invalid preview token");
+  }
+  return payload.entryId;
 }

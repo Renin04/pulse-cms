@@ -124,6 +124,7 @@ export default function FeaturesPage() {
   return (
     <>
 
+      <main id="main-content">
       {/* ─── HERO ─── */}
       <section className="relative min-h-[85vh] overflow-hidden bg-gradient-to-b from-white via-[#fff9eb] to-white">
         <div className="pointer-events-none absolute inset-0">
@@ -412,6 +413,7 @@ export default function FeaturesPage() {
         </div>
       </section>
 
+      </main>
       <Footer />
     </>
   );

@@ -80,6 +80,7 @@ const docSections = [
 export default function DocsPage() {
   return (
     <>
+      <main id="main-content">
 
       <section className="relative min-h-[60vh] overflow-hidden bg-gradient-to-b from-white via-[#fff9eb] to-[#fff9eb] pt-32 pb-16">
         <div className="pointer-events-none absolute inset-0">
@@ -247,6 +248,7 @@ export default function DocsPage() {
         </div>
       </section>
 
+      </main>
       <Footer />
     </>
   );

@@ -154,7 +154,7 @@ function KeyCaptureInput({ value, onChange }: { value: string; onChange: (combo:
             : 'Click to record shortcut'}
       </span>
       {capturing && (
-        <button
+        <button type="button"
           onClick={(e) => { e.stopPropagation(); setCapturing(false); setPreview(''); }}
           className="ml-auto text-[10px] text-[var(--neutral-400)] hover:text-[var(--pulse-black)]"
         >
@@ -305,7 +305,7 @@ export default function ReferencePage() {
             { key: 'slash', label: 'Slash Commands' },
             { key: 'custom', label: 'Custom' },
           ] as const).map(tab => (
-            <button
+            <button type="button"
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cx(
@@ -451,7 +451,7 @@ export default function ReferencePage() {
                 />
               </div>
             </div>
-            <button
+            <button type="button"
               onClick={addCustom}
               disabled={!newCmdTitle.trim()}
               className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[var(--pulse-black)] px-4 py-2 text-xs font-bold text-white hover:bg-[var(--pulse-red)] disabled:opacity-40 transition-colors"
@@ -472,7 +472,7 @@ export default function ReferencePage() {
                     Import
                     <input type="file" accept=".json" className="sr-only" onChange={importCommands} />
                   </label>
-                  <button
+                  <button type="button"
                     onClick={exportCommands}
                     className="inline-flex items-center gap-1 rounded-lg border border-[var(--neutral-200)] px-2 py-1 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] transition-colors"
                   >
@@ -502,14 +502,14 @@ export default function ReferencePage() {
                         Action: {cmd.actionType} — {cmd.actionData}
                       </p>
                     </div>
-                    <button
+                    <button type="button"
                       onClick={() => runCustom(cmd)}
                       className="rounded-lg p-1.5 text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors"
                       title="Run command"
                     >
                       <Zap className="h-3.5 w-3.5" />
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => removeCustom(cmd.id)}
                       className="rounded-lg p-1.5 text-[var(--neutral-400)] hover:bg-red-50 hover:text-red-600 transition-colors"
                       title="Delete"

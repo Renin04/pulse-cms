@@ -23,7 +23,7 @@ function now(): number {
   return Date.now();
 }
 
-export function checkRateLimit(identifier: string): {
+export function checkRateLimit(identifier: string, maxRequests = MAX_REQUESTS): {
   allowed: boolean;
   remaining: number;
   resetAt: number;
@@ -36,21 +36,21 @@ export function checkRateLimit(identifier: string): {
     // Window expired or first request
     const resetAt = current + WINDOW_MS;
     store.set(key, { count: 1, resetAt });
-    return { allowed: true, remaining: MAX_REQUESTS - 1, resetAt };
+    return { allowed: true, remaining: maxRequests - 1, resetAt };
   }
 
-  if (entry.count >= MAX_REQUESTS) {
+  if (entry.count >= maxRequests) {
     return { allowed: false, remaining: 0, resetAt: entry.resetAt };
   }
 
   entry.count += 1;
-  return { allowed: true, remaining: MAX_REQUESTS - entry.count, resetAt: entry.resetAt };
+  return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
 }
 
-export function rateLimitHeaders(identifier: string): Record<string, string> {
-  const { allowed, remaining, resetAt } = checkRateLimit(identifier);
+export function rateLimitHeaders(identifier: string, maxRequests = MAX_REQUESTS): Record<string, string> {
+  const { allowed, remaining, resetAt } = checkRateLimit(identifier, maxRequests);
   return {
-    'X-RateLimit-Limit': String(MAX_REQUESTS),
+    'X-RateLimit-Limit': String(maxRequests),
     'X-RateLimit-Remaining': String(Math.max(0, remaining)),
     'X-RateLimit-Reset': String(Math.ceil(resetAt / 1000)),
     ...(allowed ? {} : { 'Retry-After': String(Math.ceil((resetAt - now()) / 1000)) }),

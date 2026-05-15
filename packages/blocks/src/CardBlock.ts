@@ -52,7 +52,7 @@ export const CardBlock: BlockTypeDefinition<CardBlockData> = {
   render(data) {
     const parsed = cardBlockDataSchema.parse(data);
     const image = parsed.mediaUrl
-      ? `<img src="${escapeHtml(parsed.mediaUrl)}" alt="${escapeHtml(parsed.title)}" />`
+      ? `<img src="${escapeHtml(parsed.mediaUrl)}" alt="${escapeHtml(parsed.title)}" loading="lazy" decoding="async" />`
       : "";
     const cta = parsed.linkUrl && parsed.ctaLabel
       ? `<a href="${escapeHtml(parsed.linkUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(

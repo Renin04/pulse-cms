@@ -44,7 +44,7 @@ export default function AdminAuth({ onAuthenticated }: AdminAuthProps) {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-white via-[#fff9eb] to-white px-4">
+    <div id="main-content" className="flex min-h-screen items-center justify-center bg-gradient-to-br from-white via-[#fff9eb] to-white px-4">
       {/* Background decorations */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-10%] top-[10%] h-[500px] w-[500px] rounded-full bg-[var(--pulse-red)]/5 blur-[120px]" />
@@ -105,6 +105,7 @@ export default function AdminAuth({ onAuthenticated }: AdminAuthProps) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-2 text-[var(--neutral-500)] transition-colors hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)]"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
