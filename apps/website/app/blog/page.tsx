@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import BlogPage from './BlogPage';
+import { getPublishedBlogEntries, getFeaturedTags } from '../../lib/blog-data';
 
 export const metadata: Metadata = {
   title: 'Blog',
@@ -14,6 +15,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Page() {
-  return <BlogPage />;
+export const dynamic = 'force-dynamic';
+
+export default async function Page() {
+  const [entries, featuredTags] = await Promise.all([
+    getPublishedBlogEntries(),
+    getFeaturedTags(),
+  ]);
+
+  return <BlogPage initialEntries={entries} initialFeaturedTags={featuredTags} />;
 }

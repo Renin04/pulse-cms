@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Calendar, Clock, ArrowRight, Sparkles, FileText, Tag, Mail, TrendingUp, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { AdaptedBlogEntry } from '../../lib/entry-adapter';
 
 function makeExcerpt(post: any, fallbackLength = 160): string {
   if (post.excerpt && post.excerpt.trim() && post.excerpt !== post.title) return post.excerpt;
@@ -16,7 +17,6 @@ function makeExcerpt(post: any, fallbackLength = 160): string {
 import Footer from '../components/Footer';
 import { getBlogFeaturedMedia } from '../../lib/blog-feature-media';
 import { formatDisplayDate } from '../../lib/site-content';
-import { useBackendBlogEntries, useBackendFeaturedTags, useAllBackendTags } from '../../lib/use-backend-entries';
 import BlogSearch from '../components/BlogSearch';
 import TagFilter from '../components/TagFilter';
 
@@ -26,9 +26,22 @@ function getTagFromUrl(): string | null {
   return params.get('tag');
 }
 
-export default function BlogPage() {
-  const { entries: publishedEntries, loading } = useBackendBlogEntries();
-  const { tags: featuredTags, loading: _tagsLoading } = useBackendFeaturedTags();
+function useAllBackendTags(entries: AdaptedBlogEntry[]) {
+  return useMemo(() => {
+    const set = new Set<string>();
+    entries.forEach((e) => e.tags.forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [entries]);
+}
+
+interface BlogPageProps {
+  initialEntries: AdaptedBlogEntry[];
+  initialFeaturedTags: string[];
+}
+
+export default function BlogPage({ initialEntries, initialFeaturedTags }: BlogPageProps) {
+  const publishedEntries = initialEntries;
+  const featuredTags = initialFeaturedTags;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -166,7 +179,7 @@ export default function BlogPage() {
           </div>
           
           {/* Search and Filter - Combined in same dark section */}
-          {!loading && publishedEntries.length > 0 && (
+          {publishedEntries.length > 0 && (
             <div className="mx-auto mt-12 max-w-4xl space-y-6">
               <BlogSearch onSearch={setSearchQuery} />
               <TagFilter
@@ -184,7 +197,7 @@ export default function BlogPage() {
           )}
         </div>
       </section>
-      {!loading && publishedEntries.length === 0 && (
+      {publishedEntries.length === 0 && (
         <section className="bg-white py-20 sm:py-28">
           <div className="container">
             <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-[var(--neutral-300)] bg-[var(--neutral-50)] p-10 text-center">
@@ -247,28 +260,7 @@ export default function BlogPage() {
       )}
 
       {/* ─── Featured post ─── */}
-      {loading ? (
-        <section className="bg-white py-12 sm:py-16">
-          <div className="container">
-            <div className="mb-6 flex items-center gap-3">
-              <span className="h-px w-8 bg-[var(--pulse-red)]" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-[var(--pulse-red)]">
-                Featured story
-              </span>
-            </div>
-            <div className="grid overflow-hidden rounded-2xl border border-[var(--neutral-200)] bg-white lg:grid-cols-2">
-              <div className="relative min-h-[260px] animate-pulse bg-[var(--neutral-200)] sm:min-h-[320px]" />
-              <div className="flex flex-col justify-center p-6 sm:p-10">
-                <div className="mb-4 h-4 w-32 animate-pulse rounded bg-[var(--neutral-200)]" />
-                <div className="mb-4 h-8 w-3/4 animate-pulse rounded bg-[var(--neutral-200)]" />
-                <div className="mb-2 h-4 w-full animate-pulse rounded bg-[var(--neutral-200)]" />
-                <div className="mb-8 h-4 w-5/6 animate-pulse rounded bg-[var(--neutral-200)]" />
-                <div className="mt-auto h-4 w-24 animate-pulse rounded bg-[var(--neutral-200)]" />
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : featuredPost ? (
+      {featuredPost ? (
         <section className="bg-white py-12 sm:py-16">
           <div className="container">
             <div className="mb-6 flex items-center gap-3">
@@ -288,6 +280,9 @@ export default function BlogPage() {
                   <img
                     src={featuredPostMedia.src}
                     alt={featuredPostMedia.alt}
+                    loading="eager"
+                    width={800}
+                    height={600}
                     className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   />
                 ) : (
@@ -341,24 +336,7 @@ export default function BlogPage() {
       ) : null}
 
       {/* ─── All posts ─── */}
-      {loading ? (
-        <section className="border-t border-[var(--neutral-200)] bg-[var(--neutral-50)] py-12 sm:py-16">
-          <div className="container">
-            <div className="mb-8 flex flex-wrap items-end justify-between gap-4 sm:mb-10">
-              <div className="flex items-center gap-3">
-                <span className="h-px w-8 bg-[var(--pulse-red)]" />
-                <div className="h-7 w-40 animate-pulse rounded bg-[var(--neutral-200)]" />
-              </div>
-              <div className="h-8 w-24 animate-pulse rounded bg-[var(--neutral-200)]" />
-            </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className="h-[380px] animate-pulse rounded-xl bg-[var(--neutral-200)]" />
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : regularPosts.length > 0 ? (
+      {regularPosts.length > 0 ? (
         <section className="border-t border-[var(--neutral-200)] bg-[var(--neutral-50)] py-12 sm:py-16">
           <div className="container">
             <div className="mb-8 flex flex-wrap items-end justify-between gap-4 sm:mb-10">
@@ -379,6 +357,7 @@ export default function BlogPage() {
                       setSortOrder(order);
                       setPage(1);
                     }}
+                    aria-label="Sort articles"
                     className="appearance-none rounded-lg border border-[var(--neutral-200)] bg-white py-2 pl-3 pr-8 text-sm text-[var(--pulse-black)] outline-none transition-colors focus:border-[var(--pulse-red)]"
                   >
                     <option value="publishedAt-desc">Newest first</option>
@@ -414,6 +393,9 @@ export default function BlogPage() {
                           <img
                             src={featuredMedia.src}
                             alt={featuredMedia.alt}
+                            loading="lazy"
+                            width={400}
+                            height={300}
                             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                           />
                         ) : (
