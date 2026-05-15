@@ -1,15 +1,19 @@
-'use client';
+import type { Metadata } from 'next';
+import DemoPage from './DemoPage';
 
-import Footer from '../components/Footer';
-import PulseDemoEditor from './PulseDemoEditor';
+export const metadata: Metadata = {
+  title: 'Demo',
+  description: 'Try the Pulse block editor and see interactive content in action.',
+  openGraph: {
+    title: 'Pulse Demo',
+    description: 'Try the Pulse block editor and see interactive content in action.',
+    type: 'website',
+  },
+  alternates: {
+    canonical: '/demo',
+  },
+};
 
-export default function DemoPage() {
-  return (
-    <>
-      <main id="main-content">
-        <PulseDemoEditor />
-      </main>
-      <Footer />
-    </>
-  );
+export default function Page() {
+  return <DemoPage />;
 }

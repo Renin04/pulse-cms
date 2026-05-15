@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import Script from 'next/script';
 import { ArrowLeft, Calendar, Clock3, Tag, User } from 'lucide-react';
 import { getBlogFeaturedMedia } from '../../lib/blog-feature-media';
 import { formatDisplayDate } from '../../lib/site-content';
@@ -59,43 +58,10 @@ export default function BlogPostContent({
     );
   }
 
-  // Generate JSON-LD structured data for SEO
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: entry.title,
-    description: entry.excerpt,
-    author: {
-      '@type': 'Person',
-      name: entry.author,
-    },
-    datePublished: entry.publishedAt || entry.createdAt,
-    dateModified: entry.updatedAt,
-    publisher: {
-      '@type': 'Organization',
-      name: 'Pulse',
-      logo: {
-        '@type': 'ImageObject',
-        url: 'https://pulse.example.com/logo.png',
-      },
-    },
-    keywords: entry.tags.join(', '),
-    articleSection: entry.eyebrow,
-    wordCount: entry.wordCount,
-    image: featuredMedia?.src ? [featuredMedia.src] : undefined,
-  };
-
   return (
     <div id="blog-post-page" className="min-h-screen bg-[#f8f6f2]">
       <ReadingProgress />
       <ReadingModeControls />
-      
-      {/* JSON-LD Structured Data */}
-      <Script
-        id="article-structured-data"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
-      />
 
       {/* Hero header */}
       <section id="blog-post-header" className="relative overflow-hidden border-b border-black/5 pt-28 pb-16">

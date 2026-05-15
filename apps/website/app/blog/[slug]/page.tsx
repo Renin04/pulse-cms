@@ -5,6 +5,7 @@ import BlogPostContent from '../BlogPostContent';
 import { getBlogFeaturedMedia } from '../../../lib/blog-feature-media';
 import { adaptEntryDetail } from '../../../lib/entry-adapter';
 import { prisma } from '../../../lib/db';
+import { generateBlogPostStructuredData } from '../../../lib/structured-data';
 
 interface BlogPostPageProps {
   params: {
@@ -160,8 +161,26 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
+  const featuredMedia = getBlogFeaturedMedia(entry as unknown as any);
+  const structuredData = generateBlogPostStructuredData({
+    title: entry.title,
+    excerpt: entry.excerpt ?? '',
+    author: entry.author || 'Pulse Team',
+    publishedAt: entry.publishedAt,
+    updatedAt: entry.updatedAt,
+    tags: entry.tags ?? [],
+    eyebrow: entry.eyebrow,
+    wordCount: entry.wordCount ?? undefined,
+    featuredImage: featuredMedia?.src ?? null,
+    slug: entry.slug,
+  });
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
+      />
       <main id="main-content">
         <BlogPostContent entry={entry} />
       </main>

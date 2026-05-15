@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import SmartNavigationWrapper from './components/SmartNavigationWrapper';
 import Navigation from './components/Navigation';
+import { getSiteUrl } from '../lib/site';
 
 const codecPro = localFont({
   src: [
@@ -32,15 +33,54 @@ const bahnschrift = localFont({
   display: 'swap',
 });
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
-  title: 'Pulse — The Blog Engine That Comes Alive',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'Pulse — The Blog Engine That Comes Alive',
+    template: '%s | Pulse',
+  },
   description: 'Pulse is a modular, AI-powered, interactive blog engine built for creators who want more than static pages.',
   keywords: ['blog', 'cms', 'editor', 'ai', 'content management', 'publishing'],
   authors: [{ name: 'Pulse Studio' }],
+  creator: 'Pulse Studio',
+  publisher: 'Pulse Studio',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
     title: 'Pulse — The Blog Engine That Comes Alive',
     description: 'A modular, AI-powered, interactive blog engine.',
     type: 'website',
+    locale: 'en_US',
+    siteName: 'Pulse',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Pulse — The Blog Engine That Comes Alive',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Pulse — The Blog Engine That Comes Alive',
+    description: 'A modular, AI-powered, interactive blog engine.',
+    images: ['/og-image.png'],
+    creator: '@pulsestudio',
+  },
+  alternates: {
+    canonical: '/',
   },
 };
 
