@@ -72,7 +72,26 @@
 | Branch Block | ⬜ | ⬜ | ⬜ | ⬜ | |
 | Conditional Block | ⬜ | ⬜ | ⬜ | ⬜ | |
 
+## Editor Core UX (L-6)
+
+| Feature | Test Method | Result | Notes |
+|---------|-------------|--------|-------|
+| Slash palette (`/`) | Puppeteer keypress | ✅ | Opens with search input, filters blocks correctly |
+| Backslash macro (`\\`) | Puppeteer keypress | ⚠️ | Opens same palette as `/` (no separate macro system in demo) |
+| Block addition via palette | Click "Table" block | ✅ | Block added to canvas, preview updated |
+| Block duplication (copy icon) | Click copy button | ✅ | Block count increases |
+| Block deletion (trash icon) | Click trash button | ✅ | Block count decreases |
+| Block reordering (chevrons) | Click down chevron | ✅ | Blocks swap positions correctly |
+| Preview toggle | Click "Hide preview" | ✅ | Button text toggles to "Show preview" |
+| Reset canvas | Click "Reset" | ⚠️ | Clears most blocks but leaves 2 default blocks |
+| Keyboard shortcut `/` | Puppeteer keydown | ✅ | Opens command palette |
+| Keyboard shortcut `Escape` | Puppeteer keydown | ❌ | Does NOT close palette (documented gap) |
+| Multi-select (Shift+click) | Puppeteer mouse event | ❌ | Not implemented |
+| Drag & drop reordering | DragEvent simulation | ❌ | Not functional via DnD library |
+| Context menu (right-click) | contextmenu event | ❌ | Not implemented |
+| Undo/Redo (`Ctrl+Z/Y`) | Puppeteer keydown | ❌ | Infrastructure exists but unwired (L-6-001) |
+
 ---
 
 **Last Updated:** 2026-05-15  
-**Tester:** Puppeteer QA script `block-qa-l5-advanced.mjs`
+**Tester:** Puppeteer QA script `block-qa-l6-editor-ux.mjs`

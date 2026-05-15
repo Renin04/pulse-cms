@@ -59,3 +59,19 @@
 - **Blog Post (Puppeteer MCP):** Created a real published blog post (`/blog/l5-advanced-blocks-qa/`) via Prisma with all 15 advanced blocks. All blocks rendered correctly in the `studio-rendered` article container with identical HTML structure to the demo editor preview.
 - No console errors or broken asset references observed (only benign `favicon.ico` 404 and expected `example.com` placeholder image 404s from default block data).
 - Mobile viewport screenshots confirm responsive rendering for all blocks.
+
+### L-6 Editor Core UX QA Notes (Session 78)
+- **Verification method:** Puppeteer MCP on live `/demo` editor at `localhost:3001`.
+- **Features tested:**
+  - ✅ Slash palette (`/`) — opens command palette with search input and category filters
+  - ✅ Block addition via palette — Table block inserted successfully
+  - ✅ Block duplication — hover action bar → copy icon increases block count
+  - ✅ Block deletion — hover action bar → trash icon decreases block count
+  - ✅ Block reordering — hover action bar → chevron up/down swaps block positions
+  - ✅ Preview toggle — "Hide preview" / "Show preview" button toggles preview panel
+  - ⚠️ Reset canvas — clears most blocks but leaves 2 default blocks (heading + paragraph)
+  - ❌ Escape to close palette — palette stays open (no Escape handler)
+  - ❌ Multi-select (Shift+click) — not implemented
+  - ❌ Drag & drop reordering — DnD library events not functional via simulation
+  - ❌ Context menu (right-click) — not implemented
+  - ❌ Undo/Redo (`Ctrl+Z/Y`) — `HistoryState.ts` engine exists but `EditorStateAdapter` never wires it. No `adapter.undo()`/`redo()` methods. Known architectural gap, not a launch blocker.
