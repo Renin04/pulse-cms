@@ -50,3 +50,10 @@
 - **Fix:** Removed dead inline scripts from 5 block renderers; added client-side hydration `useEffect` in `PulseDemoEditor.tsx` and `PulseBlogStudio.tsx`.
 - **Verification script:** `apps/website/scripts/block-qa-l4-interactive.mjs` performs real browser clicks and verifies DOM mutations.
 - **L-4 Interactive Blocks (8/8 PASS):** Quiz, Poll, Survey, Tabs, Spoiler, Flashcard, Accordion, Toggle
+
+### L-5 Advanced & Creative Blocks QA Notes (Session 77)
+- **Verification script:** `apps/website/scripts/block-qa-l5-advanced.mjs` inserts each block via slash palette, asserts semantic HTML structure, screenshots desktop (1400px) and mobile (375px), and monitors console/network errors.
+- **L-5 Advanced Blocks (15/15 PASS):** Table, Chart, Map, Math Equation, Diagram, Manga Panel, Speech Bubble, Card, Gallery, Carousel, Timeline, Comparison, Before/After, Hero Section, Annotated Image.
+- All blocks produce valid semantic HTML (`<figure>`, `<section>`, `<article>`, `<table>`, `<ol>`, etc.).
+- No console errors or broken asset references observed (only benign `favicon.ico` 404).
+- Mobile viewport screenshots confirm responsive rendering for all blocks.

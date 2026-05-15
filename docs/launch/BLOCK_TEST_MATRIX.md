@@ -47,24 +47,23 @@
 
 | Block | Insert | Configure | Renderer output | Lazy loaded | Mobile OK | Status |
 |-------|--------|-----------|-----------------|-------------|-----------|--------|
-| Table | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Chart | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Map | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Code Playground | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Math Equation | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Diagram | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Timeline | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Comparison | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Before/After | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Manga Panel | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Speech Bubble | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
+| Table | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Chart | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Map | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Math Equation | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Diagram | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Timeline | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Comparison | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Before/After | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Manga Panel | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Speech Bubble | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Card | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Hero Section | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Gallery | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Carousel | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
+| Annotated Image | ✅ | ✅ | ✅ | ⬜ | ✅ | **PASS** |
 | Callout | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
 | Alert | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Card | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Hero Section | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Gallery | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Carousel | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
-| Annotated Image | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | |
 
 ## Branching & Conditional
 
@@ -75,5 +74,5 @@
 
 ---
 
-**Last Updated:** 2026-05-01  
-**Tester:** _______________
+**Last Updated:** 2026-05-15  
+**Tester:** Puppeteer QA script `block-qa-l5-advanced.mjs`
