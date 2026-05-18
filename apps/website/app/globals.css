@@ -1127,67 +1127,103 @@ img {
   transition: max-width 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Headings hierarchy — refined weights for less aggressive typography */
+/* ============================================================
+   BLOG TYPOGRAPHY SYSTEM
+   Uses the project's CSS variable scale for consistency.
+
+   Scale (Major Third, ratio 1.25):
+   --text-xs: 0.75rem   (12px)
+   --text-sm: 0.875rem  (14px)
+   --text-base: 1rem    (16px)
+   --text-lg: 1.125rem  (18px)
+   --text-xl: 1.25rem   (20px)
+   --text-2xl: 1.5rem   (24px)
+   --text-3xl: 1.875rem (30px)
+   --text-4xl: 2.25rem  (36px)
+
+   Line-height rules (per Josh Comeau / WCAG):
+   - Headings: 1.2-1.3 (tight, short lines)
+   - Body: 1.6 (minimum 1.5 for accessibility)
+   ============================================================ */
+
+/* Headings — descending scale, lighter weights as size drops */
 .studio-rendered h1 {
-  font-size: 2.25rem;
+  font-size: var(--text-3xl);
   font-weight: 700;
   line-height: 1.2;
   margin-top: 0;
   margin-bottom: 1.5rem;
   color: var(--pulse-black);
   letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .studio-rendered h2 {
-  font-size: 1.625rem;
+  font-size: var(--text-2xl);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.25;
   margin-top: 3rem;
   margin-bottom: 1.25rem;
   color: var(--pulse-black);
   letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 .studio-rendered h3 {
-  font-size: 1.375rem;
+  font-size: var(--text-xl);
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.3;
   margin-top: 2.5rem;
   margin-bottom: 1rem;
   color: var(--pulse-black);
+  text-wrap: balance;
 }
 
 .studio-rendered h4 {
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
   font-weight: 500;
-  line-height: 1.5;
+  line-height: 1.4;
   margin-top: 2rem;
   margin-bottom: 0.875rem;
   color: var(--pulse-black);
+  text-wrap: balance;
 }
 
-.studio-rendered h5,
-.studio-rendered h6 {
-  font-size: 1rem;
+.studio-rendered h5 {
+  font-size: var(--text-base);
   font-weight: 500;
   line-height: 1.5;
   margin-top: 1.75rem;
   margin-bottom: 0.75rem;
   color: var(--neutral-800);
+  text-wrap: balance;
 }
 
-/* Paragraphs */
+.studio-rendered h6 {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.5;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  color: var(--neutral-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-wrap: balance;
+}
+
+/* Body text */
 .studio-rendered p {
-  font-size: 1.0625rem;
-  line-height: 1.75;
+  font-size: var(--text-base);
+  line-height: 1.6;
   margin-bottom: 1.5rem;
   color: var(--neutral-700);
+  text-wrap: pretty;
 }
 
-/* First paragraph - slightly larger */
+/* Lead / first paragraph */
 .studio-rendered > p:first-of-type {
-  font-size: 1.125rem;
-  line-height: 1.7;
+  font-size: var(--text-lg);
+  line-height: 1.6;
   color: var(--neutral-800);
 }
 
@@ -1579,43 +1615,47 @@ img {
   font-style: italic;
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments — mobile viewport */
 @media (max-width: 768px) {
   .studio-rendered h1 {
-    font-size: 1.875rem;
+    font-size: var(--text-2xl);
     font-weight: 600;
   }
   
   .studio-rendered h2 {
-    font-size: 1.375rem;
+    font-size: var(--text-xl);
     font-weight: 500;
     margin-top: 2.5rem;
   }
   
   .studio-rendered h3 {
-    font-size: 1.125rem;
+    font-size: var(--text-lg);
     font-weight: 500;
     margin-top: 2rem;
   }
   
   .studio-rendered h4 {
-    font-size: 1rem;
+    font-size: var(--text-base);
     font-weight: 500;
   }
   
-  .studio-rendered h5,
+  .studio-rendered h5 {
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
   .studio-rendered h6 {
-    font-size: 0.9375rem;
+    font-size: var(--text-xs);
     font-weight: 500;
   }
   
   .studio-rendered p,
   .studio-rendered li {
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
   
   .studio-rendered > p:first-of-type {
-    font-size: 1.0625rem;
+    font-size: var(--text-base);
   }
   
   .studio-rendered blockquote {
@@ -1629,7 +1669,7 @@ img {
   }
 
   .studio-rendered blockquote p {
-    font-size: 1.0625rem;
+    font-size: var(--text-base);
     padding-left: 1rem;
   }
 
@@ -1653,40 +1693,44 @@ img {
 */
 
 [data-device-mode="mobile"] .studio-rendered h1 {
-  font-size: 1.875rem;
+  font-size: var(--text-2xl);
   font-weight: 600;
 }
 
 [data-device-mode="mobile"] .studio-rendered h2 {
-  font-size: 1.375rem;
+  font-size: var(--text-xl);
   font-weight: 500;
   margin-top: 2.5rem;
 }
 
 [data-device-mode="mobile"] .studio-rendered h3 {
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
   font-weight: 500;
   margin-top: 2rem;
 }
 
 [data-device-mode="mobile"] .studio-rendered h4 {
-  font-size: 1rem;
+  font-size: var(--text-base);
   font-weight: 500;
 }
 
-[data-device-mode="mobile"] .studio-rendered h5,
+[data-device-mode="mobile"] .studio-rendered h5 {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
 [data-device-mode="mobile"] .studio-rendered h6 {
-  font-size: 0.9375rem;
+  font-size: var(--text-xs);
   font-weight: 500;
 }
 
 [data-device-mode="mobile"] .studio-rendered p,
 [data-device-mode="mobile"] .studio-rendered li {
-  font-size: 1rem;
+  font-size: var(--text-base);
 }
 
 [data-device-mode="mobile"] .studio-rendered > p:first-of-type {
-  font-size: 1.0625rem;
+  font-size: var(--text-base);
 }
 
 [data-device-mode="mobile"] .studio-rendered blockquote {
@@ -1700,7 +1744,7 @@ img {
 }
 
 [data-device-mode="mobile"] .studio-rendered blockquote p {
-  font-size: 1.0625rem;
+  font-size: var(--text-base);
   padding-left: 1rem;
 }
 
@@ -1722,40 +1766,44 @@ img {
 }
 
 [data-device-mode="tablet"] .studio-rendered h1 {
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: var(--text-3xl);
+  font-weight: 700;
 }
 
 [data-device-mode="tablet"] .studio-rendered h2 {
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: var(--text-2xl);
+  font-weight: 600;
   margin-top: 2.75rem;
 }
 
 [data-device-mode="tablet"] .studio-rendered h3 {
-  font-size: 1.25rem;
-  font-weight: 500;
+  font-size: var(--text-xl);
+  font-weight: 600;
   margin-top: 2.25rem;
 }
 
 [data-device-mode="tablet"] .studio-rendered h4 {
-  font-size: 1.0625rem;
+  font-size: var(--text-lg);
   font-weight: 500;
 }
 
-[data-device-mode="tablet"] .studio-rendered h5,
+[data-device-mode="tablet"] .studio-rendered h5 {
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
 [data-device-mode="tablet"] .studio-rendered h6 {
-  font-size: 0.9375rem;
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 
 [data-device-mode="tablet"] .studio-rendered p,
 [data-device-mode="tablet"] .studio-rendered li {
-  font-size: 1.0625rem;
+  font-size: var(--text-base);
 }
 
 [data-device-mode="tablet"] .studio-rendered > p:first-of-type {
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
 }
 
 [data-device-mode="tablet"] .studio-rendered blockquote {
@@ -1768,7 +1816,7 @@ img {
 }
 
 [data-device-mode="tablet"] .studio-rendered blockquote p {
-  font-size: 1.125rem;
+  font-size: var(--text-base);
 }
 
 [data-device-mode="tablet"] .studio-rendered pre {
