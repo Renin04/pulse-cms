@@ -1308,3 +1308,21 @@
 
 **Last Updated:** 2026-05-16  
 **Total Completed Tasks:** 450+
+
+
+### Session 88: Bug Fixes 8.1, 8.2, 8.3 + Global Sequential Ref Numbering — 2026-05-18
+- ✅ Bug 8.1: Reference update now works — fixed by tracking actual DOM element refs instead of fragile textContent matching
+  - Files: `apps/website/app/components/StudioBlockCanvas.tsx`, `apps/website/app/components/StudioBlockEditors.tsx`
+- ✅ Bug 8.2: Reference has all link options — RefModal rebuilt with nofollow, noopener, noreferrer, external checkboxes
+  - Files: `apps/website/app/components/StudioBlockEditors.tsx`
+- ✅ Bug 8.3: Contrary options prevented and runtime-safe — noopener auto-enforced and disabled when "Open in new tab" is checked in both LinkModal and RefModal; rel attributes render in preview/blog post
+  - Files: `apps/website/app/components/StudioBlockEditors.tsx`, `apps/website/lib/entry-adapter.ts`, `apps/website/lib/blog-studio.ts`
+- ✅ Global sequential reference numbering in editor — `useLayoutEffect` in `StudioBlockCanvas` renumbers all `.pulse-editor-ref` spans globally after each render
+  - Files: `apps/website/app/components/StudioBlockCanvas.tsx`
+- ✅ Added right-click context menu support for references in blockquote block
+  - Files: `apps/website/app/components/StudioBlockCanvas.tsx`
+
+**Quality Gates:**
+- Root: `npm run lint` ✅
+- Root: `npm run typecheck` ✅
+- Root: `npm run build` ✅

@@ -4,14 +4,22 @@
 > Update this at the end of every session.
 
 **Last Updated:** 2026-05-18
-**Current Session:** Session 87 — UX/UI Bug Fixes (#6 ref editor rendering, #8 ref URL relative, #10 duplicate ref numbers, link duplication, drag-text-selection)
+**Current Session:** Session 88 — Bug Fixes 8.1/8.2/8.3 (reference update, rel options, contrary option prevention) + global sequential ref numbering
 **Current Phase:** Phase 4 — AI Builder & Automation Runtime (bug-fixing branch)
 
 ---
 
 ## Current Focus
 
-**What we just completed (Session 87):**
+**What we just completed (Session 88):**
+- Bug #8.1: Fixed reference update not working — replaced fragile textContent matching with direct DOM element tracking (`existingRefElementRef`) across heading, text, and blockquote blocks.
+- Bug #8.2: Reference now has all link options — RefModal rebuilt with nofollow, noopener, noreferrer, external checkboxes, matching LinkModal parity.
+- Bug #8.3: Contrary options prevented + runtime safety — noopener is auto-enforced and disabled when "Open in new tab" is checked in both LinkModal and RefModal; rel attributes render correctly in preview and blog post; no runtime errors.
+- Global sequential ref numbering: Editor reference numbers are now globally sequential (1,2,3,4,5) across all blocks instead of per-block restarting (1,2,1,2,3). Implemented via `useLayoutEffect` in `StudioBlockCanvas` that renumbers all `.pulse-editor-ref` spans after each render.
+- Blockquote right-click: Added missing right-click context menu support for references in blockquote block.
+- Quality gates passed: `lint`, `typecheck`, `build` green.
+
+**Previous Session 87:**
 - Bug #6: Fixed reference rendering in editor — refs now show as superscript numbers (1, a, α, ا) via `pulse-reference-editor` class instead of plain citation text.
 - Bug #7: Fixed severe reference UI render problem in blog post — resolved via #10 CSS fix and #8 URL fix.
 - Bug #8: Fixed bare domain reference URLs becoming relative (`sanitizeUrl` now auto-prepends `https://`).
@@ -20,7 +28,6 @@
 - Can't-type-after-link fix: Added `\u200B` (zero-width space) after links/refs in `markdownToHtml`; stripped in `htmlToMarkdown`.
 - Drag fix: Moved `draggable` from entire block wrapper to drag handle icon only.
 - Link/Ref target support: Added "Open in new tab" checkbox to both LinkModal and RefModal with auto-`noopener` enforcement. Updated `renderInlineContent` in `blog-studio.ts` and `entry-adapter.ts` to render `target` attribute.
-- Quality gates passed: `lint`, `typecheck` green.
 
 **Launch Readiness Gate sessions completed:**
 - L-1: Test Strategy & Environment Setup ✅

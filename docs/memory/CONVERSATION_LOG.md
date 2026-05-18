@@ -2944,3 +2944,24 @@ pm run build in pps/website)
 - Screenshots: docs/launch/qa-screenshots/
 
 **Next:** L-4 Interactive Blocks QA.
+
+
+---
+
+## Session 88 — Bug Fixes 8.1, 8.2, 8.3 + Global Ref Numbering
+**Date:** 2026-05-18
+
+**Bugs Fixed:**
+- 8.1: Reference update now works — replaced fragile textContent matching with direct DOM element tracking (`existingRefElementRef`) across heading, text, and blockquote blocks.
+- 8.2: RefModal now has all link options (nofollow, noopener, noreferrer, external).
+- 8.3: Contrary options prevented — noopener is auto-enforced and disabled when "Open in new tab" is checked in both LinkModal and RefModal; rel attributes render correctly in preview and blog post.
+- Bonus fix: Editor reference numbers are now globally sequential (1,2,3,4,5) across all blocks instead of per-block restarting (1,2,1,2,3). Implemented via `useLayoutEffect` in `StudioBlockCanvas` that renumbers all `.pulse-editor-ref` spans after each render.
+
+**Files Changed:**
+- `apps/website/app/components/StudioBlockEditors.tsx` — Added rel parsing, getRefElementAtCursor/getRefElementFromEvent helpers, rebuilt RefModal with rel options + security enforcement, disabled noopener in LinkModal when _blank active.
+- `apps/website/app/components/StudioBlockCanvas.tsx` — Added element ref tracking for all ref operations; changed text/quote blocks to useLayoutEffect; added global ref renumbering effect; added right-click context menu support for refs in blockquote.
+- `apps/website/lib/entry-adapter.ts` — Added rel attribute rendering for reference `<a>` tags.
+- `apps/website/lib/blog-studio.ts` — Same rel rendering fix for preview panel.
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅
+**Commit:** `3ebb741`
