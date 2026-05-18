@@ -34,8 +34,15 @@ export function sanitizeUrl(url: string): string | null {
       return url;
     }
   } catch {
-    // Not a valid absolute URL — treat as relative path if it doesn't contain a colon
-    if (!url.includes(":")) return url;
+    // Not a valid absolute URL
+    if (!url.includes(":")) {
+      // If it looks like a bare domain (contains a dot), prepend https://
+      if (url.includes(".")) {
+        return `https://${url}`;
+      }
+      // Otherwise treat as a relative path
+      return url;
+    }
   }
   return null;
 }

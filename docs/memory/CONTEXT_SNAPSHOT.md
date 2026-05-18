@@ -4,17 +4,23 @@
 > Update this at the end of every session.
 
 **Last Updated:** 2026-05-18
-**Current Session:** Session 86 — UX/UI Bug Fixes (#4 publish toast, #5 duplicate TOC)
+**Current Session:** Session 87 — UX/UI Bug Fixes (#6 ref editor rendering, #8 ref URL relative, #10 duplicate ref numbers, link duplication, drag-text-selection)
 **Current Phase:** Phase 4 — AI Builder & Automation Runtime (bug-fixing branch)
 
 ---
 
 ## Current Focus
 
-**What we just completed (Session 86):**
-- Bug #4: Added global ToastProvider with success/error/info toasts for publish, save, submit, archive, schedule, create, and upload actions in PulseBlogStudio.
-- Bug #5: Removed duplicate inline+sticky TOCs from right sidebar. Moved single TOC to left sidebar (14rem width, sticky). Fixed hide/show sidebar to collapse right sidebar while keeping TOC visible. Rewrote TableOfContents with MutationObserver for robust heading ID generation, fixed click-to-scroll and scroll-spy active tracking.
-- Quality gates passed: `lint`, `typecheck` green for both fixes.
+**What we just completed (Session 87):**
+- Bug #6: Fixed reference rendering in editor — refs now show as superscript numbers (1, a, α, ا) via `pulse-reference-editor` class instead of plain citation text.
+- Bug #7: Fixed severe reference UI render problem in blog post — resolved via #10 CSS fix and #8 URL fix.
+- Bug #8: Fixed bare domain reference URLs becoming relative (`sanitizeUrl` now auto-prepends `https://`).
+- Bug #10: Fixed duplicate numbers in reference footnotes list — increased CSS specificity to override Tailwind prose `ol` styles.
+- Link duplication fix: Added `skipBlurRef` guard across heading/text/blockquote blocks in `StudioBlockCanvas.tsx` to prevent `onBlur` DOM reset during modal interaction.
+- Can't-type-after-link fix: Added `\u200B` (zero-width space) after links/refs in `markdownToHtml`; stripped in `htmlToMarkdown`.
+- Drag fix: Moved `draggable` from entire block wrapper to drag handle icon only.
+- Link/Ref target support: Added "Open in new tab" checkbox to both LinkModal and RefModal with auto-`noopener` enforcement. Updated `renderInlineContent` in `blog-studio.ts` and `entry-adapter.ts` to render `target` attribute.
+- Quality gates passed: `lint`, `typecheck` green.
 
 **Launch Readiness Gate sessions completed:**
 - L-1: Test Strategy & Environment Setup ✅

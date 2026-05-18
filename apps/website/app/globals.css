@@ -1250,6 +1250,7 @@ img {
   margin-bottom: 1rem;
 }
 
+.studio-rendered .pulse-references ol,
 .pulse-references ol {
   list-style: none;
   padding: 0;
@@ -1829,22 +1830,6 @@ img {
     position: sticky;
     top: 5rem;
     align-self: start;
-    max-height: calc(100vh - 6rem);
-    overflow-y: auto;
-    padding-right: 0.5rem;
-  }
-
-  #blog-toc-rail::-webkit-scrollbar {
-    width: 3px;
-  }
-
-  #blog-toc-rail::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  #blog-toc-rail::-webkit-scrollbar-thumb {
-    background: var(--neutral-300);
-    border-radius: 999px;
   }
 
   #blog-sidebar {

@@ -347,16 +347,22 @@ function renderInlineContent(text: string, refCounter: { value: number }): strin
       refCounter.value++
       const textMatch = attrs.match(/text="([^"]*)"/)
       const styleMatch = attrs.match(/style="([^"]*)"/)
+      const targetMatch = attrs.match(/target="([^"]*)"/)
       const refText = textMatch ? textMatch[1] : ''
       const style = (styleMatch ? styleMatch[1] : 'numeric') as RefStyle
+      const target = targetMatch ? targetMatch[1] : ''
       const num = formatReferenceNumber(refCounter.value, style)
       const titleAttr = refText ? ` title="${escapeHtml(refText)}"` : ''
-      result += `<sup class="pulse-reference"><a href="${escapeHtml(url)}"${titleAttr}>${num}</a></sup>`
+      const targetAttr = target ? ` target="${escapeHtml(target)}"` : ''
+      result += `<sup class="pulse-reference"><a href="${escapeHtml(url)}"${titleAttr}${targetAttr}>${num}</a></sup>`
     } else {
       const relMatch = attrs.match(/rel="([^"]*)"/)
       const rel = relMatch ? relMatch[1] : ''
+      const targetMatch = attrs.match(/target="([^"]*)"/)
+      const target = targetMatch ? targetMatch[1] : ''
       const relAttr = rel ? ` rel="${escapeHtml(rel)}"` : ''
-      result += `<a href="${escapeHtml(url)}" class="pulse-inline-link"${relAttr}>${escapeHtml(label)}</a>`
+      const targetAttr = target ? ` target="${escapeHtml(target)}"` : ''
+      result += `<a href="${escapeHtml(url)}" class="pulse-inline-link"${relAttr}${targetAttr}>${escapeHtml(label)}</a>`
     }
     lastIndex = match.index + match[0].length
   }

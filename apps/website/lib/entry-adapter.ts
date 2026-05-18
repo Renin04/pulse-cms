@@ -1,5 +1,5 @@
 import type { Block, BlockData, EntryStatus } from "@pulse/core";
-import { PulseRenderer, RendererRegistry, registerBuiltinRenderers } from "@pulse/renderer";
+import { PulseRenderer, RendererRegistry, registerBuiltinRenderers, renderBranch, renderConditional, renderCodePlayground } from "@pulse/renderer";
 import { formatReferenceNumber, sanitizeUrl } from "@pulse/blocks";
 import type { EntryDetail } from "./api-client";
 
@@ -89,20 +89,26 @@ function renderInlineContent(text: string, refCounter: { value: number }): strin
       refCounter.value++;
       const textMatch = attrs.match(/text="([^"]*)"/);
       const styleMatch = attrs.match(/style="([^"]*)"/);
+      const targetMatch = attrs.match(/target="([^"]*)"/);
       const refText = textMatch ? textMatch[1] : "";
       const style = (styleMatch ? styleMatch[1] : "numeric") as RefStyle;
+      const target = targetMatch ? targetMatch[1] : "";
       const num = formatReferenceNumber(refCounter.value, style);
       const titleAttr = refText ? ` title="${escapeHtml(refText)}"` : "";
+      const targetAttr = target ? ` target="${escapeHtml(target)}"` : "";
       if (safeUrl) {
-        result += `<sup class="pulse-reference"><a href="${escapeHtml(safeUrl)}"${titleAttr}>${num}</a></sup>`;
+        result += `<sup class="pulse-reference"><a href="${escapeHtml(safeUrl)}"${titleAttr}${targetAttr}>${num}</a></sup>`;
       } else {
         result += escapeAndBreaks(match[0]);
       }
     } else if (safeUrl) {
       const relMatch = attrs.match(/rel="([^"]*)"/);
       const rel = relMatch ? relMatch[1] : "";
+      const targetMatch = attrs.match(/target="([^"]*)"/);
+      const target = targetMatch ? targetMatch[1] : "";
       const relAttr = rel ? ` rel="${escapeHtml(rel)}"` : "";
-      result += `<a href="${escapeHtml(safeUrl)}" class="pulse-inline-link"${relAttr}>${escapeHtml(label)}</a>`;
+      const targetAttr = target ? ` target="${escapeHtml(target)}"` : "";
+      result += `<a href="${escapeHtml(safeUrl)}" class="pulse-inline-link"${relAttr}${targetAttr}>${escapeHtml(label)}</a>`;
     } else {
       result += escapeAndBreaks(match[0]);
     }
@@ -125,6 +131,9 @@ function toSlug(text: string): string {
 function ensureRenderer(): void {
   if (rendererReady) return;
   registerBuiltinRenderers(RendererRegistry.getInstance());
+  RendererRegistry.getInstance().override("branch", renderBranch);
+  RendererRegistry.getInstance().override("conditional", renderConditional);
+  RendererRegistry.getInstance().override("code-playground", renderCodePlayground);
   rendererReady = true;
 }
 

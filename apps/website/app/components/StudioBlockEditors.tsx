@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Trash2, Plus, Upload } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
-import { type ReferenceStyle } from '@pulse/blocks';
+import { type ReferenceStyle, formatReferenceNumber } from '@pulse/blocks';
 import { media as mediaApi } from '@/lib/api-client';
 
 // ─── Reusable UI helpers ───
@@ -66,12 +66,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ─── Markdown <-> HTML helpers for inline links ───
 
 
-function parseRefAttrs(attrs: string): { text?: string; style?: string } {
-  const result: { text?: string; style?: string } = {};
+function parseRefAttrs(attrs: string): { text?: string; style?: string; target?: string } {
+  const result: { text?: string; style?: string; target?: string } = {};
   const textMatch = attrs.match(/text="([^"]*)"/);
   if (textMatch) result.text = textMatch[1];
   const styleMatch = attrs.match(/style="([^"]*)"/);
   if (styleMatch) result.style = styleMatch[1];
+  const targetMatch = attrs.match(/target="([^"]*)"/);
+  if (targetMatch) result.target = targetMatch[1];
   return result;
 }
 
@@ -101,6 +103,7 @@ export function markdownToHtml(text: string): string {
   let html = '';
   let lastIndex = 0;
   let match: RegExpExecArray | null;
+  let refCounter = 0;
 
   while ((match = regex.exec(text)) !== null) {
     html += escapeHtmlWithInlineCode(text.slice(lastIndex, match.index));
@@ -108,13 +111,17 @@ export function markdownToHtml(text: string): string {
     const url = match[2];
     const attrs = match[3] || '';
 
+    const targetMatch = attrs.match(/target="([^"]*)"/);
+    const target = targetMatch ? targetMatch[1] : '';
     if (label === 'ref') {
+      refCounter++;
       const { text: refText, style } = parseRefAttrs(attrs);
-      html += `<span class="pulse-editor-ref" data-url="${escapeHtml(url)}" data-text="${escapeHtml(refText || '')}" data-style="${escapeHtml(style || 'numeric')}">${escapeHtml(refText || '')}</span>`;
+      const num = formatReferenceNumber(refCounter, (style || 'numeric') as ReferenceStyle);
+      html += `<span class="pulse-editor-ref pulse-reference-editor" data-url="${escapeHtml(url)}" data-text="${escapeHtml(refText || '')}" data-style="${escapeHtml(style || 'numeric')}"${target ? ` data-target="${escapeHtml(target)}"` : ''}>${num}</span>\u200B`;
     } else {
       const relMatch = attrs.match(/rel="([^"]*)"/);
       const rel = relMatch ? relMatch[1] : '';
-      html += `<span class="pulse-editor-link" data-url="${escapeHtml(url)}" data-rel="${escapeHtml(rel)}" data-type="link">${escapeHtml(label)}</span>`;
+      html += `<span class="pulse-editor-link" data-url="${escapeHtml(url)}" data-rel="${escapeHtml(rel)}" data-type="link"${target ? ` data-target="${escapeHtml(target)}"` : ''}>${escapeHtml(label)}</span>\u200B`;
     }
     lastIndex = match.index + match[0].length;
   }
@@ -132,9 +139,11 @@ export function htmlToMarkdown(html: string): string {
     const url = span.getAttribute('data-url') || '';
     const text = span.getAttribute('data-text') || '';
     const style = span.getAttribute('data-style') || '';
+    const target = span.getAttribute('data-target') || '';
     const parts: string[] = [];
     if (text) parts.push(`text="${text}"`);
     if (style && style !== 'numeric') parts.push(`style="${style}"`);
+    if (target) parts.push(`target="${target}"`);
     const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
     span.replaceWith(document.createTextNode(`[ref](${url})${attrs}`));
   });
@@ -145,8 +154,12 @@ export function htmlToMarkdown(html: string): string {
     const url = span.getAttribute('data-url') || '';
     const text = span.textContent || '';
     const rel = span.getAttribute('data-rel') || '';
-    const relPart = rel ? `{rel="${rel}"}` : '';
-    span.replaceWith(document.createTextNode(`[${text}](${url})${relPart}`));
+    const target = span.getAttribute('data-target') || '';
+    const parts: string[] = [];
+    if (rel) parts.push(`rel="${rel}"`);
+    if (target) parts.push(`target="${target}"`);
+    const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
+    span.replaceWith(document.createTextNode(`[${text}](${url})${attrs}`));
   });
 
   // Convert <code> to backticks
@@ -159,10 +172,10 @@ export function htmlToMarkdown(html: string): string {
   const breaks = div.querySelectorAll('br');
   breaks.forEach((br) => br.replaceWith(document.createTextNode('\n')));
 
-  return div.textContent || '';
+  return (div.textContent || '').replace(/\u200B/g, '');
 }
 
-export function getLinkAtCursor(element: HTMLElement): { text: string; url: string; rel: string } | null {
+export function getLinkAtCursor(element: HTMLElement): { text: string; url: string; rel: string; target: string } | null {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0) return null;
 
@@ -177,6 +190,7 @@ export function getLinkAtCursor(element: HTMLElement): { text: string; url: stri
         text: el.textContent || '',
         url: el.getAttribute('data-url') || '',
         rel: el.getAttribute('data-rel') || '',
+        target: el.getAttribute('data-target') || '',
       };
     }
     el = el.parentElement;
@@ -1254,14 +1268,16 @@ export function LinkModal({
   defaultText,
   defaultUrl,
   defaultRel,
+  defaultTarget,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (url: string, rel: string) => void;
+  onConfirm: (url: string, rel: string, target: string) => void;
   onRemove?: () => void;
   defaultText: string;
   defaultUrl?: string;
   defaultRel?: string;
+  defaultTarget?: string;
 }) {
   const isEditing = Boolean(defaultUrl);
   const [url, setUrl] = useState(defaultUrl || 'https://');
@@ -1271,18 +1287,22 @@ export function LinkModal({
     noreferrer: defaultRel?.includes('noreferrer') || false,
     external: defaultRel?.includes('external') || false,
   });
+  const [openInNewTab, setOpenInNewTab] = useState(defaultTarget === '_blank');
+  const originalRelRef = useRef(defaultRel || '');
 
   useEffect(() => {
     if (isOpen) {
       setUrl(defaultUrl || 'https://');
+      originalRelRef.current = defaultRel || '';
       setRelOpts({
         nofollow: defaultRel?.includes('nofollow') || false,
         noopener: defaultRel?.includes('noopener') || false,
         noreferrer: defaultRel?.includes('noreferrer') || false,
         external: defaultRel?.includes('external') || false,
       });
+      setOpenInNewTab(defaultTarget === '_blank');
     }
-  }, [isOpen, defaultUrl, defaultRel]);
+  }, [isOpen, defaultUrl, defaultRel, defaultTarget]);
 
   if (!isOpen) return null;
 
@@ -1290,7 +1310,7 @@ export function LinkModal({
     const relParts = Object.entries(relOpts)
       .filter(([_, v]) => v)
       .map(([k]) => k);
-    onConfirm(url, relParts.join(' '));
+    onConfirm(url, relParts.join(' '), openInNewTab ? '_blank' : '');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1334,7 +1354,7 @@ export function LinkModal({
           />
         </div>
 
-        <div className="mb-5 grid grid-cols-2 gap-3">
+        <div className="mb-3 grid grid-cols-2 gap-3">
           <label className="flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)]">
             <input
               type="checkbox"
@@ -1373,6 +1393,26 @@ export function LinkModal({
           </label>
         </div>
 
+        <div className="mb-5">
+          <label className="flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)]">
+            <input
+              type="checkbox"
+              checked={openInNewTab}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setOpenInNewTab(checked);
+                if (checked) {
+                  setRelOpts((r) => ({ ...r, noopener: true }));
+                } else {
+                  setRelOpts((r) => ({ ...r, noopener: originalRelRef.current.includes('noopener') }));
+                }
+              }}
+              className="h-4 w-4 accent-[var(--pulse-red)]"
+            />
+            Open in new tab
+          </label>
+        </div>
+
         <div className="flex justify-end gap-2">
           {isEditing && onRemove && (
             <button
@@ -1402,7 +1442,7 @@ export function LinkModal({
 
 // ─── Link Context Menu ───
 
-export function getLinkFromEvent(e: React.MouseEvent): { text: string; url: string; rel: string } | null {
+export function getLinkFromEvent(e: React.MouseEvent): { text: string; url: string; rel: string; target: string } | null {
   let target = e.target as HTMLElement | null;
   while (target && target !== e.currentTarget) {
     if (target.classList.contains('pulse-editor-link')) {
@@ -1410,6 +1450,7 @@ export function getLinkFromEvent(e: React.MouseEvent): { text: string; url: stri
         text: target.textContent || '',
         url: target.getAttribute('data-url') || '',
         rel: target.getAttribute('data-rel') || '',
+        target: target.getAttribute('data-target') || '',
       };
     }
     target = target.parentElement;
@@ -1468,7 +1509,7 @@ export function LinkContextMenu({
 
 // ─── Reference helpers ───
 
-export function getRefAtCursor(element: HTMLElement): { url: string; text: string; style: ReferenceStyle } | null {
+export function getRefAtCursor(element: HTMLElement): { url: string; text: string; style: ReferenceStyle; target: string } | null {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0) return null;
   let el: HTMLElement | null = selection.anchorNode?.nodeType === Node.TEXT_NODE
@@ -1476,18 +1517,18 @@ export function getRefAtCursor(element: HTMLElement): { url: string; text: strin
     : (selection.anchorNode as HTMLElement);
   while (el && el !== element) {
     if (el.tagName === 'SPAN' && el.classList.contains('pulse-editor-ref')) {
-      return { url: el.getAttribute('data-url') || '', text: el.getAttribute('data-text') || '', style: (el.getAttribute('data-style') || 'numeric') as ReferenceStyle };
+      return { url: el.getAttribute('data-url') || '', text: el.getAttribute('data-text') || '', style: (el.getAttribute('data-style') || 'numeric') as ReferenceStyle, target: el.getAttribute('data-target') || '' };
     }
     el = el.parentElement;
   }
   return null;
 }
 
-export function getRefFromEvent(e: React.MouseEvent): { url: string; text: string; style: ReferenceStyle } | null {
+export function getRefFromEvent(e: React.MouseEvent): { url: string; text: string; style: ReferenceStyle; target: string } | null {
   let target = e.target as HTMLElement | null;
   while (target && target !== e.currentTarget) {
     if (target.classList.contains('pulse-editor-ref')) {
-      return { url: target.getAttribute('data-url') || '', text: target.getAttribute('data-text') || '', style: (target.getAttribute('data-style') || 'numeric') as ReferenceStyle };
+      return { url: target.getAttribute('data-url') || '', text: target.getAttribute('data-text') || '', style: (target.getAttribute('data-style') || 'numeric') as ReferenceStyle, target: target.getAttribute('data-target') || '' };
     }
     target = target.parentElement;
   }
@@ -1502,18 +1543,21 @@ export function RefModal({
   defaultUrl,
   defaultText,
   defaultStyle,
+  defaultTarget,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (url: string, text: string, style: ReferenceStyle) => void;
+  onConfirm: (url: string, text: string, style: ReferenceStyle, target: string) => void;
   onRemove?: () => void;
   defaultUrl?: string;
   defaultText?: string;
   defaultStyle?: ReferenceStyle;
+  defaultTarget?: string;
 }) {
   const [url, setUrl] = useState(defaultUrl || '');
   const [text, setText] = useState(defaultText || '');
   const [style, setStyle] = useState(defaultStyle || 'numeric');
+  const [openInNewTab, setOpenInNewTab] = useState(defaultTarget === '_blank');
   const isEditing = Boolean(defaultUrl);
 
   useEffect(() => {
@@ -1521,13 +1565,14 @@ export function RefModal({
       setUrl(defaultUrl || '');
       setText(defaultText || '');
       setStyle(defaultStyle || 'numeric');
+      setOpenInNewTab(defaultTarget === '_blank');
     }
-  }, [isOpen, defaultUrl, defaultText, defaultStyle]);
+  }, [isOpen, defaultUrl, defaultText, defaultStyle, defaultTarget]);
 
   if (!isOpen) return null;
 
   const handleConfirm = () => {
-    onConfirm(url, text, style);
+    onConfirm(url, text, style, openInNewTab ? '_blank' : '');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1582,6 +1627,17 @@ export function RefModal({
               <option value="greek">Greek (α, β, γ...)</option>
               <option value="abjad">Abjad (ابجد...)</option>
             </select>
+          </div>
+          <div>
+            <label className="flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)]">
+              <input
+                type="checkbox"
+                checked={openInNewTab}
+                onChange={(e) => setOpenInNewTab(e.target.checked)}
+                className="h-4 w-4 accent-[var(--pulse-red)]"
+              />
+              Open in new tab
+            </label>
           </div>
         </div>
         <div className="mt-5 flex justify-end gap-2">
