@@ -13,6 +13,7 @@ import {
   Columns2, Minimize2, HelpCircle, Image as ImageIcon, Upload, List,
   Search,
 } from 'lucide-react'
+import { ToastProvider, useToast } from './ToastProvider'
 import type { EditorStateAdapter } from '@pulse/editor'
 import { createEditorStateAdapter, DEFAULT_SHORTCUT_BINDINGS } from '@pulse/editor'
 import {
@@ -332,6 +333,15 @@ function HelpReference() {
 
 /* ─── Main ─── */
 export default function PulseBlogStudio() {
+  return (
+    <ToastProvider>
+      <PulseBlogStudioInner />
+    </ToastProvider>
+  )
+}
+
+function PulseBlogStudioInner() {
+  const { showToast } = useToast()
   const searchParams = useSearchParams()
   const editId = searchParams.get('edit')
 
@@ -671,10 +681,10 @@ export default function PulseBlogStudio() {
     if (updated && !res.error) {
       try {
         await syncEntryToBackend({ ...updated, taxonomyIds: draft.taxonomyIds })
-        setNotice(res.message ?? 'Saved')
+        showToast(res.message ?? 'Saved', 'success')
         setIsDirty(false)
       } catch (err) {
-        setNotice(err instanceof Error ? err.message : 'Sync failed')
+        showToast(err instanceof Error ? err.message : 'Sync failed', 'error')
         setIsDirty(true)
       }
     } else {
@@ -701,65 +711,67 @@ export default function PulseBlogStudio() {
       const snap = await fetchBackendStudioSnapshot()
       setSnapshot(snap)
       setSelectedSlug(newEntry.slug)
-      setNotice('Created new draft')
+      showToast('Created new draft', 'success')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to create'
-      setNotice(msg)
+      showToast(msg, 'error')
       console.error('Create entry failed:', err)
     }
   }
 
-  async function handleSave() { await runMutation(() => ({ message: 'Saved' })) }
+  async function handleSave() {
+    await runMutation(() => ({ message: 'Saved' }))
+  }
   async function handlePublish() {
     if (!selectedSlug) return
     try {
       const e = await entriesApi.getBySlug(selectedSlug)
-      if (!e) { setNotice('Not found'); return }
+      if (!e) { showToast('Entry not found', 'error'); return }
       await entriesApi.publish(e.id)
       setSnapshot(await fetchBackendStudioSnapshot())
-      setNotice('Published')
-    } catch (err) { setNotice(err instanceof Error ? err.message : 'Failed') }
+      showToast('Published successfully', 'success')
+    } catch (err) { showToast(err instanceof Error ? err.message : 'Publish failed', 'error') }
   }
   async function handleSubmit() {
     if (!selectedSlug) return
     try {
       const e = await entriesApi.getBySlug(selectedSlug)
-      if (!e) { setNotice('Not found'); return }
+      if (!e) { showToast('Entry not found', 'error'); return }
       await entriesApi.submitReview(e.id)
       setSnapshot(await fetchBackendStudioSnapshot())
-      setNotice('Submitted for review')
-    } catch (err) { setNotice(err instanceof Error ? err.message : 'Failed') }
+      showToast('Submitted for review', 'success')
+    } catch (err) { showToast(err instanceof Error ? err.message : 'Submit failed', 'error') }
   }
   async function handleReturnToDraft() {
     if (!selectedSlug) return
     try {
       const e = await entriesApi.getBySlug(selectedSlug)
-      if (!e) { setNotice('Not found'); return }
+      if (!e) { showToast('Entry not found', 'error'); return }
       await entriesApi.unpublish(e.id)
       setSnapshot(await fetchBackendStudioSnapshot())
-      setNotice('Returned to draft')
-    } catch (err) { setNotice(err instanceof Error ? err.message : 'Failed') }
+      showToast('Returned to draft', 'success')
+    } catch (err) { showToast(err instanceof Error ? err.message : 'Unpublish failed', 'error') }
   }
   async function handleArchive() {
     if (!selectedSlug) return
     try {
       const e = await entriesApi.getBySlug(selectedSlug)
-      if (!e) { setNotice('Not found'); return }
+      if (!e) { showToast('Entry not found', 'error'); return }
       await entriesApi.archive(e.id)
       setSnapshot(await fetchBackendStudioSnapshot())
-      setNotice('Archived')
-    } catch (err) { setNotice(err instanceof Error ? err.message : 'Failed') }
+      showToast('Archived', 'success')
+    } catch (err) { showToast(err instanceof Error ? err.message : 'Archive failed', 'error') }
   }
   async function handleSchedule() {
-    if (!scheduleFor) { setNotice('Pick a date/time'); return }
+    if (!scheduleFor) { showToast('Pick a date/time', 'info'); return }
     if (!selectedSlug) return
     try {
       const e = await entriesApi.getBySlug(selectedSlug)
-      if (!e) { setNotice('Not found'); return }
+      if (!e) { showToast('Entry not found', 'error'); return }
       await entriesApi.schedule(e.id, fromDatetimeLocal(scheduleFor))
       setSnapshot(await fetchBackendStudioSnapshot())
-      setNotice('Scheduled')
-    } catch (err) { setNotice(err instanceof Error ? err.message : 'Failed') }
+      showToast('Scheduled', 'success')
+    } catch (err) { showToast(err instanceof Error ? err.message : 'Schedule failed', 'error') }
   }
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {

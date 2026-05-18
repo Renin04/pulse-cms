@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { List } from 'lucide-react';
 
 interface Heading {
@@ -9,172 +9,170 @@ interface Heading {
   level: number;
 }
 
-interface TableOfContentsProps {
-  variant?: 'inline' | 'sticky';
-  revealOnScroll?: boolean;
+function slugify(text: string): string {
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/^-+|-+$/g, '') || `h-${Math.random().toString(36).slice(2, 7)}`
+  );
 }
 
-export default function TableOfContents({
-  variant = 'inline',
-  revealOnScroll = false,
-}: TableOfContentsProps) {
+const DATA_ATTR = 'data-pulse-toc-id';
+
+export default function TableOfContents() {
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState<string>('');
-  const [isMounted, setIsMounted] = useState(!revealOnScroll);
-  const [isVisible, setIsVisible] = useState(!revealOnScroll);
-  const revealAnchorRef = useRef<HTMLDivElement | null>(null);
+  const rafRef = useRef<number>(0);
+  const observerRef = useRef<MutationObserver | null>(null);
 
-  useEffect(() => {
-    // Extract headings from the article
+  const scanHeadings = useCallback(() => {
     const article = document.querySelector('.studio-rendered');
     if (!article) return;
 
     const headingElements = Array.from(article.querySelectorAll<HTMLElement>('h2, h3'));
-    const headingData: Heading[] = headingElements.map((heading) => {
-      const generatedId = heading.id || heading.textContent?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `heading-${Math.random().toString(36).substr(2, 9)}`;
-      // Ensure the heading element has an ID for scrolling
+    if (headingElements.length === 0) return;
+
+    const headingData: Heading[] = headingElements.map((heading, index) => {
+      const text = heading.textContent?.trim() || '';
+      const baseId = slugify(text) || `h-${index}`;
+      // Ensure uniqueness by including index
+      const id = `${baseId}-${index}`;
+
+      // Always set/re-set the data attribute so clicks work even after DOM mutations
+      heading.setAttribute(DATA_ATTR, id);
+
+      // Also ensure a real id exists for hash linking
       if (!heading.id) {
-        heading.id = generatedId;
+        heading.id = baseId;
       }
-      return {
-        id: generatedId,
-        text: heading.textContent || '',
-        level: parseInt(heading.tagName.charAt(1)),
-      };
+
+      return { id, text, level: parseInt(heading.tagName.charAt(1)) };
     });
 
-    setHeadings(headingData);
+    setHeadings(prev => {
+      // Only update if the headings actually changed
+      if (
+        prev.length === headingData.length &&
+        prev.every((h, i) => h.text === headingData[i].text && h.level === headingData[i].level)
+      ) {
+        return prev;
+      }
+      setActiveId(headingData[0]?.id ?? '');
+      return headingData;
+    });
+  }, []);
 
-    const getActiveHeadingId = () => {
-      const offset = 156;
-      let nextActiveId = headingData[0]?.id ?? '';
+  useEffect(() => {
+    // Initial scan
+    scanHeadings();
 
+    // Set up mutation observer to catch DOM changes (e.g., React re-inserting HTML)
+    const article = document.querySelector('.studio-rendered');
+    if (article) {
+      observerRef.current = new MutationObserver(() => {
+        scanHeadings();
+      });
+      observerRef.current.observe(article, { childList: true, subtree: true });
+    }
+
+    // Also re-scan after a delay in case content streams in
+    const t1 = setTimeout(scanHeadings, 300);
+    const t2 = setTimeout(scanHeadings, 1000);
+
+    return () => {
+      observerRef.current?.disconnect();
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [scanHeadings]);
+
+  useEffect(() => {
+    if (headings.length === 0) return;
+
+    const offset = 120;
+
+    const updateActive = () => {
+      const article = document.querySelector('.studio-rendered');
+      if (!article) return;
+      const headingElements = Array.from(article.querySelectorAll<HTMLElement>('h2, h3'));
+
+      let nextActiveId = headings[0]?.id ?? '';
       for (const heading of headingElements) {
-        const top = heading.getBoundingClientRect().top;
-        if (top - offset <= 0) {
-          nextActiveId = heading.id;
+        const rect = heading.getBoundingClientRect();
+        if (rect.top - offset <= 0) {
+          const id = heading.getAttribute(DATA_ATTR) || heading.id;
+          if (id) nextActiveId = id;
         } else {
           break;
         }
       }
-
       setActiveId(nextActiveId);
     };
 
-    getActiveHeadingId();
-    window.addEventListener('scroll', getActiveHeadingId, { passive: true });
-    window.addEventListener('resize', getActiveHeadingId);
-
-    return () => {
-      window.removeEventListener('scroll', getActiveHeadingId);
-      window.removeEventListener('resize', getActiveHeadingId);
+    updateActive();
+    const onScroll = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(updateActive);
     };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [headings]);
+
+  const scrollToHeading = useCallback((id: string) => {
+    const article = document.querySelector('.studio-rendered');
+    if (!article) return;
+    const element = article.querySelector<HTMLElement>(`[${DATA_ATTR}="${id}"]`);
+    if (!element) return;
+    const offset = 96;
+    const top = element.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: 'smooth' });
   }, []);
-
-  useEffect(() => {
-    if (!revealOnScroll || headings.length === 0) return;
-
-    const anchor = revealAnchorRef.current;
-    if (!anchor) return;
-
-    let frameId = 0;
-    let hasRevealed = false;
-    const revealCard = () => {
-      if (hasRevealed) return;
-      hasRevealed = true;
-      setIsMounted(true);
-      frameId = window.requestAnimationFrame(() => setIsVisible(true));
-    };
-
-    if (anchor.getBoundingClientRect().top <= window.innerHeight * 0.82) {
-      revealCard();
-      return () => {
-        if (frameId) {
-          window.cancelAnimationFrame(frameId);
-        }
-      };
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting && entry.boundingClientRect.top > window.innerHeight * 0.82) return;
-        revealCard();
-        observer.disconnect();
-      },
-      {
-        threshold: 0.08,
-        rootMargin: '0px 0px -18% 0px',
-      },
-    );
-
-    observer.observe(anchor);
-
-    return () => {
-      observer.disconnect();
-      if (frameId) {
-        window.cancelAnimationFrame(frameId);
-      }
-    };
-  }, [headings.length, revealOnScroll]);
 
   if (headings.length === 0) return null;
 
-  const scrollToHeading = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      const offset = 100;
-      const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({
-        top: elementPosition - offset,
-        behavior: 'smooth',
-      });
-    }
-  };
-
-  const card = (
-    <div className={`blog-sidebar-surface blog-toc-card blog-toc-card--${variant} rounded-[1.75rem] p-5`}>
-      <div className="mb-4 flex items-center gap-2">
-        <List className="h-4 w-4 text-[var(--pulse-red)]" />
-        <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--neutral-500)]">
+  return (
+    <nav aria-label="Table of contents" className="blog-toc-sidebar-nav">
+      <div className="mb-3 flex items-center gap-2 px-1">
+        <List className="h-3.5 w-3.5 text-[var(--pulse-red)]" strokeWidth={2.5} />
+        <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--neutral-500)]">
           Contents
-        </h2>
+        </span>
       </div>
-      <nav aria-label={variant === 'sticky' ? 'Sticky table of contents' : 'Table of contents'}>
-        <ul className="space-y-2">
-          {headings.map((heading) => (
+      <ul className="flex flex-col gap-0.5">
+        {headings.map((heading) => {
+          const isActive = activeId === heading.id;
+          return (
             <li key={heading.id}>
               <button
                 type="button"
                 onClick={() => scrollToHeading(heading.id)}
-                data-active={activeId === heading.id ? 'true' : 'false'}
-                className={`blog-toc-link block w-full rounded-2xl px-4 py-2.5 text-left text-sm transition-all duration-300 ${
-                  heading.level === 3 ? 'pl-12' : 'pl-9'
+                className={`group flex w-full items-center rounded-md px-2 py-[5px] text-left text-[12px] leading-snug transition-colors duration-200 ${
+                  heading.level === 3 ? 'pl-5' : 'pl-2'
                 } ${
-                  activeId === heading.id
+                  isActive
                     ? 'font-semibold text-[var(--pulse-red)]'
-                    : 'text-[var(--neutral-600)] hover:text-[var(--pulse-red)]'
+                    : 'font-medium text-[var(--neutral-500)] hover:bg-black/[0.03] hover:text-[var(--pulse-black)]'
                 }`}
               >
-                {heading.text}
+                <span
+                  className={`mr-2 h-[5px] w-[5px] shrink-0 rounded-full transition-colors duration-200 ${
+                    isActive ? 'bg-[var(--pulse-red)]' : 'bg-[var(--neutral-300)] group-hover:bg-[var(--neutral-400)]'
+                  }`}
+                />
+                <span className="truncate">{heading.text}</span>
               </button>
             </li>
-          ))}
-        </ul>
-      </nav>
-    </div>
-  );
-
-  if (!revealOnScroll) {
-    return card;
-  }
-
-  return (
-    <div ref={revealAnchorRef} className="blog-toc-anchor">
-      {isMounted ? (
-        <div className="blog-toc-reveal" data-visible={isVisible ? 'true' : 'false'}>
-          {card}
-        </div>
-      ) : null}
-    </div>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }

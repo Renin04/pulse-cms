@@ -171,6 +171,12 @@ export default function BlogPostContent({
         <div className="container">
           <div id="blog-content-shell" className="mx-auto max-w-[88rem]">
             <div id="blog-content-wrapper" className="grid gap-8 lg:gap-10">
+              <aside id="blog-toc-sidebar" className="min-w-0">
+                <div id="blog-toc-rail" className="sticky top-[7rem] space-y-4 self-start">
+                  <TableOfContents />
+                </div>
+              </aside>
+
               <div id="blog-article-column" className="min-w-0 flex-1">
                 <div id="blog-content-card" className="py-0">
                   <div id="blog-article-body">
@@ -183,8 +189,6 @@ export default function BlogPostContent({
 
               <aside id="blog-sidebar" className="min-w-0">
                 <div id="blog-sidebar-rail" className="space-y-4">
-                  <TableOfContents variant="inline" />
-                  
                   <ShareButtons title={entry.title} url={`/blog/${entry.slug}`} />
                   
                   <SpotlightCard
@@ -208,8 +212,6 @@ export default function BlogPostContent({
                       ))}
                     </div>
                   </SpotlightCard>
-
-                  <TableOfContents variant="sticky" revealOnScroll />
 
                   <div id="blog-written-card" className="blog-sidebar-surface rounded-[1.75rem] p-5">
                     <p id="blog-written-label" className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--pulse-red)]">

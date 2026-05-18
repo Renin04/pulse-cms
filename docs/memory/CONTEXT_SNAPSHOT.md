@@ -3,31 +3,34 @@
 > Quick reference for the next agent session.
 > Update this at the end of every session.
 
-**Last Updated:** 2026-05-15
-**Current Session:** Session 77 — L-5 Advanced & Creative Blocks QA (Complete)
-**Current Phase:** Launch Readiness Gate — Pre-Phase 4 Validation (L-6 next)
+**Last Updated:** 2026-05-18
+**Current Session:** Session 86 — UX/UI Bug Fixes (#4 publish toast, #5 duplicate TOC)
+**Current Phase:** Phase 4 — AI Builder & Automation Runtime (bug-fixing branch)
 
 ---
 
 ## Current Focus
 
-**What we just completed (Session 77):**
-- L-5 Advanced & Creative Blocks QA — all 17 blocks verified
-- Puppeteer MCP testing in demo editor preview pane, editor panel, and live blog post
-- Created `apps/website/scripts/block-qa-l5-advanced.mjs` — automated QA script
-- Created test blog post `/blog/l5-advanced-blocks-qa/` with all 17 advanced blocks via Prisma
-- Verified no placeholders in editor panel; all blocks have dedicated editable UI
-- Desktop (1400px) and mobile (375px) screenshots captured
-- Updated `docs/launch/BLOCK_TEST_MATRIX.md` — all 17 marked PASS
-- Updated `docs/launch/BUG_LOG.md` — L-5 session notes appended
-- Committed all changes
+**What we just completed (Session 86):**
+- Bug #4: Added global ToastProvider with success/error/info toasts for publish, save, submit, archive, schedule, create, and upload actions in PulseBlogStudio.
+- Bug #5: Removed duplicate inline+sticky TOCs from right sidebar. Moved single TOC to left sidebar (14rem width, sticky). Fixed hide/show sidebar to collapse right sidebar while keeping TOC visible. Rewrote TableOfContents with MutationObserver for robust heading ID generation, fixed click-to-scroll and scroll-spy active tracking.
+- Quality gates passed: `lint`, `typecheck` green for both fixes.
 
-**Previous sessions completed:**
+**Launch Readiness Gate sessions completed:**
 - L-1: Test Strategy & Environment Setup ✅
 - L-2: Basic Blocks QA (8/8 PASS) ✅
 - L-3: Media Blocks QA (4/4 PASS) ✅
 - L-4: Interactive Blocks QA (8/8 PASS) ✅
 - L-5: Advanced & Creative Blocks QA (17/17 PASS) ✅
+- L-6: Editor Core UX QA ✅ (L-6-001 HistoryState/undo-redo wired and fixed)
+- L-7: Renderer QA — Layout & Responsive ✅ (L-7-001 table overflow-x fixed, L-7-002 manga mobile columns fixed)
+- L-8: Renderer QA — Animation & Interaction ✅ (Performance audit with Lighthouse + CDP metrics)
+- L-9: CMS End-to-End QA ✅
+- L-10: Website & Blog Dogfooding QA ✅
+- L-11: Security Audit ✅ (XSS hardened, CSP/HSTS added, rate limiting, CORS restrictions)
+- L-12: Performance Audit ✅ (Bundle analysis, render profiling, memory-leak checks, cross-browser/PWA baseline)
+- L-13: Bug Bash & Regression Fix ✅ (All P0 bugs closed; P1 bugs fixed or deferred with rationale)
+- L-14: Final Validation & Launch Sign-off ✅
 
 ---
 
@@ -39,36 +42,45 @@
 - **Pre-Migration Gate to Phase 3:** ✅ Completed
 - **Phase 3:** ✅ Completed
 - **PM4 Migration Gate:** ✅ Completed
-- **Launch Readiness Gate:** 🟦 In Progress (L-6 next)
-- **Phase 4 (AI):** ⬜ Blocked until Launch Readiness Gate closes
+- **Launch Readiness Gate:** ✅ Completed (L-14 signed off)
+- **Phase 4 (AI):** 🟦 Ready to start (R4-1 next)
 - **Phase 5 (SEO):** ⬜ Planned
 - **Phase 6 (Production):** ⬜ Planned
 
-### Launch Readiness Priority Themes
-1. ~~Block-by-block QA (editor + renderer) — L-2 through L-5~~ — ALL COMPLETE ✅
-2. Editor UX integrity — L-6 — NEXT
-3. Renderer integrity (layout, animation, interaction, reader XP) — L-7, L-8
-4. CMS end-to-end workflow validation — L-9
-5. Website/blog dogfooding — L-10
-6. Security audit — L-11
-7. Performance audit — L-12
-8. Bug bash & regression closure — L-13
-9. Final sign-off and Phase 4 unblocking — L-14
+### Phase 4 Priority Themes
+1. AI package scaffold + capability contracts (R4-1)
+2. AI brief and context model (R4-2)
+3. Inline invocation UX (R4-3)
+4. Provider registry GUI (R4-4)
+5. Secure key and model profile management (R4-5)
+6. Capability router — text vs image split (R4-6)
+7. Tool runtime foundation (R4-7)
+8. AI Builder: block creation toolchain (R4-8)
+9. AI Builder: command/shortcut/macro tools (R4-9)
+10. AI Builder: AI action generator (R4-10)
+11. Automation engine core (R4-11)
+12. Silent automation mode (R4-12)
+13. Automation recipe builder UX (R4-13)
+14. Image generation flow (R4-14)
+15. Media enrichment (R4-15)
+16. Safety and governance hardening (R4-16)
+17. Auditability and observability (R4-17)
+18. Stabilization and handoff (R4-18)
 
 ---
 
 ## Key Files Status
 
-### Session 77 — L-5 Advanced Blocks QA
-- ✅ `apps/website/scripts/block-qa-l5-advanced.mjs` — New
-- ✅ `apps/website/scripts/create-l5-test-entry.mjs` — New
-- ✅ `apps/website/scripts/add-callout-alert-to-l5.mjs` — New
-- ✅ `apps/website/scripts/get-content-types.mjs` — New
-- ✅ `docs/launch/qa-screenshots/L-5-*` — New (35 screenshots)
-- ✅ `docs/launch/BLOCK_TEST_MATRIX.md` — Updated (17/17 PASS)
-- ✅ `docs/launch/BUG_LOG.md` — Updated (L-5 notes)
-- ✅ `backlog/BACKLOG.md` — Updated (L-4, L-5 marked complete)
-- ✅ `backlog/DONE.md` — Updated (L-4, L-5 archived)
+### Session 85 — L-14 Launch Sign-off
+- ✅ `docs/launch/LAUNCH_SIGNOFF.md` — New
+- ✅ `docs/launch/BUG_LOG.md` — Updated (all P0 closed, remaining P1/P2 triaged)
+- ✅ `docs/launch/BLOCK_TEST_MATRIX.md` — Final (all blocks PASS)
+- ✅ `backlog/BACKLOG.md` — L-6..L-14 archived, Phase 4 activated
+- ✅ `backlog/DONE.md` — L-6..L-14 archived
+- ✅ `docs/memory/CONTEXT_SNAPSHOT.md` — This file
+- ✅ `docs/memory/CONVERSATION_LOG.md` — Session 85 summary appended
+- ✅ `docs/FEATURES.md` — Launch gate completion note added
+- ✅ `phases/PHASE_LAUNCH_READINESS.md` — Execution log completed
 
 ---
 
@@ -80,7 +92,7 @@
 - `apps/website` dependency install still works best when run from the website workspace.
 - Playwright/browser-dependent website E2E remains skipped by explicit user instruction.
 - The website studio is intentionally local-first and persists through browser storage.
-- Launch Readiness Gate is active; Phase 4 is explicitly blocked until L-14 sign-off.
+- Launch Readiness Gate is closed; Phase 4 AI is unblocked.
 
 ---
 
@@ -90,21 +102,20 @@
 1. Read `docs/memory/CONTEXT_SNAPSHOT.md`
 2. Read `backlog/BACKLOG.md`
 3. Read `backlog/DECISIONS.md`
-4. Read active phase file: `phases/PHASE_LAUNCH_READINESS.md`
-5. Read `docs/renderer/STYLING_GUIDE.md` only if touching renderer CSS/theme/layout
+4. Read active phase file: `phases/PHASE_04_AI.md`
+5. Read `docs/PHASE_04_AI_KICKOFF_CHECKLIST.md`
+6. Read `docs/renderer/STYLING_GUIDE.md` only if touching renderer CSS/theme/layout
 
 **At the end of every session:**
-1. Update `docs/launch/BUG_LOG.md` if any findings
-2. Update `docs/launch/BLOCK_TEST_MATRIX.md` if block QA was performed
+1. Update `docs/memory/CONTEXT_SNAPSHOT.md`
+2. Update `docs/memory/CONVERSATION_LOG.md`
 3. Update `backlog/BACKLOG.md`
 4. Update `backlog/DONE.md`
-5. Update `docs/memory/CONTEXT_SNAPSHOT.md`
-6. Update `docs/memory/CONVERSATION_LOG.md`
-7. Update `docs/FEATURES.md` only if feature status changes
-8. Update `backlog/DECISIONS.md` only for true architecture/design decisions
-9. Run: `npm run docs:check`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run test`
-10. Skip Playwright/browser-dependent validation unless the user later provides a reachable browser runtime or explicitly changes the network constraint.
+5. Update `docs/FEATURES.md` only if feature status changes
+6. Update `backlog/DECISIONS.md` only for true architecture/design decisions
+7. Run: `npm run docs:check`, `npm run lint`, `npm run typecheck`, `npm run build`, `npm run test`
+8. Skip Playwright/browser-dependent validation unless the user later provides a reachable browser runtime or explicitly changes the network constraint.
 
 ---
 
-**Next Session Goal:** L-6 Editor Core UX QA (slash commands, shortcuts, context menus, toolbar, DnD, clipboard, undo/redo, multi-select, block search, templates).
+**Next Session Goal:** R4-1 AI package scaffold + capability contracts.
