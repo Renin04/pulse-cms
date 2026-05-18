@@ -49,7 +49,7 @@ function isExternalLink(href: string) {
 
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   const className =
-    'text-sm text-white/50 transition-colors duration-200 hover:text-[var(--pulse-jasmine)]';
+    'text-sm text-white/60 transition-colors duration-200 hover:text-[var(--pulse-jasmine)]';
   if (isExternalLink(href)) {
     return (
       <a
@@ -86,7 +86,7 @@ function FooterColumn({ column }: { column: (typeof footerColumns)[number] }) {
       >
         {column.title}
         <ChevronDown
-          className={`h-4 w-4 text-white/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 text-white/60 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
         />
       </button>
       <h3 className="mb-3 hidden text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[var(--pulse-jasmine)] sm:block">
@@ -127,7 +127,7 @@ export default function Footer() {
               {stackBadges.map((badge) => (
                 <span
                   key={badge}
-                  className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-white/50"
+                  className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-white/60"
                 >
                   {badge}
                 </span>
@@ -142,7 +142,7 @@ export default function Footer() {
                   href={item.href}
                   target={item.href.startsWith('http') ? '_blank' : undefined}
                   rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/50 transition-colors hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/60 transition-colors hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
                   aria-label={item.label}
                 >
                   <item.icon className="h-4 w-4" />
@@ -173,7 +173,7 @@ export default function Footer() {
                 href={item.href}
                 target={item.href.startsWith('http') ? '_blank' : undefined}
                 rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                className="inline-flex items-center gap-2 text-xs text-white/40 transition-colors hover:text-white/70"
+                className="inline-flex items-center gap-2 text-xs text-white/60 transition-colors hover:text-white"
               >
                 <item.icon className="h-3.5 w-3.5" />
                 {item.label}

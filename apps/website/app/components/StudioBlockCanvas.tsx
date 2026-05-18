@@ -410,6 +410,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
         defaultText={linkModalText}
         defaultUrl={linkModalUrl}
         defaultRel={linkModalRel}
+        defaultTarget={linkModalTarget}
       />
       {contextMenu && (
         <LinkContextMenu
@@ -454,6 +455,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
         defaultUrl={refModalUrl}
         defaultText={refModalText}
         defaultStyle={refModalStyle}
+        defaultTarget={refModalTarget}
       />
       {refContextMenu && (
         <RefContextMenu
@@ -636,6 +638,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       setRefModalUrl(existingRef.url || '');
       setRefModalText(existingRef.text || '');
       setRefModalStyle(existingRef.style);
+      setRefModalTarget(existingRef.target || '');
       existingRefRef.current = existingRef;
       savedRangeRef.current = null;
       setRefModalOpen(true);
@@ -651,6 +654,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     setRefModalText(selectedText);
     setRefModalUrl('');
     setRefModalStyle('numeric');
+    setRefModalTarget('');
     setRefModalOpen(true);
   };
 
@@ -788,6 +792,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
         defaultText={linkModalText}
         defaultUrl={linkModalUrl}
         defaultRel={linkModalRel}
+        defaultTarget={linkModalTarget}
       />
       {contextMenu && (
         <LinkContextMenu
@@ -832,6 +837,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
         defaultUrl={refModalUrl}
         defaultText={refModalText}
         defaultStyle={refModalStyle}
+        defaultTarget={refModalTarget}
       />
       {refContextMenu && (
         <RefContextMenu
@@ -989,6 +995,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
       setRefModalUrl(existingRef.url || '');
       setRefModalText(existingRef.text || '');
       setRefModalStyle(existingRef.style);
+      setRefModalTarget(existingRef.target || '');
       existingRefRef.current = existingRef;
       savedRangeRef.current = null;
       setRefModalOpen(true);
@@ -1004,6 +1011,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     setRefModalText(selectedText);
     setRefModalUrl('');
     setRefModalStyle('numeric');
+    setRefModalTarget('');
     setRefModalOpen(true);
   };
 
@@ -1140,6 +1148,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
         defaultText={linkModalText}
         defaultUrl={linkModalUrl}
         defaultRel={linkModalRel}
+        defaultTarget={linkModalTarget}
       />
       {contextMenu && (
         <LinkContextMenu
@@ -1184,6 +1193,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
         defaultUrl={refModalUrl}
         defaultText={refModalText}
         defaultStyle={refModalStyle}
+        defaultTarget={refModalTarget}
       />
       {refContextMenu && (
         <RefContextMenu

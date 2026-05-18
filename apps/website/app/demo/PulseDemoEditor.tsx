@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Sparkles, Command, Keyboard, MousePointer, Plus,
@@ -153,24 +153,30 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
   const [linkModalText, setLinkModalText] = useState('');
   const [linkModalUrl, setLinkModalUrl] = useState('');
   const [linkModalRel, setLinkModalRel] = useState('');
+  const [linkModalTarget, setLinkModalTarget] = useState('');
   const savedRangeRef = useRef<Range | null>(null);
-  const existingLinkRef = useRef<{ text: string; url: string; rel: string } | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; link: { text: string; url: string; rel: string } } | null>(null);
+  const skipBlurRef = useRef(false);
+  const existingLinkRef = useRef<{ text: string; url: string; rel: string; target: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; link: { text: string; url: string; rel: string; target: string } } | null>(null);
   const [refModalOpen, setRefModalOpen] = useState(false);
   const [refModalUrl, setRefModalUrl] = useState('');
   const [refModalText, setRefModalText] = useState('');
   const [refModalStyle, setRefModalStyle] = useState<'numeric' | 'alphabetic' | 'greek' | 'abjad'>('numeric');
-  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad' } | null>(null);
-  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad' } } | null>(null);
+  const [refModalTarget, setRefModalTarget] = useState('');
+  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } | null>(null);
+  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } } | null>(null);
 
-  useEffect(() => {
+  // Sync innerHTML whenever block text or level changes
+  // useLayoutEffect ensures content is set before paint to prevent flash of empty content
+  useLayoutEffect(() => {
     const el = headingRef.current;
     if (el) {
       el.innerHTML = markdownToHtml(data.text);
     }
-  }, [data.text]);
+  }, [data.text, data.level]);
 
   const openLinkModal = () => {
+    skipBlurRef.current = true;
     const el = headingRef.current;
     if (!el) return;
 
@@ -179,6 +185,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
       setLinkModalText(existingLink.text);
       setLinkModalUrl(existingLink.url);
       setLinkModalRel(existingLink.rel);
+      setLinkModalTarget(existingLink.target);
       existingLinkRef.current = existingLink;
       savedRangeRef.current = null;
       setLinkModalOpen(true);
@@ -195,14 +202,18 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
     setLinkModalText(selectedText);
     setLinkModalUrl('');
     setLinkModalRel('');
+    setLinkModalTarget('');
     setLinkModalOpen(true);
   };
 
-  const handleLinkConfirm = (url: string, rel: string) => {
+  const handleLinkConfirm = (url: string, rel: string, target: string) => {
     const el = headingRef.current;
     if (!el) return;
-    const relPart = rel ? `{rel="${rel}"}` : '';
-    const markdownText = `[${linkModalText}](${url})${relPart}`;
+    const parts: string[] = [];
+    if (rel) parts.push(`rel="${rel}"`);
+    if (target) parts.push(`target="${target}"`);
+    const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
+    const markdownText = `[${linkModalText}](${url})${attrs}`;
 
     if (existingLinkRef.current) {
       const links = el.querySelectorAll('span.pulse-editor-link');
@@ -221,6 +232,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
       document.execCommand('insertText', false, markdownText);
     }
 
+    skipBlurRef.current = false;
     setLinkModalOpen(false);
     existingLinkRef.current = null;
     savedRangeRef.current = null;
@@ -243,6 +255,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
       });
     }
 
+    skipBlurRef.current = false;
     setLinkModalOpen(false);
     existingLinkRef.current = null;
     savedRangeRef.current = null;
@@ -253,6 +266,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
   };
 
   const openRefModal = () => {
+    skipBlurRef.current = true;
     const el = headingRef.current;
     if (!el) return;
     const existingRef = getRefAtCursor(el);
@@ -260,6 +274,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
       setRefModalUrl(existingRef.url || '');
       setRefModalText(existingRef.text || '');
       setRefModalStyle(existingRef.style);
+      setRefModalTarget(existingRef.target || '');
       existingRefRef.current = existingRef;
       savedRangeRef.current = null;
       setRefModalOpen(true);
@@ -275,13 +290,15 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
     setRefModalText(selectedText);
     setRefModalUrl('');
     setRefModalStyle('numeric');
+    setRefModalTarget('');
     setRefModalOpen(true);
   };
 
-  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad') => {
+  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string) => {
     const el = headingRef.current;
     if (!el) return;
-    const markdownText = `[ref](${url}){text="${text}" style="${style}"}`;
+    const targetPart = target ? ` target="${target}"` : '';
+    const markdownText = `[ref](${url}){text="${text}" style="${style}"${targetPart}}`;
     if (existingRefRef.current) {
       const refs = el.querySelectorAll('span.pulse-editor-ref');
       refs.forEach((span) => {
@@ -299,6 +316,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
       }
       document.execCommand('insertText', false, markdownText);
     }
+    skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
     savedRangeRef.current = null;
@@ -319,6 +337,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
         }
       });
     }
+    skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
     savedRangeRef.current = null;
@@ -343,12 +362,14 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
           ))}
         </select>
         <Tag
+          key={`heading-level-${data.level}`}
           ref={headingRef}
           contentEditable
           suppressContentEditableWarning
           className="min-w-0 flex-1 font-bold text-[var(--pulse-black)] outline-none"
           style={{ fontSize: data.level === 1 ? '2rem' : data.level === 2 ? '1.5rem' : '1.25rem' }}
           onBlur={(e) => {
+            if (skipBlurRef.current) return;
             const markdown = htmlToMarkdown(e.currentTarget.innerHTML);
             adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, text: markdown } }));
           }}
@@ -391,12 +412,13 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
       </div>
       <LinkModal
         isOpen={linkModalOpen}
-        onClose={() => setLinkModalOpen(false)}
+        onClose={() => { skipBlurRef.current = false; setLinkModalOpen(false); }}
         onConfirm={handleLinkConfirm}
         onRemove={linkModalUrl ? handleLinkRemove : undefined}
         defaultText={linkModalText}
         defaultUrl={linkModalUrl}
         defaultRel={linkModalRel}
+        defaultTarget={linkModalTarget}
       />
       {contextMenu && (
         <LinkContextMenu
@@ -406,6 +428,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
             setLinkModalText(contextMenu.link.text);
             setLinkModalUrl(contextMenu.link.url);
             setLinkModalRel(contextMenu.link.rel);
+            setLinkModalTarget(contextMenu.link.target);
             existingLinkRef.current = contextMenu.link;
             savedRangeRef.current = null;
             setLinkModalOpen(true);
@@ -431,12 +454,13 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
       )}
       <RefModal
         isOpen={refModalOpen}
-        onClose={() => setRefModalOpen(false)}
+        onClose={() => { skipBlurRef.current = false; setRefModalOpen(false); }}
         onConfirm={handleRefConfirm}
         onRemove={existingRefRef.current ? handleRefRemove : undefined}
         defaultUrl={refModalUrl}
         defaultText={refModalText}
         defaultStyle={refModalStyle}
+        defaultTarget={refModalTarget}
       />
       {refContextMenu && (
         <RefContextMenu
@@ -446,6 +470,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
             setRefModalUrl(refContextMenu.ref.url || '');
             setRefModalText(refContextMenu.ref.text || '');
             setRefModalStyle(refContextMenu.ref.style);
+            setRefModalTarget(refContextMenu.ref.target || '');
             existingRefRef.current = refContextMenu.ref;
             savedRangeRef.current = null;
             setRefModalOpen(true);
@@ -481,15 +506,18 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
   const [linkModalText, setLinkModalText] = useState('');
   const [linkModalUrl, setLinkModalUrl] = useState('');
   const [linkModalRel, setLinkModalRel] = useState('');
+  const [linkModalTarget, setLinkModalTarget] = useState('');
   const savedRangeRef = useRef<Range | null>(null);
-  const existingLinkRef = useRef<{ text: string; url: string; rel: string } | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; link: { text: string; url: string; rel: string } } | null>(null);
+  const skipBlurRef = useRef(false);
+  const existingLinkRef = useRef<{ text: string; url: string; rel: string; target: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; link: { text: string; url: string; rel: string; target: string } } | null>(null);
   const [refModalOpen, setRefModalOpen] = useState(false);
   const [refModalUrl, setRefModalUrl] = useState('');
   const [refModalText, setRefModalText] = useState('');
   const [refModalStyle, setRefModalStyle] = useState<'numeric' | 'alphabetic' | 'greek' | 'abjad'>('numeric');
-  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad' } | null>(null);
-  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad' } } | null>(null);
+  const [refModalTarget, setRefModalTarget] = useState('');
+  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } | null>(null);
+  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } } | null>(null);
 
   useEffect(() => {
     const el = textRef.current;
@@ -526,11 +554,14 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     setLinkModalOpen(true);
   };
 
-  const handleLinkConfirm = (url: string, rel: string) => {
+  const handleLinkConfirm = (url: string, rel: string, target: string) => {
     const el = textRef.current;
     if (!el) return;
-    const relPart = rel ? `{rel="${rel}"}` : '';
-    const markdownText = `[${linkModalText}](${url})${relPart}`;
+    const parts: string[] = [];
+    if (rel) parts.push(`rel="${rel}"`);
+    if (target) parts.push(`target="${target}"`);
+    const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
+    const markdownText = `[${linkModalText}](${url})${attrs}`;
 
     if (existingLinkRef.current) {
       const links = el.querySelectorAll('span.pulse-editor-link');
@@ -549,6 +580,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       document.execCommand('insertText', false, markdownText);
     }
 
+    skipBlurRef.current = false;
     setLinkModalOpen(false);
     existingLinkRef.current = null;
     savedRangeRef.current = null;
@@ -571,6 +603,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       });
     }
 
+    skipBlurRef.current = false;
     setLinkModalOpen(false);
     existingLinkRef.current = null;
     savedRangeRef.current = null;
@@ -581,6 +614,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
   };
 
   const openRefModal = () => {
+    skipBlurRef.current = true;
     const el = textRef.current;
     if (!el) return;
     const existingRef = getRefAtCursor(el);
@@ -588,6 +622,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       setRefModalUrl(existingRef.url || '');
       setRefModalText(existingRef.text || '');
       setRefModalStyle(existingRef.style);
+      setRefModalTarget(existingRef.target || '');
       existingRefRef.current = existingRef;
       savedRangeRef.current = null;
       setRefModalOpen(true);
@@ -603,13 +638,15 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     setRefModalText(selectedText);
     setRefModalUrl('');
     setRefModalStyle('numeric');
+    setRefModalTarget('');
     setRefModalOpen(true);
   };
 
-  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad') => {
+  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string) => {
     const el = textRef.current;
     if (!el) return;
-    const markdownText = `[ref](${url}){text="${text}" style="${style}"}`;
+    const targetPart = target ? ` target="${target}"` : '';
+    const markdownText = `[ref](${url}){text="${text}" style="${style}"${targetPart}}`;
     if (existingRefRef.current) {
       const refs = el.querySelectorAll('span.pulse-editor-ref');
       refs.forEach((span) => {
@@ -627,6 +664,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       }
       document.execCommand('insertText', false, markdownText);
     }
+    skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
     savedRangeRef.current = null;
@@ -647,6 +685,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
         }
       });
     }
+    skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
     savedRangeRef.current = null;
@@ -666,6 +705,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
           className="min-h-[1.5em] leading-relaxed text-[var(--neutral-700)] outline-empty"
           style={{ textAlign: align as any }}
           onBlur={(e) => {
+            if (skipBlurRef.current) return;
             const markdown = htmlToMarkdown(e.currentTarget.innerHTML);
             adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, text: markdown } }));
           }}
@@ -721,12 +761,13 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       </div>
       <LinkModal
         isOpen={linkModalOpen}
-        onClose={() => setLinkModalOpen(false)}
+        onClose={() => { skipBlurRef.current = false; setLinkModalOpen(false); }}
         onConfirm={handleLinkConfirm}
         onRemove={linkModalUrl ? handleLinkRemove : undefined}
         defaultText={linkModalText}
         defaultUrl={linkModalUrl}
         defaultRel={linkModalRel}
+        defaultTarget={linkModalTarget}
       />
       {contextMenu && (
         <LinkContextMenu
@@ -736,6 +777,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
             setLinkModalText(contextMenu.link.text);
             setLinkModalUrl(contextMenu.link.url);
             setLinkModalRel(contextMenu.link.rel);
+            setLinkModalTarget(contextMenu.link.target);
             existingLinkRef.current = contextMenu.link;
             savedRangeRef.current = null;
             setLinkModalOpen(true);
@@ -761,12 +803,13 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       )}
       <RefModal
         isOpen={refModalOpen}
-        onClose={() => setRefModalOpen(false)}
+        onClose={() => { skipBlurRef.current = false; setRefModalOpen(false); }}
         onConfirm={handleRefConfirm}
         onRemove={existingRefRef.current ? handleRefRemove : undefined}
         defaultUrl={refModalUrl}
         defaultText={refModalText}
         defaultStyle={refModalStyle}
+        defaultTarget={refModalTarget}
       />
       {refContextMenu && (
         <RefContextMenu
@@ -776,6 +819,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
             setRefModalUrl(refContextMenu.ref.url || '');
             setRefModalText(refContextMenu.ref.text || '');
             setRefModalStyle(refContextMenu.ref.style);
+            setRefModalTarget(refContextMenu.ref.target || '');
             existingRefRef.current = refContextMenu.ref;
             savedRangeRef.current = null;
             setRefModalOpen(true);
@@ -810,15 +854,18 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
   const [linkModalText, setLinkModalText] = useState('');
   const [linkModalUrl, setLinkModalUrl] = useState('');
   const [linkModalRel, setLinkModalRel] = useState('');
+  const [linkModalTarget, setLinkModalTarget] = useState('');
   const savedRangeRef = useRef<Range | null>(null);
-  const existingLinkRef = useRef<{ text: string; url: string; rel: string } | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; link: { text: string; url: string; rel: string } } | null>(null);
+  const skipBlurRef = useRef(false);
+  const existingLinkRef = useRef<{ text: string; url: string; rel: string; target: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; link: { text: string; url: string; rel: string; target: string } } | null>(null);
   const [refModalOpen, setRefModalOpen] = useState(false);
   const [refModalUrl, setRefModalUrl] = useState('');
   const [refModalText, setRefModalText] = useState('');
   const [refModalStyle, setRefModalStyle] = useState<'numeric' | 'alphabetic' | 'greek' | 'abjad'>('numeric');
-  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad' } | null>(null);
-  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad' } } | null>(null);
+  const [refModalTarget, setRefModalTarget] = useState('');
+  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } | null>(null);
+  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } } | null>(null);
 
   useEffect(() => {
     const el = quoteRef.current;
@@ -828,6 +875,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
   }, [data.quote]);
 
   const openLinkModal = () => {
+    skipBlurRef.current = true;
     const el = quoteRef.current;
     if (!el) return;
     const existingLink = getLinkAtCursor(el);
@@ -835,6 +883,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
       setLinkModalText(existingLink.text);
       setLinkModalUrl(existingLink.url);
       setLinkModalRel(existingLink.rel);
+      setLinkModalTarget(existingLink.target);
       existingLinkRef.current = existingLink;
       savedRangeRef.current = null;
       setLinkModalOpen(true);
@@ -850,14 +899,18 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     setLinkModalText(selectedText);
     setLinkModalUrl('');
     setLinkModalRel('');
+    setLinkModalTarget('');
     setLinkModalOpen(true);
   };
 
-  const handleLinkConfirm = (url: string, rel: string) => {
+  const handleLinkConfirm = (url: string, rel: string, target: string) => {
     const el = quoteRef.current;
     if (!el) return;
-    const relPart = rel ? `{rel="${rel}"}` : '';
-    const markdownText = `[${linkModalText}](${url})${relPart}`;
+    const parts: string[] = [];
+    if (rel) parts.push(`rel="${rel}"`);
+    if (target) parts.push(`target="${target}"`);
+    const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
+    const markdownText = `[${linkModalText}](${url})${attrs}`;
     if (existingLinkRef.current) {
       const links = el.querySelectorAll('span.pulse-editor-link');
       links.forEach((span) => {
@@ -874,6 +927,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
       }
       document.execCommand('insertText', false, markdownText);
     }
+    skipBlurRef.current = false;
     setLinkModalOpen(false);
     existingLinkRef.current = null;
     savedRangeRef.current = null;
@@ -894,6 +948,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
         }
       });
     }
+    skipBlurRef.current = false;
     setLinkModalOpen(false);
     existingLinkRef.current = null;
     savedRangeRef.current = null;
@@ -904,6 +959,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
   };
 
   const openRefModal = () => {
+    skipBlurRef.current = true;
     const el = quoteRef.current;
     if (!el) return;
     const existingRef = getRefAtCursor(el);
@@ -911,6 +967,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
       setRefModalUrl(existingRef.url || '');
       setRefModalText(existingRef.text || '');
       setRefModalStyle(existingRef.style);
+      setRefModalTarget(existingRef.target || '');
       existingRefRef.current = existingRef;
       savedRangeRef.current = null;
       setRefModalOpen(true);
@@ -926,13 +983,15 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     setRefModalText(selectedText);
     setRefModalUrl('');
     setRefModalStyle('numeric');
+    setRefModalTarget('');
     setRefModalOpen(true);
   };
 
-  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad') => {
+  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string) => {
     const el = quoteRef.current;
     if (!el) return;
-    const markdownText = `[ref](${url}){text="${text}" style="${style}"}`;
+    const targetPart = target ? ` target="${target}"` : '';
+    const markdownText = `[ref](${url}){text="${text}" style="${style}"${targetPart}}`;
     if (existingRefRef.current) {
       const refs = el.querySelectorAll('span.pulse-editor-ref');
       refs.forEach((span) => {
@@ -950,6 +1009,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
       }
       document.execCommand('insertText', false, markdownText);
     }
+    skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
     savedRangeRef.current = null;
@@ -970,6 +1030,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
         }
       });
     }
+    skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
     savedRangeRef.current = null;
@@ -988,6 +1049,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
           suppressContentEditableWarning
           className="min-h-[1.5em] flex-1 outline-none"
           onBlur={(e) => {
+            if (skipBlurRef.current) return;
             const markdown = htmlToMarkdown(e.currentTarget.innerHTML);
             adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, quote: markdown } }));
           }}
@@ -1036,12 +1098,13 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
       />
       <LinkModal
         isOpen={linkModalOpen}
-        onClose={() => setLinkModalOpen(false)}
+        onClose={() => { skipBlurRef.current = false; setLinkModalOpen(false); }}
         onConfirm={handleLinkConfirm}
         onRemove={linkModalUrl ? handleLinkRemove : undefined}
         defaultText={linkModalText}
         defaultUrl={linkModalUrl}
         defaultRel={linkModalRel}
+        defaultTarget={linkModalTarget}
       />
       {contextMenu && (
         <LinkContextMenu
@@ -1051,6 +1114,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
             setLinkModalText(contextMenu.link.text);
             setLinkModalUrl(contextMenu.link.url);
             setLinkModalRel(contextMenu.link.rel);
+            setLinkModalTarget(contextMenu.link.target);
             existingLinkRef.current = contextMenu.link;
             savedRangeRef.current = null;
             setLinkModalOpen(true);
@@ -1076,12 +1140,13 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
       )}
       <RefModal
         isOpen={refModalOpen}
-        onClose={() => setRefModalOpen(false)}
+        onClose={() => { skipBlurRef.current = false; setRefModalOpen(false); }}
         onConfirm={handleRefConfirm}
         onRemove={existingRefRef.current ? handleRefRemove : undefined}
         defaultUrl={refModalUrl}
         defaultText={refModalText}
         defaultStyle={refModalStyle}
+        defaultTarget={refModalTarget}
       />
       {refContextMenu && (
         <RefContextMenu
@@ -1091,6 +1156,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
             setRefModalUrl(refContextMenu.ref.url || '');
             setRefModalText(refContextMenu.ref.text || '');
             setRefModalStyle(refContextMenu.ref.style);
+            setRefModalTarget(refContextMenu.ref.target || '');
             existingRefRef.current = refContextMenu.ref;
             savedRangeRef.current = null;
             setRefModalOpen(true);
@@ -1416,7 +1482,15 @@ export default function PulseDemoEditor() {
   // Keyboard shortcut: / opens palette when not in input
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName || '')) {
+      // Ctrl+/ or Cmd+/ opens palette from anywhere; plain / opens only when not typing in an input/textarea/contenteditable
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        setShowPalette(true);
+        return;
+      }
+      if (e.key === '/' && !e.shiftKey && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName || '')) {
+        const target = e.target as HTMLElement;
+        if (target.isContentEditable) return;
         e.preventDefault();
         setShowPalette(true);
       }

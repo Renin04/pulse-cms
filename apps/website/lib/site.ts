@@ -13,6 +13,10 @@ export function getSiteUrl(): string {
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
+  // Use localhost in development to avoid HTTPS metadata issues
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:3000';
+  }
   return 'https://pulse.studio';
 }
 

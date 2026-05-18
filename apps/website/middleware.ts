@@ -69,6 +69,15 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Skip rate limiting in development to avoid false 429s from shared localhost IP
+  if (process.env.NODE_ENV === 'development') {
+    const response = NextResponse.next();
+    for (const [key, value] of Object.entries(getCorsHeaders())) {
+      response.headers.set(key, value);
+    }
+    return response;
+  }
+
   // CORS preflight
   if (req.method === 'OPTIONS') {
     return new NextResponse(null, {

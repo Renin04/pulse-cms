@@ -6,7 +6,7 @@
 > and collect structured user feedback so Pulse is launch-ready as a complete
 > Editor + Renderer + CMS product.
 
-**Status:** 🟦 In Progress (L-1 next)  
+**Status:** ✅ Complete (L-1 through L-14 closed on 2026-05-16)  
 **Depends On:** Phase 3 closure (R3-1..R3-16), PM4 closure (PM4-1..PM4-12)  
 **Blocks:** Phase 4 AI implementation start (R4-1+)  
 **Estimated Sessions:** 14  
@@ -342,6 +342,71 @@ This gate is complete only when all criteria pass:
 **Date:** 2026-05-01  
 **Status:** ✅ Complete  
 **Notes:** Test matrices and checklists created. Two pre-existing P1 build/test bugs (L-0-001, L-0-002) fixed and verified. All quality gates pass. Ready for L-2 block QA.
+
+### L-2 — Basic Blocks QA
+**Date:** 2026-05-14  
+**Status:** ✅ Complete  
+**Notes:** 8/8 basic blocks PASS. One P1 bug found and fixed (L-2-001: hyphenated block type label keys).
+
+### L-3 — Media Blocks QA
+**Date:** 2026-05-15  
+**Status:** ✅ Complete  
+**Notes:** 4/4 media blocks PASS. Metadata fields round-trip correctly.
+
+### L-4 — Interactive Blocks QA
+**Date:** 2026-05-15  
+**Status:** ✅ Complete  
+**Notes:** 8/8 interactive blocks PASS. One P0 bug found and fixed (L-4-001: inline scripts stripped by React; replaced with client-side hydration).
+
+### L-5 — Advanced & Creative Blocks QA
+**Date:** 2026-05-15  
+**Status:** ✅ Complete  
+**Notes:** 17/17 advanced/creative blocks PASS. Verified in demo editor preview, editor panel, and live blog post. Desktop + mobile screenshots captured.
+
+### L-6 — Editor Core UX QA
+**Date:** 2026-05-15  
+**Status:** ✅ Complete  
+**Notes:** Slash palette, block insertion, duplication, deletion, reordering, preview toggle verified. One P1 bug fixed (L-6-001: `HistoryState` wired into `EditorStateAdapter` for undo/redo).
+
+### L-7 — Renderer QA — Layout & Responsive
+**Date:** 2026-05-15  
+**Status:** ✅ Complete  
+**Notes:** Breakpoints tested at 375px/768px/1024px/1400px. Two P1/P2 bugs fixed (L-7-001: table overflow-x wrapper; L-7-002: manga column cap on mobile).
+
+### L-8 — Renderer QA — Animation & Interaction
+**Date:** 2026-05-15  
+**Status:** ✅ Complete  
+**Notes:** Scroll animations, fade/slide, parallax, hover, click, forms, progress tracking verified. `prefers-reduced-motion` fallback confirmed. Performance audit baselines recorded.
+
+### L-9 — CMS End-to-End QA
+**Date:** 2026-05-15  
+**Status:** ✅ Complete  
+**Notes:** Full content lifecycle (draft → review → approve → schedule → publish) validated. Roles, media library, taxonomy, SEO metadata, webhooks verified.
+
+### L-10 — Website & Blog Dogfooding QA
+**Date:** 2026-05-15  
+**Status:** ✅ Complete  
+**Notes:** Realistic blog post authored in studio, previewed, published, and verified in `/blog` feed. Offline serving (`npm run serve:offline`) confirmed.
+
+### L-11 — Security Audit
+**Date:** 2026-05-16  
+**Status:** ✅ Complete  
+**Notes:** XSS injection tests passed (sanitized). CSP/HSTS headers added. Rate limiting and CORS restrictions implemented. API-key encryption behavior verified.
+
+### L-12 — Performance Audit
+**Date:** 2026-05-16  
+**Status:** ✅ Complete  
+**Notes:** Bundle sizes within targets. Large-document render performance acceptable. Animation throttle verified. Lazy-loading boundaries confirmed. Memory-leak check passed. Cross-browser baseline and PWA manifest added.
+
+### L-13 — Bug Bash & Regression Fix
+**Date:** 2026-05-16  
+**Status:** ✅ Complete  
+**Notes:** All P0 bugs closed. P1 bugs fixed or deferred with rationale. Regression tests written for every fixed bug. Re-run manual verification for affected blocks/features.
+
+### L-14 — Final Validation & Launch Sign-off
+**Date:** 2026-05-16  
+**Status:** ✅ Complete  
+**Notes:** All quality gates passed. `docs/launch/LAUNCH_SIGNOFF.md` created with evidence links. All docs and memory files synced. User approved launch readiness. Phase 4 is unblocked.
 
 ---
 

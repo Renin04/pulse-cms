@@ -59,12 +59,13 @@ Pulse/
 │   ├── core/          # Shared types, block registry, plugin system
 │   ├── editor/        # The block editor (authoring side)
 │   ├── renderer/      # The display engine (reading side)
-│   ├── ai/            # AI integration layer
+│   ├── ai/            # AI integration layer (Phase 4 — active)
 │   └── plugins/       # Official block plugins (quiz, poll, manga, etc.)
 ├── docs/              # Project documentation & agent files
 ├── apps/
 │   ├── playground/    # Programmatic editor fixture
-│   └── manual-lab/    # Interactive local test server + UI harness
+│   ├── manual-lab/    # Interactive local test server + UI harness
+│   └── website/       # Pulse marketing site + Pulse-powered blog
 └── ...
 ```
 
@@ -110,8 +111,20 @@ See `docs/AGENT_PROMPT.md` for the agent's operating instructions.
 
 ## Status
 
-🟦 **Pre-Migration gate active before Phase 3 (Renderer)**
+✅ **Launch Readiness Gate Complete — Phase 4 (AI) Unblocked**
 
-Phase 1 and Phase 2 implementation waves are complete, and all remaining Phase 1/2
-feature debt is now being closed under `phases/PHASE_PRE_MIGRATION_03.md` before
-renderer kickoff.
+- Phase 1 (Core Foundation) ✅
+- Phase 2 (Editor Experience) ✅
+- Phase 3 (Renderer, Display & UI) ✅
+- PM4 Migration Gate (Editor Parity + CMS Baseline + Website) ✅
+- Launch Readiness Gate (L-1 through L-14) ✅
+- **Phase 4 (AI Builder & Automation Runtime)** — 🟦 Ready to start
+
+---
+
+## Current Phase
+
+**Phase 4: AI Builder & Automation Runtime**
+
+Implementing the AI control center, inline AI flows, AI Builder tooling, automation runtime,
+and governance/audit infrastructure. See `phases/PHASE_04_AI.md` for the full plan.

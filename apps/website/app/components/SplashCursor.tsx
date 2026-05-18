@@ -30,6 +30,14 @@ function SplashCursor({
     let isActive = true;
     let initHandle: number | null = null;
 
+    // Handler refs defined in outer scope so cleanup can access them
+    // even if runInit hasn't executed yet
+    let handleMouseDown: ((e: MouseEvent) => void) | null = null;
+    let handleMouseMove: ((e: MouseEvent) => void) | null = null;
+    let handleTouchStart: ((e: TouchEvent) => void) | null = null;
+    let handleTouchMove: ((e: TouchEvent) => void) | null = null;
+    let handleTouchEnd: ((e: TouchEvent) => void) | null = null;
+
     const runInit = () => {
 
     function pointerPrototype() {
@@ -971,7 +979,8 @@ function SplashCursor({
     }
 
     // Named event handlers for proper cleanup
-    function handleMouseDown(e) {
+    let firstMouseMoveHandled = false;
+    handleMouseDown = function(e: MouseEvent) {
       let pointer = pointers[0];
       let posX = scaleByPixelRatio(e.clientX);
       let posY = scaleByPixelRatio(e.clientY);
@@ -979,8 +988,7 @@ function SplashCursor({
       clickSplat(pointer);
     }
 
-    let firstMouseMoveHandled = false;
-    function handleMouseMove(e) {
+    handleMouseMove = function(e: MouseEvent) {
       let pointer = pointers[0];
       let posX = scaleByPixelRatio(e.clientX);
       let posY = scaleByPixelRatio(e.clientY);
@@ -993,7 +1001,7 @@ function SplashCursor({
       }
     }
 
-    function handleTouchStart(e) {
+    handleTouchStart = function(e: TouchEvent) {
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
@@ -1003,7 +1011,7 @@ function SplashCursor({
       }
     }
 
-    function handleTouchMove(e) {
+    handleTouchMove = function(e: TouchEvent) {
       const touches = e.targetTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
@@ -1013,7 +1021,7 @@ function SplashCursor({
       }
     }
 
-    function handleTouchEnd(e) {
+    handleTouchEnd = function(e: TouchEvent) {
       const touches = e.changedTouches;
       let pointer = pointers[0];
       for (let i = 0; i < touches.length; i++) {
@@ -1055,12 +1063,12 @@ function SplashCursor({
         animationFrameId.current = null;
       }
 
-      // Remove event listeners
-      window.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
+      // Remove event listeners (guarded in case runInit never executed)
+      if (handleMouseDown) window.removeEventListener('mousedown', handleMouseDown);
+      if (handleMouseMove) window.removeEventListener('mousemove', handleMouseMove);
+      if (handleTouchStart) window.removeEventListener('touchstart', handleTouchStart);
+      if (handleTouchMove) window.removeEventListener('touchmove', handleTouchMove);
+      if (handleTouchEnd) window.removeEventListener('touchend', handleTouchEnd);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

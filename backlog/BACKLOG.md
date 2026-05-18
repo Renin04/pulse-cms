@@ -1,154 +1,155 @@
-﻿# Pulse â€” Development Backlog
+# Pulse — Development Backlog
 
 > This is the actionable work queue.  
 > Completed tasks must be removed from this file and archived in `backlog/DONE.md`.
 
-**Last Updated:** 2026-05-15  
-**Current Phase:** Launch Readiness Gate â€” Pre-Phase 4 Validation
+**Last Updated:** 2026-05-16  
+**Current Phase:** Phase 4 — AI Builder & Automation Runtime
 
 ---
 
-## ðŸŽ¯ Active Execution Backlog
+## 🎯 Active Execution Backlog
 
 Only tasks that are still open belong here.
 
-### Launch Readiness Gate
+### Phase 4: AI Builder & Automation Runtime
 
-Reference plan: `phases/PHASE_LAUNCH_READINESS.md`  
-Start prompt: `docs/prompt/PHASE_LAUNCH_KICKOFF.md`  
-Closeout prompt: `docs/prompt/PHASE_LAUNCH_CLOSEOUT.md`
+Reference plan: `phases/PHASE_04_AI.md`  
+Kickoff handoff: `docs/PHASE_04_AI_KICKOFF_CHECKLIST.md`
 
-#### Session L-1 â€” Test Strategy & Environment Setup
-- âœ… Create `docs/launch/BLOCK_TEST_MATRIX.md` covering all block types.
-- âœ… Create `docs/launch/SECURITY_AUDIT_CHECKLIST.md`.
-- âœ… Create `docs/launch/PERF_AUDIT_CHECKLIST.md`.
-- âœ… Define severity labels and `docs/launch/BUG_LOG.md` template.
-- âœ… Harden build/test environment: fix root `npm run build` (L-0-001) and website snapshot test path (L-0-002).
+#### R4-1 — AI package scaffold + capability contracts
+- ⬜ Create `packages/ai` package structure (src/, tests/, package.json, tsconfig)
+- ⬜ Define capability interfaces: `text_generation`, `image_generation`, `builder_tools`, `automation`
+- ⬜ Add capability resolution registry and base tests
 
-#### Session L-2 â€” Basic Blocks QA (Editor + Renderer)
-- âœ… Automated verification: Paragraph, Heading, List, Blockquote, Code, Inline Code, HR, Link, Image.
-- âœ… Validate renderer SSR and hydrated output (Puppeteer + DOM inspection).
-- âœ… Validate mobile rendering (375px viewport).
-- âœ… Validate edit data persistence (editor loads all blocks with correct fields).
-- âœ… Manual verification: insert via slash, shortcut, and context menu (via Puppeteer demo editor).
-- âœ… Copy/paste round-trip (tested via block duplication in demo editor).
-- âœ… Log defects in `docs/launch/BUG_LOG.md` (L-2-001 found and fixed).
+#### R4-2 — AI brief and context model
+- ⬜ Implement document-level AI brief schema and storage
+- ⬜ Implement context pack resolver (topic + nearby blocks + selection)
+- ⬜ Add tests for context assembly determinism
 
-#### Session L-3 â€” Media Blocks QA
-- âœ… Manual verification: Image (extended metadata), Video, Audio, File, Embed.
-- âœ… Validate metadata fields: alt, title, credit, source, license.
-- âœ… Validate renderer attribution exposure.
-- âœ… Log defects (none found).
+#### R4-3 — Inline invocation UX
+- ⬜ Implement inline AI launcher (`Cmd/Ctrl + J`) and selection-aware commands
+- ⬜ Add apply modes (`replace`, `append`, `new block`) with preview state
+- ⬜ Add interaction tests around cursor/selection transitions
 
-#### Session L-4 â€” Interactive Blocks QA
-- âœ… Manual verification: Quiz, Poll, Survey, Flashcard, Accordion, Tabs, Toggle, Spoiler.
-- âœ… Validate interactivity in renderer and SSR fallback.
-- âœ… Log defects.
+#### R4-4 — Provider registry GUI
+- ⬜ Build provider management panel (add/edit/remove provider, endpoint, auth mode)
+- ⬜ Build AI Studio tabs for feature/command/shortcut/action/automation catalogs
+- ⬜ Add provider validation and health-check probe flow
+- ⬜ Add UI tests for provider panel state transitions
 
-#### Session L-5 â€” Advanced & Creative Blocks QA
-- âœ… Manual verification: Table, Chart, Map, Code Playground, Math, Diagram, Timeline,
-  Comparison, Before/After, Manga, Speech Bubble, Callout, Alert, Card, Hero, Gallery,
-  Carousel, Annotated Image.
-- âœ… Validate lazy loading for heavy blocks.
-- âœ… Log defects.
+#### R4-5 — Secure key and model profile management
+- ⬜ Implement secure API key storage integration path
+- ⬜ Implement model profile CRUD (temperature, max tokens, timeout, budgets)
+- ⬜ Add tests for key redaction and profile fallback behavior
 
-#### Session L-6 â€” Editor Core UX QA
-- â¬œ Validate slash commands, backslash macros, shortcuts, context menus, toolbar.
-- â¬œ Validate DnD, clipboard, undo/redo, multi-select, block search, templates.
-- â¬œ Validate bidirectional input safety.
-- â¬œ Log defects.
+#### R4-6 — Capability router (text vs image split)
+- ⬜ Implement capability router with independent text and image model routes
+- ⬜ Implement fallback chain policy by capability
+- ⬜ Add routing tests for model failure and fallback selection
 
-#### Session L-7 â€” Renderer QA â€” Layout & Responsive
-- â¬œ Validate layout modes: single-column, multi-column, grid, manga, full-width, sticky.
-- â¬œ Validate responsive behavior across mobile/tablet/desktop.
-- â¬œ Log defects.
+#### R4-7 — Tool runtime foundation
+- ⬜ Build tool invocation contract with strict input/output schemas
+- ⬜ Add permission levels (`read`, `suggest`, `apply-with-approval`)
+- ⬜ Add audit envelope and trace ID generation
 
-#### Session L-8 â€” Renderer QA â€” Animation & Interaction
-- â¬œ Validate scroll animations, fade/slide, parallax, hover, click, forms, progress.
-- â¬œ Validate `prefers-reduced-motion` fallback.
-- â¬œ Log defects.
+#### R4-8 — AI Builder: block creation toolchain
+- ⬜ Implement `createBlockType` tool flow (schema + registration patch proposal)
+- ⬜ Add generated test scaffolding and docs draft output
+- ⬜ Add approval gate before any write action
 
-#### Session L-9 â€” CMS End-to-End QA
-- â¬œ Execute full content lifecycle: draft â†’ review â†’ approve â†’ schedule â†’ publish.
-- â¬œ Validate roles, media library, taxonomy, SEO metadata, webhooks.
-- â¬œ Log defects.
+#### R4-9 — AI Builder: command/shortcut/macro tools
+- ⬜ Implement `addCommand`, `addShortcut`, `addMacro` tools
+- ⬜ Implement conflict checks and rollback-safe proposals
+- ⬜ Add regression tests for command and shortcut generation
 
-#### Session L-10 â€” Website & Blog Dogfooding QA
-- â¬œ Author a realistic post in the studio and verify preview + published feed.
-- â¬œ Verify offline serving (`npm run serve:offline`).
-- â¬œ Log defects.
+#### R4-10 — AI Builder: AI action generator (meta-builder)
+- ⬜ Implement `createAiAction` tool to register new AI actions
+- ⬜ Support action metadata (name, category, params, safety level)
+- ⬜ Auto-refresh AI Studio catalogs after generated-action registration
+- ⬜ Add tests for action registry updates and validation failure cases
 
-#### Session L-11 â€” Security Audit
-- â¬œ Run XSS injection tests in block data and URLs.
-- â¬œ Review CSP, CORS, and API-key encryption behavior.
-- â¬œ Log findings and fix launch-blocking issues.
+#### R4-11 — Automation engine core
+- ⬜ Implement trigger/condition/action runtime engine
+- ⬜ Add run orchestration with retries, timeouts, and deterministic logs
+- ⬜ Add tests for multi-step automation execution
 
-#### Session L-12 â€” Performance Audit
-- â¬œ Measure bundle sizes and compare to architecture targets.
-- â¬œ Profile render and animation performance.
-- â¬œ Check for memory leaks.
-- â¬œ Log findings and fix launch-blocking issues.
+#### R4-12 — Silent automation mode
+- ⬜ Implement policy-driven silent runs (pre-approved action scopes only)
+- ⬜ Add budget ceilings (token/cost/run-frequency)
+- ⬜ Add tests for silent mode guardrail violations
 
-#### Session L-13 â€” Bug Bash & Regression Fix
-- â¬œ Triage `docs/launch/BUG_LOG.md` and fix all P0 bugs.
-- â¬œ Fix P1 bugs as capacity allows; defer remaining with rationale.
-- â¬œ Re-run affected tests and manual verification.
+#### R4-13 — Automation recipe builder UX
+- ⬜ Implement GUI builder for automation recipes
+- ⬜ Support schedule, publish, and manual triggers
+- ⬜ Add tests for recipe validation and persistence
 
-#### Session L-14 â€” Final Validation & Launch Sign-off
-- â¬œ Run full quality gates: `docs:check`, `lint`, `typecheck`, `build`, `test`.
-- â¬œ Create `docs/launch/LAUNCH_SIGNOFF.md`.
-- â¬œ Sync all docs and memory files.
-- â¬œ Get user approval for launch readiness.
+#### R4-14 — Image generation flow
+- ⬜ Implement image request pipeline with separate image model route
+- ⬜ Add prompt helper, style presets, regenerate/variation actions
+- ⬜ Add tests for image workflow fallback and metadata payload
+
+#### R4-15 — Media enrichment
+- ⬜ Implement auto alt-text and caption suggestions
+- ⬜ Implement style-to-theme matching hints for generated media
+- ⬜ Add tests for accessibility metadata completeness
+
+#### R4-16 — Safety and governance hardening
+- ⬜ Implement prompt injection defenses and policy guardrails
+- ⬜ Implement redaction options and confidence/hallucination risk tags
+- ⬜ Add policy enforcement and rejection-path tests
+
+#### R4-17 — Auditability and observability
+- ⬜ Implement action audit stream + searchable execution history
+- ⬜ Add trace correlation between UI action and tool/runtime logs
+- ⬜ Add tests for audit completeness and replay references
+
+#### R4-18 — Stabilization and handoff
+- ⬜ Run full quality gates and fix Phase 4 regressions
+- ⬜ Close all Phase 4 `docs/FEATURES.md` rows
+- ⬜ Document handoff contracts for Phase 5 (SEO Intelligence)
 
 ---
 
-## ðŸ”® Future Roadmap (Not Active Yet)
+## 🔮 Future Roadmap (Not Active Yet)
 
-These items are intentionally parked until the Launch Readiness Gate closes.
-
-### Phase 4: AI Builder & Automation Runtime
-Reference plan: `phases/PHASE_04_AI.md`  
-Kickoff handoff: `docs/PHASE_04_AI_KICKOFF_CHECKLIST.md`
-- â¬œ R4-1: Scaffold `@pulse/ai` + capability contracts
-- â¬œ R4-2 through R4-18: AI workspace, invocation UX, provider GUI, builder runtime,
-  automation engine, media intelligence, safety/audit, stabilization
+These items are intentionally parked until Phase 4 closes.
 
 ### Phase 5: SEO Intelligence
 Reference plan: `phases/PHASE_05_SEO.md`
-- â¬œ Add SEO brief and keyword/intent planning workflows
-- â¬œ Add on-page optimization (title/meta/slug/headings/internal links)
-- â¬œ Add schema/FAQ/rich-snippet assistants
-- â¬œ Add pre-publish SEO score and SEO automations
+- ⬜ Add SEO brief and keyword/intent planning workflows
+- ⬜ Add on-page optimization (title/meta/slug/headings/internal links)
+- ⬜ Add schema/FAQ/rich-snippet assistants
+- ⬜ Add pre-publish SEO score and SEO automations
 
 ### Phase 6: Production Hardening
 Reference plan: `phases/PHASE_06_PRODUCTION.md`
-- â¬œ Complete packaging/release operations (npm/CDN/changelog/migrations)
-- â¬œ Complete observability/testing hardening (E2E/visual/performance monitoring)
-- â¬œ Complete developer/documentation surfaces (API docs/guides/examples)
-- â¬œ Complete platform expansion (adapters, i18n, security hardening)
+- ⬜ Complete packaging/release operations (npm/CDN/changelog/migrations)
+- ⬜ Complete observability/testing hardening (E2E/visual/performance monitoring)
+- ⬜ Complete developer/documentation surfaces (API docs/guides/examples)
+- ⬜ Complete platform expansion (adapters, i18n, security hardening)
 
 ---
 
-## â¸ï¸ Blocked Tasks
+## ⏸️ Blocked Tasks
 
 - Playwright/browser-dependent website E2E remains blocked by the current network/browser-install constraint.
 
 ---
 
-## ðŸ—‘ï¸ Cancelled Tasks
+## 🗑️ Cancelled Tasks
 
 *No cancelled tasks yet.*
 
 ---
 
-## ðŸ“ Backlog Hygiene Rules
+## 📝 Backlog Hygiene Rules
 
 - Keep this file limited to **not completed** tasks.
 - Move done work to `backlog/DONE.md` in the same session.
-- Do not keep `- âœ…` checklist items in this file.
+- Do not keep `- ✅` checklist items in this file.
 - Automated check: run `npm run docs:check` (also included in `npm run ci:local`).
 
 ---
 
-**Current Goal:** Proceed to L-4 Interactive Blocks QA.
-
+**Current Goal:** Execute R4-1 — scaffold `@pulse/ai` and define capability contracts.

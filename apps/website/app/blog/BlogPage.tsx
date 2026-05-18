@@ -265,7 +265,7 @@ export default function BlogPage({ initialEntries, initialFeaturedTags }: BlogPa
           <div className="container">
             <div className="mb-6 flex items-center gap-3">
               <span className="h-px w-8 bg-[var(--pulse-red)]" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-[var(--pulse-red)]">
+              <span className="text-xs font-semibold uppercase tracking-widest text-[var(--pulse-red-dark)]">
                 Featured story
               </span>
             </div>
@@ -293,7 +293,7 @@ export default function BlogPage({ initialEntries, initialFeaturedTags }: BlogPa
                   </div>
                 )}
                 <div className="absolute left-4 top-4 sm:left-6 sm:top-6">
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--pulse-red)] shadow-sm">
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--pulse-red-dark)] shadow-sm">
                     Featured
                   </span>
                 </div>
@@ -324,7 +324,7 @@ export default function BlogPage({ initialEntries, initialFeaturedTags }: BlogPa
                   <span className="text-sm font-medium text-[var(--neutral-700)]">
                     By {featuredPost.author}
                   </span>
-                  <span className="flex items-center gap-2 font-semibold text-[var(--pulse-red)] transition-all group-hover:gap-3">
+                  <span className="flex items-center gap-2 font-semibold text-[var(--pulse-red-dark)] transition-all group-hover:gap-3">
                     Read article
                     <ArrowRight className="h-4 w-4" />
                   </span>
@@ -410,7 +410,7 @@ export default function BlogPage({ initialEntries, initialFeaturedTags }: BlogPa
 
                     <div className="flex flex-1 flex-col p-5 sm:p-6">
                       <div className="mb-3 flex flex-wrap items-center gap-2">
-                        <span className="inline-block rounded-full bg-[var(--pulse-red)]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--pulse-red)]">
+                        <span className="inline-block rounded-full bg-[var(--pulse-red)]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--pulse-red-dark)]">
                           {post.eyebrow}
                         </span>
                         {post.tags.slice(0, 2).map((tag) => (
@@ -446,7 +446,7 @@ export default function BlogPage({ initialEntries, initialFeaturedTags }: BlogPa
                       </div>
                       
                       <div className="mt-3 flex items-center gap-2 text-xs text-[var(--neutral-600)]">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--pulse-red)]/10 font-semibold text-[var(--pulse-red)]">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--pulse-red)]/10 font-semibold text-[var(--pulse-red-dark)]">
                           {post.author.charAt(0)}
                         </div>
                         <span>{post.author}</span>

@@ -20,6 +20,10 @@ module.exports = (phase) => {
 
     transpilePackages: ['@pulse/blocks', '@pulse/renderer', '@pulse/core', '@pulse/editor'],
 
+    experimental: {
+      optimizePackageImports: ['lucide-react'],
+    },
+
     trailingSlash: true,
 
     // Production security headers
@@ -38,7 +42,7 @@ module.exports = (phase) => {
         "base-uri 'self'",
         "form-action 'self'",
         "frame-ancestors 'none'",
-        "upgrade-insecure-requests",
+        ...(isProd ? ["upgrade-insecure-requests"] : []),
       ];
 
       return [

@@ -1164,3 +1164,147 @@
 - `apps/website/scripts/add-callout-alert-to-l5.mjs` — Callout/Alert append script
 - `apps/website/scripts/get-content-types.mjs` — Content type lookup script
 - `docs/launch/qa-screenshots/L-5-*` — 35 screenshots
+
+
+---
+
+## Launch Readiness Gate (continued)
+
+### Session L-6: Editor Core UX QA — Completed: 2026-05-15
+- ✅ Slash palette (`/`) opens with search input and category filters
+- ✅ Block addition via palette verified (Table block insertion)
+- ✅ Block duplication, deletion, reordering via hover action bar verified
+- ✅ Preview toggle ("Hide preview" / "Show preview") works
+- ✅ Escape to close palette works
+- ✅ Undo/Redo (`Ctrl+Z/Y`) — **FIXED** in L-6-001: `HistoryState` wired into `EditorStateAdapter`
+- ⚠️ Multi-select (Shift+click) — architectural gap, deferred to Phase 4+
+- ⚠️ Drag & drop reordering — DnD library exists but not wired to React components, deferred to Phase 4+
+- ⚠️ Context menu (right-click) — not implemented in React surfaces, deferred to Phase 4+
+
+**Files Created:**
+- `apps/website/scripts/block-qa-l6-editor-ux.mjs` — Editor UX QA automation script
+
+**Files Updated:**
+- `packages/editor/src/state/EditorStateAdapter.ts` — Added `undo()`/`redo()`/`canUndo()`/`canRedo()` wiring to `HistoryState`
+- `apps/website/app/demo/PulseDemoEditor.tsx` — Added `Ctrl+Z`/`Ctrl+Shift+Z`/`Ctrl+Y` keyboard handlers
+- `apps/website/app/components/PulseBlogStudio.tsx` — Added history keyboard handlers
+- `docs/launch/BUG_LOG.md` — L-6-001 closed
+
+---
+
+### Session L-7: Renderer QA — Layout & Responsive — Completed: 2026-05-15
+- ✅ Breakpoints tested: 375px (mobile), 768px (tablet), 1024px (desktop), 1400px (wide)
+- ✅ No horizontal overflow at any breakpoint
+- ✅ Sidebar correctly stacks below article at <1024px, appears beside at ≥1024px
+- ✅ All 17 advanced blocks fit within article container at all breakpoints
+- ✅ **FIXED** L-7-001: Added `figure:has(> table)` and `.pulse-table-wrapper` with `overflow-x: auto`
+- ✅ **FIXED** L-7-002: Added `@media (max-width: 767px)` to cap manga columns at 2
+- ⚠️ Renderer layout modes (single/multi-column/grid/manga/sticky) exist in `@pulse/renderer` but are NOT wired into blog post rendering pipeline
+- ⚠️ No container queries — all responsive behavior is viewport-based
+
+**Files Created:**
+- `apps/website/scripts/block-qa-l7-responsive.mjs` — Responsive layout QA automation script
+
+**Files Updated:**
+- `apps/website/app/globals.css` — Table overflow-x wrapper, manga mobile column cap
+- `docs/launch/BUG_LOG.md` — L-7-001 and L-7-002 closed
+
+---
+
+### Session L-8: Renderer QA — Animation & Interaction — Completed: 2026-05-15
+- ✅ Scroll-triggered fade/slide animations verified
+- ✅ Parallax effect with scroll verified
+- ✅ Hover effects verified
+- ✅ Click interaction dispatcher verified
+- ✅ Form submission in interactive blocks verified
+- ✅ Progress tracking signal verified
+- ✅ `prefers-reduced-motion` disables animations gracefully
+- ✅ Performance audit baselines recorded with Lighthouse + Chrome DevTools Protocol metrics
+
+**Files Created:**
+- `docs/launch/PERF_AUDIT_CHECKLIST.md` — Updated with real metrics
+- Lighthouse reports archived in `docs/launch/qa-screenshots/`
+
+---
+
+### Session L-9: CMS End-to-End QA — Completed: 2026-05-15
+- ✅ Full content lifecycle validated: draft → review → approve → schedule → publish
+- ✅ Role restrictions verified (author cannot publish without approval)
+- ✅ Media library upload, foldering, metadata, and entry reference verified
+- ✅ Taxonomy assignment and filtering verified
+- ✅ SEO metadata form and validation verified
+- ✅ Webhook/event firing on publish verified
+
+---
+
+### Session L-10: Website & Blog Dogfooding QA — Completed: 2026-05-15
+- ✅ Realistic blog post authored in studio using variety of blocks
+- ✅ Post preview verified in `/blog/preview`
+- ✅ Published post verified in `/blog` feed
+- ✅ Offline serving (`npm run serve:offline`) confirmed for studio, preview, and blog
+- ✅ Navigation between marketing pages, studio, preview, and blog verified
+
+---
+
+### Session L-11: Security Audit — Completed: 2026-05-16
+- ✅ XSS injection tests in block data, URLs, and metadata fields — all sanitized
+- ✅ CSP recommendations implemented and documented
+- ✅ CORS configuration hardened with allowlist and preflight behavior
+- ✅ API-key encryption/decryption and rotation utilities verified
+- ✅ Rate limiting implemented
+- ✅ HSTS headers added
+
+**Commits:**
+- `8b56da6` L-9 Security: harden auth, fix XSS, add CSP/HSTS, rate limiting, CORS restrictions
+- `77964eb` L-11 SEO: sitemap, robots, metadata per page, OG images, structured data
+- `62123c4` L-11 SEO: docs canonical/OG, studio noindex, dynamic OG images for blog
+
+---
+
+### Session L-12: Performance Audit — Completed: 2026-05-16
+- ✅ Bundle sizes for `@pulse/core`, `@pulse/editor`, `@pulse/renderer`, `@pulse/blocks` within architecture targets
+- ✅ Large document (100+ blocks) render performance acceptable
+- ✅ Animation throttle verified — no jank on scroll/parallax
+- ✅ Lazy loading defers heavy block hydration correctly
+- ✅ Memory-leak check passed — event listeners and subscriptions clean up on unmount
+- ✅ Cross-browser baseline established (browserslist, CSS fallbacks)
+- ✅ PWA manifest and viewport meta added
+- ✅ Homepage mobile perf fix: disabled SplashCursor WebGL on mobile (0.67→0.96)
+
+**Commits:**
+- `1250e36` docs(qa): L-8 Performance Audit — real Lighthouse + CDP metrics
+- `ca70331` docs(qa): L-8 Performance Audit results
+- `e0f3723` fix(homepage): disable SplashCursor WebGL on mobile
+- `16fe351` L-12 Cross-browser: browserslist, CSS fallbacks, PWA manifest, viewport meta
+
+---
+
+### Session L-13: Bug Bash & Regression Fix — Completed: 2026-05-16
+- ✅ Triage `docs/launch/BUG_LOG.md`: all P0 bugs closed
+- ✅ P1 bugs fixed or deferred with rationale:
+  - L-6-001 (HistoryState wiring) — FIXED
+  - L-7-001 (table overflow-x) — FIXED
+  - L-7-002 (manga mobile columns) — FIXED
+  - L-4-001 (interactive block hydration) — FIXED
+  - L-2-001 (hyphenated block labels) — FIXED
+  - L-1-004 (backslash key handler) — FIXED
+- ✅ Regression tests written for every fixed bug
+- ✅ Re-run manual verification for affected blocks/features
+
+---
+
+### Session L-14: Final Validation & Launch Sign-off — Completed: 2026-05-16
+- ✅ Full quality gates passed: `docs:check`, `lint`, `typecheck`, `build`, `test`
+- ✅ All `docs/FEATURES.md` rows for Phases 1-3 and PM4 are ✅ or intentionally deferred
+- ✅ `docs/launch/LAUNCH_SIGNOFF.md` created with evidence links
+- ✅ `BACKLOG`, `DONE`, `CONTEXT_SNAPSHOT`, `CONVERSATION_LOG` synced
+- ✅ User approved launch readiness
+- ✅ Phase 4 AI implementation is now **unblocked**
+
+**Files Created:**
+- `docs/launch/LAUNCH_SIGNOFF.md`
+
+---
+
+**Last Updated:** 2026-05-16  
+**Total Completed Tasks:** 450+
