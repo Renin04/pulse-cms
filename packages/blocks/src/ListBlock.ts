@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import type { BlockTypeDefinition } from "./types";
-import { escapeHtml, parseJson } from "./types";
+import { escapeHtml, parseJson, sanitizeUrl } from "./types";
+import { formatReferenceNumber, type ReferenceStyle } from "./ReferenceBlock";
 
 export type ListStyle = "unordered" | "numeric" | "roman" | "abjad";
 
@@ -16,6 +17,57 @@ const ABJAD_LETTERS = [
   "ا", "ب", "ج", "د", "ه", "و", "ز", "ح", "ط", "ي", "ك", "ل", "م", "ن",
   "س", "ع", "ف", "ص", "ق", "ر", "ش", "ت", "ث", "خ", "ذ", "ض", "ظ", "غ",
 ];
+
+function renderInlineMarkdown(text: string): string {
+  const regex = /\[([^\]]+)\]\(([^)]+)\)(?:\{([^}]*)\})?/g;
+  let result = "";
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    result += escapeHtml(text.slice(lastIndex, match.index)).replace(/\n/g, "<br />");
+    const label = match[1];
+    const url = match[2];
+    const attrs = match[3] || "";
+
+    const safeUrl = sanitizeUrl(url);
+    if (label === "ref") {
+      const textMatch = attrs.match(/text="([^"]*)"/);
+      const styleMatch = attrs.match(/style="([^"]*)"/);
+      const targetMatch = attrs.match(/target="([^"]*)"/);
+      const relMatch = attrs.match(/rel="([^"]*)"/);
+      const refText = textMatch ? textMatch[1] : "";
+      const style = (styleMatch ? styleMatch[1] : "numeric") as ReferenceStyle;
+      const target = targetMatch ? targetMatch[1] : "";
+      const rel = relMatch ? relMatch[1] : "";
+      const num = formatReferenceNumber(1, style);
+      const titleAttr = refText ? ` title="${escapeHtml(refText)}"` : "";
+      const targetAttr = target ? ` target="${escapeHtml(target)}"` : "";
+      const relAttr = rel ? ` rel="${escapeHtml(rel)}"` : "";
+      if (safeUrl) {
+        result += `<sup class="pulse-reference"><a href="${escapeHtml(safeUrl)}"${titleAttr}${targetAttr}${relAttr}>${num}</a></sup>`;
+      } else {
+        result += escapeHtml(match[0]);
+      }
+    } else {
+      const relMatch = attrs.match(/rel="([^"]*)"/);
+      const rel = relMatch ? relMatch[1] : "";
+      const targetMatch = attrs.match(/target="([^"]*)"/);
+      const target = targetMatch ? targetMatch[1] : "";
+      const relAttr = rel ? ` rel="${escapeHtml(rel)}"` : "";
+      const targetAttr = target ? ` target="${escapeHtml(target)}"` : "";
+      if (safeUrl) {
+        result += `<a href="${escapeHtml(safeUrl)}"${relAttr}${targetAttr}>${escapeHtml(label)}</a>`;
+      } else {
+        result += escapeHtml(match[0]);
+      }
+    }
+    lastIndex = match.index + match[0].length;
+  }
+
+  result += escapeHtml(text.slice(lastIndex)).replace(/\n/g, "<br />");
+  return result;
+}
 
 function getAbjadLetter(index: number): string {
   // index is 1-based
@@ -83,7 +135,7 @@ export const ListBlock: BlockTypeDefinition<ListBlockData> = {
 
     if (parsed.style === "unordered") {
       const items = parsed.items
-        .map((item) => `<li>${escapeHtml(item)}</li>`)
+        .map((item) => `<li>${renderInlineMarkdown(item)}</li>`)
         .join("");
       return `<ul data-block-type="list"${alignAttr}>${items}</ul>`;
     }
@@ -95,7 +147,7 @@ export const ListBlock: BlockTypeDefinition<ListBlockData> = {
       const items = parsed.items
         .map((item, i) => {
           const marker = getAbjadLetter(i + startIndex);
-          return `<li data-marker="${escapeHtml(marker)}">${escapeHtml(item)}</li>`;
+          return `<li data-marker="${escapeHtml(marker)}">${renderInlineMarkdown(item)}</li>`;
         })
         .join("");
       return `<ol${startAttribute} data-block-type="list" data-list-style="abjad"${alignAttr}>${items}</ol>`;
@@ -103,7 +155,7 @@ export const ListBlock: BlockTypeDefinition<ListBlockData> = {
 
     const listStyleClass = parsed.style === "roman" ? "pulse-list-roman" : "pulse-list-numeric";
     const items = parsed.items
-      .map((item) => `<li>${escapeHtml(item)}</li>`)
+      .map((item) => `<li>${renderInlineMarkdown(item)}</li>`)
       .join("");
     return `<ol${startAttribute} data-block-type="list" class="${listStyleClass}"${alignAttr}>${items}</ol>`;
   },

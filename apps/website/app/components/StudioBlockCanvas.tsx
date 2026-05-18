@@ -1304,66 +1304,455 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     { value: 'abjad', label: 'ابجد' },
   ];
 
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [linkModalText, setLinkModalText] = useState('');
+  const [linkModalUrl, setLinkModalUrl] = useState('');
+  const [linkModalRel, setLinkModalRel] = useState('');
+  const [linkModalTarget, setLinkModalTarget] = useState('');
+  const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+  const savedRangeRef = useRef<Range | null>(null);
+  const skipBlurRef = useRef(false);
+  const existingLinkRef = useRef<{ text: string; url: string; rel: string; target: string } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; link: { text: string; url: string; rel: string; target: string }; itemIndex: number } | null>(null);
+  const [refModalOpen, setRefModalOpen] = useState(false);
+  const [refModalUrl, setRefModalUrl] = useState('');
+  const [refModalText, setRefModalText] = useState('');
+  const [refModalStyle, setRefModalStyle] = useState<'numeric' | 'alphabetic' | 'greek' | 'abjad'>('numeric');
+  const [refModalTarget, setRefModalTarget] = useState('');
+  const [refModalRel, setRefModalRel] = useState('');
+  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string } | null>(null);
+  const existingRefElementRef = useRef<HTMLElement | null>(null);
+  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string }; element: HTMLElement; itemIndex: number } | null>(null);
+
+  // Sync innerHTML whenever block items change (safe because data.items only changes on blur/save)
+  useLayoutEffect(() => {
+    data.items.forEach((item, i) => {
+      const el = itemRefs.current[i];
+      if (el && el.innerHTML !== markdownToHtml(item)) {
+        el.innerHTML = markdownToHtml(item);
+      }
+    });
+  }, [data.items]);
+
+  const openLinkModal = (itemIndex: number) => {
+    const el = itemRefs.current[itemIndex];
+    if (!el) return;
+    skipBlurRef.current = true;
+    setActiveItemIndex(itemIndex);
+
+    const existingLink = getLinkAtCursor(el);
+    if (existingLink) {
+      setLinkModalText(existingLink.text);
+      setLinkModalUrl(existingLink.url);
+      setLinkModalRel(existingLink.rel);
+      setLinkModalTarget(existingLink.target);
+      existingLinkRef.current = existingLink;
+      savedRangeRef.current = null;
+      setLinkModalOpen(true);
+      return;
+    }
+
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+    if (!selectedText) return;
+    if (selection && selection.rangeCount > 0) {
+      savedRangeRef.current = selection.getRangeAt(0).cloneRange();
+    }
+    existingLinkRef.current = null;
+    setLinkModalText(selectedText);
+    setLinkModalUrl('');
+    setLinkModalRel('');
+    setLinkModalTarget('');
+    setLinkModalOpen(true);
+  };
+
+  const handleLinkConfirm = (url: string, rel: string, target: string) => {
+    if (activeItemIndex === null) return;
+    const el = itemRefs.current[activeItemIndex];
+    if (!el) return;
+    skipBlurRef.current = false;
+    const parts: string[] = [];
+    if (rel) parts.push(`rel="${rel}"`);
+    if (target) parts.push(`target="${target}"`);
+    const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
+    const markdownText = `[${linkModalText}](${url})${attrs}`;
+
+    if (existingLinkRef.current) {
+      const links = el.querySelectorAll('span.pulse-editor-link');
+      links.forEach((span) => {
+        if (span.textContent?.trim() === existingLinkRef.current?.text && span.getAttribute('data-url') === existingLinkRef.current?.url) {
+          span.replaceWith(document.createTextNode(markdownText));
+        }
+      });
+    } else if (savedRangeRef.current) {
+      el.focus();
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(savedRangeRef.current);
+      }
+      document.execCommand('insertText', false, markdownText);
+    }
+
+    skipBlurRef.current = false;
+    setLinkModalOpen(false);
+    existingLinkRef.current = null;
+    savedRangeRef.current = null;
+    setActiveItemIndex(null);
+    setTimeout(() => {
+      const markdown = htmlToMarkdown(el.innerHTML);
+      const next = [...data.items];
+      next[activeItemIndex] = markdown;
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next } }));
+    }, 0);
+  };
+
+  const handleLinkRemove = () => {
+    if (activeItemIndex === null) return;
+    const el = itemRefs.current[activeItemIndex];
+    if (!el) return;
+    skipBlurRef.current = false;
+
+    if (existingLinkRef.current) {
+      const links = el.querySelectorAll('span.pulse-editor-link');
+      links.forEach((span) => {
+        if (span.textContent?.trim() === existingLinkRef.current?.text && span.getAttribute('data-url') === existingLinkRef.current?.url) {
+          span.replaceWith(document.createTextNode(existingLinkRef.current.text));
+        }
+      });
+    }
+
+    skipBlurRef.current = false;
+    setLinkModalOpen(false);
+    existingLinkRef.current = null;
+    savedRangeRef.current = null;
+    setActiveItemIndex(null);
+    setTimeout(() => {
+      const markdown = htmlToMarkdown(el.innerHTML);
+      const next = [...data.items];
+      next[activeItemIndex] = markdown;
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next } }));
+    }, 0);
+  };
+
+  const openRefModal = (itemIndex: number) => {
+    const el = itemRefs.current[itemIndex];
+    if (!el) return;
+    skipBlurRef.current = true;
+    setActiveItemIndex(itemIndex);
+    const existingRef = getRefAtCursor(el);
+    if (existingRef) {
+      setRefModalUrl(existingRef.url || '');
+      setRefModalText(existingRef.text || '');
+      setRefModalStyle(existingRef.style);
+      setRefModalTarget(existingRef.target || '');
+      setRefModalRel(existingRef.rel || '');
+      existingRefRef.current = existingRef;
+      existingRefElementRef.current = getRefElementAtCursor(el);
+      savedRangeRef.current = null;
+      setRefModalOpen(true);
+      return;
+    }
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+    if (!selectedText) return;
+    if (selection && selection.rangeCount > 0) {
+      savedRangeRef.current = selection.getRangeAt(0).cloneRange();
+    }
+    existingRefRef.current = null;
+    existingRefElementRef.current = null;
+    setRefModalText(selectedText);
+    setRefModalUrl('');
+    setRefModalStyle('numeric');
+    setRefModalTarget('');
+    setRefModalRel('');
+    setRefModalOpen(true);
+  };
+
+  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string, rel: string) => {
+    if (activeItemIndex === null) return;
+    const el = itemRefs.current[activeItemIndex];
+    if (!el) return;
+    skipBlurRef.current = false;
+    const parts: string[] = [];
+    parts.push(`text="${text}"`);
+    parts.push(`style="${style}"`);
+    if (target) parts.push(`target="${target}"`);
+    if (rel) parts.push(`rel="${rel}"`);
+    const attrs = `{${parts.join(' ')}}`;
+    const markdownText = `[ref](${url})${attrs}`;
+    if (existingRefElementRef.current) {
+      existingRefElementRef.current.replaceWith(document.createTextNode(markdownText));
+    } else if (savedRangeRef.current) {
+      el.focus();
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(savedRangeRef.current);
+        selection.collapseToEnd();
+      }
+      document.execCommand('insertText', false, markdownText);
+    }
+    skipBlurRef.current = false;
+    setRefModalOpen(false);
+    existingRefRef.current = null;
+    existingRefElementRef.current = null;
+    savedRangeRef.current = null;
+    setActiveItemIndex(null);
+    setTimeout(() => {
+      const markdown = htmlToMarkdown(el.innerHTML);
+      const next = [...data.items];
+      next[activeItemIndex] = markdown;
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next } }));
+    }, 0);
+  };
+
+  const handleRefRemove = () => {
+    if (activeItemIndex === null) return;
+    const el = itemRefs.current[activeItemIndex];
+    if (!el) return;
+    skipBlurRef.current = false;
+    if (existingRefElementRef.current) {
+      existingRefElementRef.current.replaceWith(document.createTextNode(existingRefRef.current?.text || ''));
+      existingRefElementRef.current = null;
+    }
+    skipBlurRef.current = false;
+    setRefModalOpen(false);
+    existingRefRef.current = null;
+    savedRangeRef.current = null;
+    setActiveItemIndex(null);
+    setTimeout(() => {
+      const markdown = htmlToMarkdown(el.innerHTML);
+      const next = [...data.items];
+      next[activeItemIndex] = markdown;
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next } }));
+    }, 0);
+  };
+
+  const handleItemKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, itemIndex: number) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      openLinkModal(itemIndex);
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      const next = [...data.items];
+      next.splice(itemIndex + 1, 0, '');
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next } }));
+      setTimeout(() => {
+        const newEl = itemRefs.current[itemIndex + 1];
+        if (newEl) {
+          newEl.focus();
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.setStart(newEl, 0);
+          range.collapse(true);
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        }
+      }, 0);
+    }
+  };
+
   return (
-    <div>
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <select
-          value={data.style || 'unordered'}
-          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, style: e.target.value as typeof data.style } }))}
-          className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-700)] outline-none focus:border-[var(--pulse-red)]"
-        >
-          {styleOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <div className="h-4 w-px bg-[var(--neutral-200)]" />
-        {(['left','center','right','justify'] as const).map((a) => (
-          <button
-            key={a}
-            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
-            className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
-              align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
-            }`}
+    <>
+      <div>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <select
+            value={data.style || 'unordered'}
+            onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, style: e.target.value as typeof data.style } }))}
+            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-700)] outline-none focus:border-[var(--pulse-red)]"
           >
-            {a}
-          </button>
-        ))}
+            {styleOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <div className="h-4 w-px bg-[var(--neutral-200)]" />
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+              className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+        <ListTag className={listStyleClass} style={{ textAlign: align as any }}>
+          {data.items.map((item, i) => (
+            <li key={i} className="mb-2" data-marker={data.style === 'abjad' ? getAbjadMarker(i + 1) : undefined}>
+              <div className="flex items-start gap-2">
+                <div
+                  ref={(el) => { itemRefs.current[i] = el; }}
+                  contentEditable
+                  suppressContentEditableWarning
+                  className="min-w-0 flex-1 min-h-[1.5em] rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-1.5 text-sm text-[var(--neutral-700)] outline-none"
+                  style={{ textAlign: align as any }}
+                  onBlur={(e) => {
+                    if (skipBlurRef.current) return;
+                    const markdown = htmlToMarkdown(e.currentTarget.innerHTML);
+                    const next = [...data.items];
+                    next[i] = markdown;
+                    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next } }));
+                  }}
+                  onKeyDown={(e) => handleItemKeyDown(e, i)}
+                  onContextMenu={(e) => {
+                    const link = getLinkFromEvent(e);
+                    if (link) {
+                      e.preventDefault();
+                      setContextMenu({ x: e.clientX, y: e.clientY, link, itemIndex: i });
+                      return;
+                    }
+                    const ref = getRefFromEvent(e);
+                    const refEl = getRefElementFromEvent(e);
+                    if (ref && refEl) {
+                      e.preventDefault();
+                      setRefContextMenu({ x: e.clientX, y: e.clientY, ref, element: refEl, itemIndex: i });
+                    }
+                  }}
+                />
+                <div className="flex flex-col gap-1">
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => openLinkModal(i)}
+                    className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
+                    title="Link selected text (Ctrl+K)"
+                  >
+                    Link
+                  </button>
+                  <button
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => openRefModal(i)}
+                    className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
+                    title="Add reference citation"
+                  >
+                    Ref
+                  </button>
+                  <button
+                    onClick={() => {
+                      const next = data.items.filter((_, idx) => idx !== i);
+                      itemRefs.current = itemRefs.current.filter((_, idx) => idx !== i);
+                      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next.length ? next : [''] } }));
+                    }}
+                    className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ListTag>
+        <button
+          onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: [...data.items, ''] } }))}
+          className="mt-2 inline-flex items-center gap-1 rounded-md bg-[var(--neutral-100)] px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]"
+        >
+          <Plus className="h-3 w-3" />
+          Add item
+        </button>
       </div>
-      <ListTag className={listStyleClass} style={{ textAlign: align as any }}>
-        {data.items.map((item, i) => (
-          <li key={i} className="mb-2" data-marker={data.style === 'abjad' ? getAbjadMarker(i + 1) : undefined}>
-            <div className="flex items-start gap-2">
-              <input
-                value={item}
-                onChange={(e) => {
-                  const next = [...data.items];
-                  next[i] = e.target.value;
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next } }));
-                }}
-                placeholder="List item"
-                className="min-w-0 flex-1 rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-1.5 text-sm text-[var(--neutral-700)] outline-none placeholder:text-[var(--neutral-400)]"
-              />
-              <button
-                onClick={() => {
-                  const next = data.items.filter((_, idx) => idx !== i);
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next.length ? next : [''] } }));
-                }}
-                className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          </li>
-        ))}
-      </ListTag>
-      <button
-        onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: [...data.items, ''] } }))}
-        className="mt-2 inline-flex items-center gap-1 rounded-md bg-[var(--neutral-100)] px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]"
-      >
-        <Plus className="h-3 w-3" />
-        Add item
-      </button>
-    </div>
+      <LinkModal
+        isOpen={linkModalOpen}
+        onClose={() => {
+          skipBlurRef.current = false;
+          setLinkModalOpen(false);
+          setActiveItemIndex(null);
+        }}
+        onConfirm={handleLinkConfirm}
+        onRemove={linkModalUrl ? handleLinkRemove : undefined}
+        defaultText={linkModalText}
+        defaultUrl={linkModalUrl}
+        defaultRel={linkModalRel}
+        defaultTarget={linkModalTarget}
+      />
+      {contextMenu && (
+        <LinkContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onEdit={() => {
+            setLinkModalText(contextMenu.link.text);
+            setLinkModalUrl(contextMenu.link.url);
+            setLinkModalRel(contextMenu.link.rel);
+            setLinkModalTarget(contextMenu.link.target);
+            existingLinkRef.current = contextMenu.link;
+            savedRangeRef.current = null;
+            setActiveItemIndex(contextMenu.itemIndex);
+            setLinkModalOpen(true);
+            setContextMenu(null);
+          }}
+          onRemove={() => {
+            const el = itemRefs.current[contextMenu.itemIndex];
+            if (!el) return;
+            const links = el.querySelectorAll('span.pulse-editor-link');
+            links.forEach((span) => {
+              if (span.textContent?.trim() === contextMenu.link.text && span.getAttribute('data-url') === contextMenu.link.url) {
+                span.replaceWith(document.createTextNode(contextMenu.link.text));
+              }
+            });
+            setContextMenu(null);
+            setTimeout(() => {
+              const markdown = htmlToMarkdown(el.innerHTML);
+              const next = [...data.items];
+              next[contextMenu.itemIndex] = markdown;
+              adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next } }));
+            }, 0);
+          }}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+      <RefModal
+        isOpen={refModalOpen}
+        onClose={() => {
+          skipBlurRef.current = false;
+          setRefModalOpen(false);
+          setActiveItemIndex(null);
+        }}
+        onConfirm={handleRefConfirm}
+        onRemove={existingRefRef.current ? handleRefRemove : undefined}
+        defaultUrl={refModalUrl}
+        defaultText={refModalText}
+        defaultStyle={refModalStyle}
+        defaultTarget={refModalTarget}
+        defaultRel={refModalRel}
+      />
+      {refContextMenu && (
+        <RefContextMenu
+          x={refContextMenu.x}
+          y={refContextMenu.y}
+          onEdit={() => {
+            setRefModalUrl(refContextMenu.ref.url || '');
+            setRefModalText(refContextMenu.ref.text || '');
+            setRefModalStyle(refContextMenu.ref.style);
+            setRefModalTarget(refContextMenu.ref.target || '');
+            setRefModalRel(refContextMenu.ref.rel || '');
+            existingRefRef.current = refContextMenu.ref;
+            existingRefElementRef.current = refContextMenu.element;
+            savedRangeRef.current = null;
+            setActiveItemIndex(refContextMenu.itemIndex);
+            setRefModalOpen(true);
+            setRefContextMenu(null);
+          }}
+          onRemove={() => {
+            const el = itemRefs.current[refContextMenu.itemIndex];
+            if (!el) return;
+            if (refContextMenu.element) {
+              refContextMenu.element.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
+            }
+            setRefContextMenu(null);
+            setTimeout(() => {
+              const markdown = htmlToMarkdown(el.innerHTML);
+              const next = [...data.items];
+              next[refContextMenu.itemIndex] = markdown;
+              adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next } }));
+            }, 0);
+          }}
+          onClose={() => setRefContextMenu(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -1974,6 +2363,18 @@ export default function StudioBlockCanvas({
                       className="ml-auto rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-2 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
                     >
                       Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        const input = document.querySelector('input[type="number"]') as HTMLInputElement;
+                        const target = parseInt(input?.value || '', 10);
+                        if (!isNaN(target) && target >= 1 && target <= blocks.length + 1) {
+                          insertAtPosition(positionMode.type, target - 1);
+                        }
+                      }}
+                      className="rounded-lg bg-[var(--pulse-red)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--pulse-red-dark)]"
+                    >
+                      Insert
                     </button>
                   </div>
                 </div>

@@ -3,8 +3,27 @@
 > Archive of all completed tasks from the backlog. Tasks are moved here when marked as âœ… in BACKLOG.md.
 > This file serves as a historical record of project progress.
 
-**Last Updated:** 2026-05-15  
-**Total Completed Tasks:** 396
+**Last Updated:** 2026-05-18  
+**Total Completed Tasks:** 401
+
+---
+
+## Bug-Fix Session 90 — List Block Overhaul (Bugs #14-18)
+**Completed:** 2026-05-18
+
+- ✅ Bug #14: Ctrl+Enter in list block adds new list item with focus
+- ✅ Bug #15: Link and Reference options in list block (modal + context menu)
+- ✅ Bug #16: Multiline paragraph support in list items (contentEditable)
+- ✅ Bug #17: Insert button added to Shift+Enter position modal
+- ✅ Bug #18: List alignment renders live in editor
+
+**Files Changed:**
+- `apps/website/app/components/StudioBlockCanvas.tsx` — EditableList rewrite, position-mode Insert button
+- `packages/blocks/src/ListBlock.ts` — Inline markdown parser for list items
+- `apps/website/lib/blog-studio.ts` — List renderer override + ref collection
+- `apps/website/lib/entry-adapter.ts` — List renderer override + ref collection
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (1071/1071)
 
 ---
 

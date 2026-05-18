@@ -304,6 +304,20 @@ function escapeAndBreaks(text: string): string {
   return escapeHtml(text).replace(/\n/g, '<br />');
 }
 
+const ABJAD_LETTERS = [
+  'ا', 'ب', 'ج', 'د', 'ه', 'و', 'ز', 'ح', 'ط', 'ي', 'ك', 'ل', 'م', 'ن',
+  'س', 'ع', 'ف', 'ص', 'ق', 'ر', 'ش', 'ت', 'ث', 'خ', 'ذ', 'ض', 'ظ', 'غ',
+];
+
+function getAbjadLetter(index: number): string {
+  if (index < 1) return 'ا';
+  if (index <= ABJAD_LETTERS.length) return ABJAD_LETTERS[index - 1];
+  const cycles = Math.floor((index - 1) / ABJAD_LETTERS.length);
+  const remainder = ((index - 1) % ABJAD_LETTERS.length) + 1;
+  const letter = ABJAD_LETTERS[remainder - 1];
+  return cycles > 0 ? `${letter}(${cycles + 1})` : letter;
+}
+
 type RefStyle = 'numeric' | 'alphabetic' | 'greek' | 'abjad'
 
 interface InlineRef {
@@ -412,6 +426,29 @@ function registerCustomRenderers(registry: RendererRegistry, refCounter: { value
     const citation = data.citation ? `<cite>${escapeHtml(data.citation)}</cite>` : ''
     return `<blockquote data-block-type="blockquote"><p>${renderInlineContent(data.quote, refCounter)}</p>${citation}</blockquote>`
   })
+
+  registry.override('list', (block) => {
+    const data = block.data as { style: string; items: string[]; start?: number; align?: string }
+    const align = data.align ?? 'left'
+    const alignAttr = align === 'left' ? '' : ` style="text-align: ${align};"`
+    const startIndex = data.start ?? 1
+    const startAttribute = data.start && data.style !== 'unordered' ? ` start="${data.start}"` : ''
+    const listStyleClass = data.style === 'roman' ? 'pulse-list-roman' : data.style === 'numeric' ? 'pulse-list-numeric' : ''
+    const classAttr = listStyleClass ? ` class="${listStyleClass}"` : ''
+    const items = data.items
+      .map((item, i) => {
+        if (data.style === 'abjad') {
+          const marker = getAbjadLetter(i + startIndex)
+          return `<li data-marker="${escapeHtml(marker)}">${renderInlineContent(item, refCounter)}</li>`
+        }
+        return `<li>${renderInlineContent(item, refCounter)}</li>`
+      })
+      .join('')
+    if (data.style === 'unordered') {
+      return `<ul data-block-type="list"${alignAttr}>${items}</ul>`
+    }
+    return `<ol${startAttribute} data-block-type="list"${classAttr}${alignAttr}>${items}</ol>`
+  })
 }
 
 function ensureRendererReady(): void {
@@ -425,15 +462,23 @@ export function renderStudioBlocksHtml(blocks: StudioBlock[]): string {
   // First pass: collect all inline refs from text/heading/blockquote blocks
   const allRefs: InlineRef[] = []
   for (const block of blocks) {
-    if (block.type === 'text' || block.type === 'heading' || block.type === 'blockquote') {
+    if (block.type === 'text' || block.type === 'heading' || block.type === 'blockquote' || block.type === 'list') {
       const data = block.data as Record<string, unknown>
-      const text =
-        typeof data.text === 'string'
-          ? data.text
-          : typeof data.quote === 'string'
-            ? data.quote
-            : ''
-      allRefs.push(...extractRefs(text))
+      if (block.type === 'list' && Array.isArray(data.items)) {
+        for (const item of data.items) {
+          if (typeof item === 'string') {
+            allRefs.push(...extractRefs(item))
+          }
+        }
+      } else {
+        const text =
+          typeof data.text === 'string'
+            ? data.text
+            : typeof data.quote === 'string'
+              ? data.quote
+              : ''
+        allRefs.push(...extractRefs(text))
+      }
     }
   }
 

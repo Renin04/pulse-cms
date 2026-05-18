@@ -4,19 +4,22 @@
 > Update this at the end of every session.
 
 **Last Updated:** 2026-05-18
-**Current Session:** Session 89 — Bug Fixes 9/11/12 (404 redesign, move-to clamping, list dropdown with Roman & Abjad)
+**Current Session:** Session 90 — Bug Fixes 14/15/16/17/18 (List block overhaul: Ctrl+Enter, Link/Ref, multiline, alignment, Insert button)
 **Current Phase:** Phase 4 — AI Builder & Automation Runtime (bug-fixing branch)
 
 ---
 
 ## Current Focus
 
-**What we just completed (Session 89):**
-- Bug #9: 404 page redesigned — Created `apps/website/app/not-found.tsx` with dark Pulse-brand theme, glitch-effect on "404", rotating sarcastic excuses (10 different messages), floating gradient orbs, noise texture background, and dual CTAs ("Take me home" + "Explore the blog").
-- Bug #11: Move-to input bounds clamping — Values `< 1` clamp to position 1 (start), values `> total` clamp to position total (end). Added `onBlur` safety commit in addition to Enter key.
-- Bug #12: List block Roman & Abjad dropdown — Replaced separate "Bullet / Numbered" buttons with a single `<select>` dropdown offering Bullet • Numbered • Roman • ابجد. Implemented correct traditional abjad order (ا ب ج د ه و ز ح ط ي ك ل م ن س ع ف ص ق ر ش ت ث خ ذ ض ظ غ). Updated `ListBlock.ts` schema to accept `"unordered" | "numeric" | "roman" | "abjad"` with legacy `"ordered"` auto-migration. Added renderer CSS for `.pulse-list-roman`, `.pulse-list-numeric`, and `data-list-style="abjad"` with custom `::before` markers.
-- Also fixed: list item placeholder text (empty string + placeholder="List item" instead of hardcoded "New item"), which addresses bug #14.
+**What we just completed (Session 90):**
+- Bug #14: Ctrl+Enter in list block adds a new empty list item after the current one and focuses it with cursor at start.
+- Bug #15: Link and Reference options added to every list item — full modal support with Ctrl+K shortcut, right-click context menu (edit/remove), and all link options (nofollow, noopener, noreferrer, external, open in new tab).
+- Bug #16: List items switched from `<input>` to `contentEditable` divs with `markdownToHtml`/`htmlToMarkdown`, enabling multiline paragraphs and rich inline content (links, refs, inline code).
+- Bug #17: Shift+Enter position modal now has an explicit "Insert" button alongside Enter key and Cancel.
+- Bug #18: List alignment renders live in the editor — each contentEditable item inherits `textAlign` from the block's alignment setting.
+- Renderer updates: `ListBlock.ts` now parses inline markdown links/refs in list items; `blog-studio.ts` and `entry-adapter.ts` both override the list renderer with `renderInlineContent()` and collect refs from list blocks for global sequential footnote numbering.
 - Quality gates passed: `lint`, `typecheck`, `build`, `test` (1071/1071 passed) green.
+- Committed: pending approval
 
 **Previous Session 88:**
 - Bug #8.1: Fixed reference update not working — replaced fragile textContent matching with direct DOM element tracking (`existingRefElementRef`) across heading, text, and blockquote blocks.

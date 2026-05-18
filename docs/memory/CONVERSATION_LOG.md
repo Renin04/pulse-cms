@@ -2965,3 +2965,30 @@ pm run build in pps/website)
 
 **Quality Gates:** lint ✅ typecheck ✅ build ✅
 **Commit:** `3ebb741`
+
+---
+
+## Session 90 — Bug Fixes 14, 15, 16, 17, 18 (List Block Overhaul)
+**Date:** 2026-05-18
+
+**Bugs Fixed:**
+- #14: Ctrl+Enter in list block now adds a new empty list item after the current one and sets focus/cursor on it.
+- #15: Link and Reference options now available in every list item, with full modal support (Ctrl+K, right-click context menu, edit/remove).
+- #16: List items switched from `<input>` to `contentEditable` divs with `markdownToHtml`/`htmlToMarkdown`, enabling multiline paragraphs and rich inline content.
+- #17: Shift+Enter position modal now has an explicit "Insert" button alongside Enter key and Cancel.
+- #18: List alignment now renders live in the editor — each contentEditable item inherits `textAlign` from the block's alignment setting.
+
+**Renderer Updates:**
+- `packages/blocks/src/ListBlock.ts` — Added `renderInlineMarkdown()` to parse `[text](url)` and `[ref](url){...}` in list items. Base renderer now supports inline links and references.
+- `apps/website/lib/blog-studio.ts` — Added list renderer override using `renderInlineContent()` with shared ref counter; collects refs from list blocks for global footnote numbering.
+- `apps/website/lib/entry-adapter.ts` — Same list override + ref collection for blog post rendering.
+
+**Files Changed:**
+- `apps/website/app/components/StudioBlockCanvas.tsx` — Complete `EditableList` rewrite with contentEditable items, per-item Link/Ref modals, Ctrl+Enter handler, live alignment, and position-mode Insert button.
+- `packages/blocks/src/ListBlock.ts` — Added inline markdown parser + imports for `formatReferenceNumber` and `sanitizeUrl`.
+- `apps/website/lib/blog-studio.ts` — Added `getAbjadLetter`, list renderer override, list ref collection.
+- `apps/website/lib/entry-adapter.ts` — Same abjad helper, list renderer override, list ref collection.
+- `C:\Users\z0512\Desktop\pulse bug list.md` — Marked #14-18 as complete.
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (1071/1071 passed)
+**Commit:** pending approval
