@@ -1311,6 +1311,7 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
   const [linkModalRel, setLinkModalRel] = useState('');
   const [linkModalTarget, setLinkModalTarget] = useState('');
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
+  const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
   const skipBlurRef = useRef(false);
   const existingLinkRef = useRef<{ text: string; url: string; rel: string; target: string } | null>(null);
@@ -1322,15 +1323,17 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
   const [refModalTarget, setRefModalTarget] = useState('');
   const [refModalRel, setRefModalRel] = useState('');
   const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string } | null>(null);
-  const existingRefElementRef = useRef<HTMLElement | null>(null);
-  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string }; element: HTMLElement; itemIndex: number } | null>(null);
+  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string }; itemIndex: number } | null>(null);
 
-  // Sync innerHTML whenever block items change (safe because data.items only changes on blur/save)
+  // Sync innerHTML only for non-focused items to avoid wiping unsaved edits
   useLayoutEffect(() => {
     data.items.forEach((item, i) => {
       const el = itemRefs.current[i];
-      if (el && el.innerHTML !== markdownToHtml(item)) {
-        el.innerHTML = markdownToHtml(item);
+      if (!el) return;
+      if (document.activeElement === el) return;
+      const expected = markdownToHtml(item);
+      if (el.innerHTML !== expected) {
+        el.innerHTML = expected;
       }
     });
   }, [data.items]);
@@ -1449,7 +1452,6 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       setRefModalTarget(existingRef.target || '');
       setRefModalRel(existingRef.rel || '');
       existingRefRef.current = existingRef;
-      existingRefElementRef.current = getRefElementAtCursor(el);
       savedRangeRef.current = null;
       setRefModalOpen(true);
       return;
@@ -1461,7 +1463,6 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       savedRangeRef.current = selection.getRangeAt(0).cloneRange();
     }
     existingRefRef.current = null;
-    existingRefElementRef.current = null;
     setRefModalText(selectedText);
     setRefModalUrl('');
     setRefModalStyle('numeric');
@@ -1482,8 +1483,30 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     if (rel) parts.push(`rel="${rel}"`);
     const attrs = `{${parts.join(' ')}}`;
     const markdownText = `[ref](${url})${attrs}`;
-    if (existingRefElementRef.current) {
-      existingRefElementRef.current.replaceWith(document.createTextNode(markdownText));
+
+    // Find and replace existing ref by matching attributes (robust against re-renders)
+    if (existingRefRef.current) {
+      const refs = el.querySelectorAll('span.pulse-editor-ref');
+      let replaced = false;
+      refs.forEach((span) => {
+        if (!replaced &&
+            span.getAttribute('data-url') === existingRefRef.current?.url &&
+            span.getAttribute('data-text') === existingRefRef.current?.text &&
+            span.getAttribute('data-style') === existingRefRef.current?.style) {
+          span.replaceWith(document.createTextNode(markdownText));
+          replaced = true;
+        }
+      });
+      if (!replaced && savedRangeRef.current) {
+        el.focus();
+        const selection = window.getSelection();
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(savedRangeRef.current);
+          selection.collapseToEnd();
+        }
+        document.execCommand('insertText', false, markdownText);
+      }
     } else if (savedRangeRef.current) {
       el.focus();
       const selection = window.getSelection();
@@ -1494,10 +1517,10 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       }
       document.execCommand('insertText', false, markdownText);
     }
+
     skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
-    existingRefElementRef.current = null;
     savedRangeRef.current = null;
     setActiveItemIndex(null);
     setTimeout(() => {
@@ -1513,10 +1536,18 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     const el = itemRefs.current[activeItemIndex];
     if (!el) return;
     skipBlurRef.current = false;
-    if (existingRefElementRef.current) {
-      existingRefElementRef.current.replaceWith(document.createTextNode(existingRefRef.current?.text || ''));
-      existingRefElementRef.current = null;
+
+    if (existingRefRef.current) {
+      const refs = el.querySelectorAll('span.pulse-editor-ref');
+      refs.forEach((span) => {
+        if (span.getAttribute('data-url') === existingRefRef.current?.url &&
+            span.getAttribute('data-text') === existingRefRef.current?.text &&
+            span.getAttribute('data-style') === existingRefRef.current?.style) {
+          span.replaceWith(document.createTextNode(existingRefRef.current.text || ''));
+        }
+      });
     }
+
     skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
@@ -1580,6 +1611,24 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
               {a}
             </button>
           ))}
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => focusedItemIndex !== null && openLinkModal(focusedItemIndex)}
+            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] disabled:opacity-40"
+            disabled={focusedItemIndex === null}
+            title="Link selected text in focused item (Ctrl+K)"
+          >
+            Link
+          </button>
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => focusedItemIndex !== null && openRefModal(focusedItemIndex)}
+            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] disabled:opacity-40"
+            disabled={focusedItemIndex === null}
+            title="Add reference to focused item"
+          >
+            Ref
+          </button>
         </div>
         <ListTag className={listStyleClass} style={{ textAlign: align as any }}>
           {data.items.map((item, i) => (
@@ -1591,7 +1640,9 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
                   suppressContentEditableWarning
                   className="min-w-0 flex-1 min-h-[1.5em] rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-1.5 text-sm text-[var(--neutral-700)] outline-none"
                   style={{ textAlign: align as any }}
+                  onFocus={() => setFocusedItemIndex(i)}
                   onBlur={(e) => {
+                    setFocusedItemIndex((prev) => prev === i ? null : prev);
                     if (skipBlurRef.current) return;
                     const markdown = htmlToMarkdown(e.currentTarget.innerHTML);
                     const next = [...data.items];
@@ -1610,7 +1661,7 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
                     const refEl = getRefElementFromEvent(e);
                     if (ref && refEl) {
                       e.preventDefault();
-                      setRefContextMenu({ x: e.clientX, y: e.clientY, ref, element: refEl, itemIndex: i });
+                      setRefContextMenu({ x: e.clientX, y: e.clientY, ref, itemIndex: i });
                     }
                   }}
                 />
@@ -1729,7 +1780,6 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
             setRefModalTarget(refContextMenu.ref.target || '');
             setRefModalRel(refContextMenu.ref.rel || '');
             existingRefRef.current = refContextMenu.ref;
-            existingRefElementRef.current = refContextMenu.element;
             savedRangeRef.current = null;
             setActiveItemIndex(refContextMenu.itemIndex);
             setRefModalOpen(true);
@@ -1738,9 +1788,14 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
           onRemove={() => {
             const el = itemRefs.current[refContextMenu.itemIndex];
             if (!el) return;
-            if (refContextMenu.element) {
-              refContextMenu.element.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
-            }
+            const refs = el.querySelectorAll('span.pulse-editor-ref');
+            refs.forEach((span) => {
+              if (span.getAttribute('data-url') === refContextMenu.ref.url &&
+                  span.getAttribute('data-text') === refContextMenu.ref.text &&
+                  span.getAttribute('data-style') === refContextMenu.ref.style) {
+                span.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
+              }
+            });
             setRefContextMenu(null);
             setTimeout(() => {
               const markdown = htmlToMarkdown(el.innerHTML);
@@ -2008,6 +2063,7 @@ export default function StudioBlockCanvas({
   const [paletteQuery, setPaletteQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [positionMode, setPositionMode] = useState<{ type: string } | null>(null);
+  const positionInputRef = useRef<HTMLInputElement>(null);
 
   // Globally renumber all inline references so they are sequential across blocks
   useLayoutEffect(() => {
@@ -2337,6 +2393,7 @@ export default function StudioBlockCanvas({
                   <p className="mb-2 text-sm font-semibold text-[var(--pulse-black)]">Insert at position</p>
                   <div className="flex items-center gap-2">
                     <input
+                      ref={positionInputRef}
                       autoFocus
                       type="number"
                       min={1}
@@ -2345,10 +2402,11 @@ export default function StudioBlockCanvas({
                       className="w-20 rounded-lg border border-[var(--neutral-200)] px-3 py-2 text-sm outline-none focus:border-[var(--pulse-red)]"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          const target = parseInt((e.target as HTMLInputElement).value, 10);
-                          if (!isNaN(target) && target >= 1 && target <= blocks.length + 1) {
-                            insertAtPosition(positionMode.type, target - 1);
-                          }
+                          let target = parseInt((e.target as HTMLInputElement).value, 10);
+                          if (isNaN(target)) return;
+                          if (target < 1) target = 1;
+                          if (target > blocks.length + 1) target = blocks.length + 1;
+                          insertAtPosition(positionMode.type, target - 1);
                         }
                         if (e.key === 'Escape') {
                           e.preventDefault();
@@ -2366,11 +2424,11 @@ export default function StudioBlockCanvas({
                     </button>
                     <button
                       onClick={() => {
-                        const input = document.querySelector('input[type="number"]') as HTMLInputElement;
-                        const target = parseInt(input?.value || '', 10);
-                        if (!isNaN(target) && target >= 1 && target <= blocks.length + 1) {
-                          insertAtPosition(positionMode.type, target - 1);
-                        }
+                        let target = parseInt(positionInputRef.current?.value || '', 10);
+                        if (isNaN(target)) return;
+                        if (target < 1) target = 1;
+                        if (target > blocks.length + 1) target = blocks.length + 1;
+                        insertAtPosition(positionMode.type, target - 1);
                       }}
                       className="rounded-lg bg-[var(--pulse-red)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--pulse-red-dark)]"
                     >

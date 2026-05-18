@@ -26,22 +26,15 @@ const ALLOWED_INLINE_PROTOCOLS = new Set(["http:", "https:", "mailto:", "tel:"])
 
 export function sanitizeUrl(url: string): string | null {
   if (!url) return null;
-  // Allow relative URLs (start with / or #)
-  if (url.startsWith("/") || url.startsWith("#")) return url;
   try {
     const parsed = new URL(url);
     if (ALLOWED_INLINE_PROTOCOLS.has(parsed.protocol)) {
       return url;
     }
   } catch {
-    // Not a valid absolute URL
-    if (!url.includes(":")) {
-      // If it looks like a bare domain (contains a dot), prepend https://
-      if (url.includes(".")) {
-        return `https://${url}`;
-      }
-      // Otherwise treat as a relative path
-      return url;
+    // Not a valid absolute URL — try bare domain fallback
+    if (!url.includes(":") && url.includes(".")) {
+      return `https://${url}`;
     }
   }
   return null;
