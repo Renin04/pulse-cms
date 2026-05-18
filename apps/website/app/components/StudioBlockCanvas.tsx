@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
-import { BUILTIN_BLOCK_DEFINITIONS } from '@pulse/blocks';
+import { BUILTIN_BLOCK_DEFINITIONS, formatReferenceNumber } from '@pulse/blocks';
 import {
   EditableHorizontalRule, EditableLink, EditableImage, EditableVideo, EditableAudio,
   EditableEmbed, EditableFile, EditableTable, EditableAlert, EditableQuiz, EditablePoll,
@@ -23,7 +23,7 @@ import {
   EditableGallery, EditableCarousel, EditableHeroSection, EditableAnnotatedImage,
   LinkModal, LinkContextMenu, RefModal, RefContextMenu,
   markdownToHtml, htmlToMarkdown,
-  getLinkAtCursor, getLinkFromEvent, getRefAtCursor, getRefFromEvent,
+  getLinkAtCursor, getLinkFromEvent, getRefAtCursor, getRefFromEvent, getRefElementAtCursor, getRefElementFromEvent,
 } from './StudioBlockEditors';
 
 const blockTypeToIcon: Record<string, React.ElementType> = {
@@ -143,8 +143,10 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
   const [refModalText, setRefModalText] = useState('');
   const [refModalStyle, setRefModalStyle] = useState<'numeric' | 'alphabetic' | 'greek' | 'abjad'>('numeric');
   const [refModalTarget, setRefModalTarget] = useState('');
-  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } | null>(null);
-  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } } | null>(null);
+  const [refModalRel, setRefModalRel] = useState('');
+  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string } | null>(null);
+  const existingRefElementRef = useRef<HTMLElement | null>(null);
+  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string }; element: HTMLElement } | null>(null);
 
   // Sync innerHTML whenever block text or level changes
   // useLayoutEffect ensures content is set before paint to prevent flash of empty content
@@ -259,7 +261,10 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
       setRefModalUrl(existingRef.url || '');
       setRefModalText(existingRef.text || '');
       setRefModalStyle(existingRef.style);
+      setRefModalTarget(existingRef.target || '');
+      setRefModalRel(existingRef.rel || '');
       existingRefRef.current = existingRef;
+      existingRefElementRef.current = getRefElementAtCursor(el);
       savedRangeRef.current = null;
       setRefModalOpen(true);
       return;
@@ -271,13 +276,16 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
       savedRangeRef.current = selection.getRangeAt(0).cloneRange();
     }
     existingRefRef.current = null;
+    existingRefElementRef.current = null;
     setRefModalText(selectedText);
     setRefModalUrl('');
     setRefModalStyle('numeric');
+    setRefModalTarget('');
+    setRefModalRel('');
     setRefModalOpen(true);
   };
 
-  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string) => {
+  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string, rel: string) => {
     const el = headingRef.current;
     if (!el) return;
     skipBlurRef.current = false;
@@ -285,15 +293,11 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
     parts.push(`text="${text}"`);
     parts.push(`style="${style}"`);
     if (target) parts.push(`target="${target}"`);
+    if (rel) parts.push(`rel="${rel}"`);
     const attrs = `{${parts.join(' ')}}`;
     const markdownText = `[ref](${url})${attrs}`;
-    if (existingRefRef.current) {
-      const refs = el.querySelectorAll('span.pulse-editor-ref');
-      refs.forEach((span) => {
-        if (span.textContent?.trim() === existingRefRef.current?.text && span.getAttribute('data-url') === existingRefRef.current?.url) {
-          span.replaceWith(document.createTextNode(markdownText));
-        }
-      });
+    if (existingRefElementRef.current) {
+      existingRefElementRef.current.replaceWith(document.createTextNode(markdownText));
     } else if (savedRangeRef.current) {
       el.focus();
       const selection = window.getSelection();
@@ -307,6 +311,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
     skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
+    existingRefElementRef.current = null;
     savedRangeRef.current = null;
     setTimeout(() => {
       const markdown = htmlToMarkdown(el.innerHTML);
@@ -318,13 +323,9 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
     const el = headingRef.current;
     if (!el) return;
     skipBlurRef.current = false;
-    if (existingRefRef.current) {
-      const refs = el.querySelectorAll('span.pulse-editor-ref');
-      refs.forEach((span) => {
-        if (span.textContent?.trim() === existingRefRef.current?.text && span.getAttribute('data-url') === existingRefRef.current?.url) {
-          span.replaceWith(document.createTextNode(existingRefRef.current.text || ''));
-        }
-      });
+    if (existingRefElementRef.current) {
+      existingRefElementRef.current.replaceWith(document.createTextNode(existingRefRef.current?.text || ''));
+      existingRefElementRef.current = null;
     }
     skipBlurRef.current = false;
     setRefModalOpen(false);
@@ -376,9 +377,10 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
               return;
             }
             const ref = getRefFromEvent(e);
-            if (ref) {
+            const refEl = getRefElementFromEvent(e);
+            if (ref && refEl) {
               e.preventDefault();
-              setRefContextMenu({ x: e.clientX, y: e.clientY, ref });
+              setRefContextMenu({ x: e.clientX, y: e.clientY, ref, element: refEl });
             }
           }}
         />
@@ -456,6 +458,7 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
         defaultText={refModalText}
         defaultStyle={refModalStyle}
         defaultTarget={refModalTarget}
+        defaultRel={refModalRel}
       />
       {refContextMenu && (
         <RefContextMenu
@@ -466,7 +469,9 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
             setRefModalText(refContextMenu.ref.text || '');
             setRefModalStyle(refContextMenu.ref.style);
             setRefModalTarget(refContextMenu.ref.target || '');
+            setRefModalRel(refContextMenu.ref.rel || '');
             existingRefRef.current = refContextMenu.ref;
+            existingRefElementRef.current = refContextMenu.element;
             savedRangeRef.current = null;
             setRefModalOpen(true);
             setRefContextMenu(null);
@@ -474,12 +479,9 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
           onRemove={() => {
             const el = headingRef.current;
             if (!el) return;
-            const refs = el.querySelectorAll('span.pulse-editor-ref');
-            refs.forEach((span) => {
-              if (span.textContent?.trim() === refContextMenu.ref.text && span.getAttribute('data-url') === refContextMenu.ref.url) {
-                span.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
-              }
-            });
+            if (refContextMenu.element) {
+              refContextMenu.element.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
+            }
             setRefContextMenu(null);
             setTimeout(() => {
               const markdown = htmlToMarkdown(el.innerHTML);
@@ -511,11 +513,13 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
   const [refModalText, setRefModalText] = useState('');
   const [refModalStyle, setRefModalStyle] = useState<'numeric' | 'alphabetic' | 'greek' | 'abjad'>('numeric');
   const [refModalTarget, setRefModalTarget] = useState('');
-  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } | null>(null);
-  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } } | null>(null);
+  const [refModalRel, setRefModalRel] = useState('');
+  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string } | null>(null);
+  const existingRefElementRef = useRef<HTMLElement | null>(null);
+  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string }; element: HTMLElement } | null>(null);
 
   // Sync innerHTML whenever block text changes (safe because data.text only changes on blur/save)
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = textRef.current;
     if (el) {
       el.innerHTML = markdownToHtml(data.text);
@@ -639,7 +643,9 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       setRefModalText(existingRef.text || '');
       setRefModalStyle(existingRef.style);
       setRefModalTarget(existingRef.target || '');
+      setRefModalRel(existingRef.rel || '');
       existingRefRef.current = existingRef;
+      existingRefElementRef.current = getRefElementAtCursor(el);
       savedRangeRef.current = null;
       setRefModalOpen(true);
       return;
@@ -651,14 +657,16 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
       savedRangeRef.current = selection.getRangeAt(0).cloneRange();
     }
     existingRefRef.current = null;
+    existingRefElementRef.current = null;
     setRefModalText(selectedText);
     setRefModalUrl('');
     setRefModalStyle('numeric');
     setRefModalTarget('');
+    setRefModalRel('');
     setRefModalOpen(true);
   };
 
-  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string) => {
+  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string, rel: string) => {
     const el = textRef.current;
     if (!el) return;
     skipBlurRef.current = false;
@@ -666,15 +674,11 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     parts.push(`text="${text}"`);
     parts.push(`style="${style}"`);
     if (target) parts.push(`target="${target}"`);
+    if (rel) parts.push(`rel="${rel}"`);
     const attrs = `{${parts.join(' ')}}`;
     const markdownText = `[ref](${url})${attrs}`;
-    if (existingRefRef.current) {
-      const refs = el.querySelectorAll('span.pulse-editor-ref');
-      refs.forEach((span) => {
-        if (span.textContent?.trim() === existingRefRef.current?.text && span.getAttribute('data-url') === existingRefRef.current?.url) {
-          span.replaceWith(document.createTextNode(markdownText));
-        }
-      });
+    if (existingRefElementRef.current) {
+      existingRefElementRef.current.replaceWith(document.createTextNode(markdownText));
     } else if (savedRangeRef.current) {
       el.focus();
       const selection = window.getSelection();
@@ -688,6 +692,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
+    existingRefElementRef.current = null;
     savedRangeRef.current = null;
     setTimeout(() => {
       const markdown = htmlToMarkdown(el.innerHTML);
@@ -699,13 +704,9 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     const el = textRef.current;
     if (!el) return;
     skipBlurRef.current = false;
-    if (existingRefRef.current) {
-      const refs = el.querySelectorAll('span.pulse-editor-ref');
-      refs.forEach((span) => {
-        if (span.textContent?.trim() === existingRefRef.current?.text && span.getAttribute('data-url') === existingRefRef.current?.url) {
-          span.replaceWith(document.createTextNode(existingRefRef.current.text || ''));
-        }
-      });
+    if (existingRefElementRef.current) {
+      existingRefElementRef.current.replaceWith(document.createTextNode(existingRefRef.current?.text || ''));
+      existingRefElementRef.current = null;
     }
     skipBlurRef.current = false;
     setRefModalOpen(false);
@@ -745,9 +746,10 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
               return;
             }
             const ref = getRefFromEvent(e);
-            if (ref) {
+            const refEl = getRefElementFromEvent(e);
+            if (ref && refEl) {
               e.preventDefault();
-              setRefContextMenu({ x: e.clientX, y: e.clientY, ref });
+              setRefContextMenu({ x: e.clientX, y: e.clientY, ref, element: refEl });
             }
           }}
         />
@@ -838,6 +840,7 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
         defaultText={refModalText}
         defaultStyle={refModalStyle}
         defaultTarget={refModalTarget}
+        defaultRel={refModalRel}
       />
       {refContextMenu && (
         <RefContextMenu
@@ -848,7 +851,9 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
             setRefModalText(refContextMenu.ref.text || '');
             setRefModalStyle(refContextMenu.ref.style);
             setRefModalTarget(refContextMenu.ref.target || '');
+            setRefModalRel(refContextMenu.ref.rel || '');
             existingRefRef.current = refContextMenu.ref;
+            existingRefElementRef.current = refContextMenu.element;
             savedRangeRef.current = null;
             setRefModalOpen(true);
             setRefContextMenu(null);
@@ -856,12 +861,9 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
           onRemove={() => {
             const el = textRef.current;
             if (!el) return;
-            const refs = el.querySelectorAll('span.pulse-editor-ref');
-            refs.forEach((span) => {
-              if (span.textContent?.trim() === refContextMenu.ref.text && span.getAttribute('data-url') === refContextMenu.ref.url) {
-                span.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
-              }
-            });
+            if (refContextMenu.element) {
+              refContextMenu.element.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
+            }
             setRefContextMenu(null);
             setTimeout(() => {
               const markdown = htmlToMarkdown(el.innerHTML);
@@ -893,10 +895,12 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
   const [refModalText, setRefModalText] = useState('');
   const [refModalStyle, setRefModalStyle] = useState<'numeric' | 'alphabetic' | 'greek' | 'abjad'>('numeric');
   const [refModalTarget, setRefModalTarget] = useState('');
-  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } | null>(null);
-  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string } } | null>(null);
+  const [refModalRel, setRefModalRel] = useState('');
+  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string } | null>(null);
+  const existingRefElementRef = useRef<HTMLElement | null>(null);
+  const [refContextMenu, setRefContextMenu] = useState<{ x: number; y: number; ref: { url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string }; element: HTMLElement } | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = quoteRef.current;
     if (el) {
       el.innerHTML = markdownToHtml(data.quote);
@@ -996,7 +1000,9 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
       setRefModalText(existingRef.text || '');
       setRefModalStyle(existingRef.style);
       setRefModalTarget(existingRef.target || '');
+      setRefModalRel(existingRef.rel || '');
       existingRefRef.current = existingRef;
+      existingRefElementRef.current = getRefElementAtCursor(el);
       savedRangeRef.current = null;
       setRefModalOpen(true);
       return;
@@ -1008,14 +1014,16 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
       savedRangeRef.current = selection.getRangeAt(0).cloneRange();
     }
     existingRefRef.current = null;
+    existingRefElementRef.current = null;
     setRefModalText(selectedText);
     setRefModalUrl('');
     setRefModalStyle('numeric');
     setRefModalTarget('');
+    setRefModalRel('');
     setRefModalOpen(true);
   };
 
-  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string) => {
+  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string, rel: string) => {
     const el = quoteRef.current;
     if (!el) return;
     skipBlurRef.current = false;
@@ -1023,15 +1031,11 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     parts.push(`text="${text}"`);
     parts.push(`style="${style}"`);
     if (target) parts.push(`target="${target}"`);
+    if (rel) parts.push(`rel="${rel}"`);
     const attrs = `{${parts.join(' ')}}`;
     const markdownText = `[ref](${url})${attrs}`;
-    if (existingRefRef.current) {
-      const refs = el.querySelectorAll('span.pulse-editor-ref');
-      refs.forEach((span) => {
-        if (span.textContent?.trim() === existingRefRef.current?.text && span.getAttribute('data-url') === existingRefRef.current?.url) {
-          span.replaceWith(document.createTextNode(markdownText));
-        }
-      });
+    if (existingRefElementRef.current) {
+      existingRefElementRef.current.replaceWith(document.createTextNode(markdownText));
     } else if (savedRangeRef.current) {
       el.focus();
       const selection = window.getSelection();
@@ -1045,6 +1049,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
+    existingRefElementRef.current = null;
     savedRangeRef.current = null;
     setTimeout(() => {
       const markdown = htmlToMarkdown(el.innerHTML);
@@ -1056,13 +1061,9 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     const el = quoteRef.current;
     if (!el) return;
     skipBlurRef.current = false;
-    if (existingRefRef.current) {
-      const refs = el.querySelectorAll('span.pulse-editor-ref');
-      refs.forEach((span) => {
-        if (span.textContent?.trim() === existingRefRef.current?.text && span.getAttribute('data-url') === existingRefRef.current?.url) {
-          span.replaceWith(document.createTextNode(existingRefRef.current.text || ''));
-        }
-      });
+    if (existingRefElementRef.current) {
+      existingRefElementRef.current.replaceWith(document.createTextNode(existingRefRef.current?.text || ''));
+      existingRefElementRef.current = null;
     }
     skipBlurRef.current = false;
     setRefModalOpen(false);
@@ -1098,6 +1099,13 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
             if (link) {
               e.preventDefault();
               setContextMenu({ x: e.clientX, y: e.clientY, link });
+              return;
+            }
+            const ref = getRefFromEvent(e);
+            const refEl = getRefElementFromEvent(e);
+            if (ref && refEl) {
+              e.preventDefault();
+              setRefContextMenu({ x: e.clientX, y: e.clientY, ref, element: refEl });
             }
           }}
         />
@@ -1194,6 +1202,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
         defaultText={refModalText}
         defaultStyle={refModalStyle}
         defaultTarget={refModalTarget}
+        defaultRel={refModalRel}
       />
       {refContextMenu && (
         <RefContextMenu
@@ -1204,7 +1213,9 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
             setRefModalText(refContextMenu.ref.text || '');
             setRefModalStyle(refContextMenu.ref.style);
             setRefModalTarget(refContextMenu.ref.target || '');
+            setRefModalRel(refContextMenu.ref.rel || '');
             existingRefRef.current = refContextMenu.ref;
+            existingRefElementRef.current = refContextMenu.element;
             savedRangeRef.current = null;
             setRefModalOpen(true);
             setRefContextMenu(null);
@@ -1212,12 +1223,9 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
           onRemove={() => {
             const el = quoteRef.current;
             if (!el) return;
-            const refs = el.querySelectorAll('span.pulse-editor-ref');
-            refs.forEach((span) => {
-              if (span.textContent?.trim() === refContextMenu.ref.text && span.getAttribute('data-url') === refContextMenu.ref.url) {
-                span.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
-              }
-            });
+            if (refContextMenu.element) {
+              refContextMenu.element.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
+            }
             setRefContextMenu(null);
             setTimeout(() => {
               const markdown = htmlToMarkdown(el.innerHTML);
@@ -1569,10 +1577,22 @@ export default function StudioBlockCanvas({
   adapter: EditorStateAdapter<Block<BlockData>> | null;
   blocks: Block<BlockData>[];
 }) {
+  const editorRef = useRef<HTMLDivElement>(null);
   const [showPalette, setShowPalette] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [positionMode, setPositionMode] = useState<{ type: string } | null>(null);
+
+  // Globally renumber all inline references so they are sequential across blocks
+  useLayoutEffect(() => {
+    const container = editorRef.current;
+    if (!container) return;
+    const refs = container.querySelectorAll('.pulse-editor-ref');
+    refs.forEach((span, index) => {
+      const style = (span.getAttribute('data-style') || 'numeric') as import('@pulse/blocks').ReferenceStyle;
+      span.textContent = formatReferenceNumber(index + 1, style);
+    });
+  });
 
   const allDefs = useMemo(() => [...(BUILTIN_BLOCK_DEFINITIONS as unknown as any[])], []);
   const closePalette = useCallback(() => {
@@ -1739,7 +1759,7 @@ export default function StudioBlockCanvas({
         </p>
       </div>
 
-      <div className="pulse-editor space-y-3">
+      <div ref={editorRef} className="pulse-editor space-y-3">
         {blocks.map((block, i) => (
           <EditableBlock
             key={block.id}

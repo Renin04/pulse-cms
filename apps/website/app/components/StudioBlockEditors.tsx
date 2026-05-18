@@ -66,14 +66,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ─── Markdown <-> HTML helpers for inline links ───
 
 
-function parseRefAttrs(attrs: string): { text?: string; style?: string; target?: string } {
-  const result: { text?: string; style?: string; target?: string } = {};
+function parseRefAttrs(attrs: string): { text?: string; style?: string; target?: string; rel?: string } {
+  const result: { text?: string; style?: string; target?: string; rel?: string } = {};
   const textMatch = attrs.match(/text="([^"]*)"/);
   if (textMatch) result.text = textMatch[1];
   const styleMatch = attrs.match(/style="([^"]*)"/);
   if (styleMatch) result.style = styleMatch[1];
   const targetMatch = attrs.match(/target="([^"]*)"/);
   if (targetMatch) result.target = targetMatch[1];
+  const relMatch = attrs.match(/rel="([^"]*)"/);
+  if (relMatch) result.rel = relMatch[1];
   return result;
 }
 
@@ -115,9 +117,9 @@ export function markdownToHtml(text: string): string {
     const target = targetMatch ? targetMatch[1] : '';
     if (label === 'ref') {
       refCounter++;
-      const { text: refText, style } = parseRefAttrs(attrs);
+      const { text: refText, style, rel: refRel } = parseRefAttrs(attrs);
       const num = formatReferenceNumber(refCounter, (style || 'numeric') as ReferenceStyle);
-      html += `<span class="pulse-editor-ref pulse-reference-editor" data-url="${escapeHtml(url)}" data-text="${escapeHtml(refText || '')}" data-style="${escapeHtml(style || 'numeric')}"${target ? ` data-target="${escapeHtml(target)}"` : ''}>${num}</span>\u200B`;
+      html += `<span class="pulse-editor-ref pulse-reference-editor" data-url="${escapeHtml(url)}" data-text="${escapeHtml(refText || '')}" data-style="${escapeHtml(style || 'numeric')}"${target ? ` data-target="${escapeHtml(target)}"` : ''}${refRel ? ` data-rel="${escapeHtml(refRel)}"` : ''}>${num}</span>\u200B`;
     } else {
       const relMatch = attrs.match(/rel="([^"]*)"/);
       const rel = relMatch ? relMatch[1] : '';
@@ -140,10 +142,12 @@ export function htmlToMarkdown(html: string): string {
     const text = span.getAttribute('data-text') || '';
     const style = span.getAttribute('data-style') || '';
     const target = span.getAttribute('data-target') || '';
+    const rel = span.getAttribute('data-rel') || '';
     const parts: string[] = [];
     if (text) parts.push(`text="${text}"`);
     if (style && style !== 'numeric') parts.push(`style="${style}"`);
     if (target) parts.push(`target="${target}"`);
+    if (rel) parts.push(`rel="${rel}"`);
     const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
     span.replaceWith(document.createTextNode(`[ref](${url})${attrs}`));
   });
@@ -1364,10 +1368,11 @@ export function LinkModal({
             />
             nofollow
           </label>
-          <label className="flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)]">
+          <label className={`flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)] ${openInNewTab ? 'opacity-60' : ''}`} title={openInNewTab ? 'noopener is required for security when opening in a new tab' : ''}>
             <input
               type="checkbox"
               checked={relOpts.noopener}
+              disabled={openInNewTab}
               onChange={(e) => setRelOpts((r) => ({ ...r, noopener: e.target.checked }))}
               className="h-4 w-4 accent-[var(--pulse-red)]"
             />
@@ -1509,7 +1514,7 @@ export function LinkContextMenu({
 
 // ─── Reference helpers ───
 
-export function getRefAtCursor(element: HTMLElement): { url: string; text: string; style: ReferenceStyle; target: string } | null {
+export function getRefAtCursor(element: HTMLElement): { url: string; text: string; style: ReferenceStyle; target: string; rel: string } | null {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0) return null;
   let el: HTMLElement | null = selection.anchorNode?.nodeType === Node.TEXT_NODE
@@ -1517,18 +1522,44 @@ export function getRefAtCursor(element: HTMLElement): { url: string; text: strin
     : (selection.anchorNode as HTMLElement);
   while (el && el !== element) {
     if (el.tagName === 'SPAN' && el.classList.contains('pulse-editor-ref')) {
-      return { url: el.getAttribute('data-url') || '', text: el.getAttribute('data-text') || '', style: (el.getAttribute('data-style') || 'numeric') as ReferenceStyle, target: el.getAttribute('data-target') || '' };
+      return { url: el.getAttribute('data-url') || '', text: el.getAttribute('data-text') || '', style: (el.getAttribute('data-style') || 'numeric') as ReferenceStyle, target: el.getAttribute('data-target') || '', rel: el.getAttribute('data-rel') || '' };
     }
     el = el.parentElement;
   }
   return null;
 }
 
-export function getRefFromEvent(e: React.MouseEvent): { url: string; text: string; style: ReferenceStyle; target: string } | null {
+export function getRefElementAtCursor(element: HTMLElement): HTMLElement | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+  let el: HTMLElement | null = selection.anchorNode?.nodeType === Node.TEXT_NODE
+    ? (selection.anchorNode as Text).parentElement
+    : (selection.anchorNode as HTMLElement);
+  while (el && el !== element) {
+    if (el.tagName === 'SPAN' && el.classList.contains('pulse-editor-ref')) {
+      return el;
+    }
+    el = el.parentElement;
+  }
+  return null;
+}
+
+export function getRefFromEvent(e: React.MouseEvent): { url: string; text: string; style: ReferenceStyle; target: string; rel: string } | null {
   let target = e.target as HTMLElement | null;
   while (target && target !== e.currentTarget) {
     if (target.classList.contains('pulse-editor-ref')) {
-      return { url: target.getAttribute('data-url') || '', text: target.getAttribute('data-text') || '', style: (target.getAttribute('data-style') || 'numeric') as ReferenceStyle, target: target.getAttribute('data-target') || '' };
+      return { url: target.getAttribute('data-url') || '', text: target.getAttribute('data-text') || '', style: (target.getAttribute('data-style') || 'numeric') as ReferenceStyle, target: target.getAttribute('data-target') || '', rel: target.getAttribute('data-rel') || '' };
+    }
+    target = target.parentElement;
+  }
+  return null;
+}
+
+export function getRefElementFromEvent(e: React.MouseEvent): HTMLElement | null {
+  let target = e.target as HTMLElement | null;
+  while (target && target !== e.currentTarget) {
+    if (target.classList.contains('pulse-editor-ref')) {
+      return target;
     }
     target = target.parentElement;
   }
@@ -1544,20 +1575,29 @@ export function RefModal({
   defaultText,
   defaultStyle,
   defaultTarget,
+  defaultRel,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (url: string, text: string, style: ReferenceStyle, target: string) => void;
+  onConfirm: (url: string, text: string, style: ReferenceStyle, target: string, rel: string) => void;
   onRemove?: () => void;
   defaultUrl?: string;
   defaultText?: string;
   defaultStyle?: ReferenceStyle;
   defaultTarget?: string;
+  defaultRel?: string;
 }) {
   const [url, setUrl] = useState(defaultUrl || '');
   const [text, setText] = useState(defaultText || '');
   const [style, setStyle] = useState(defaultStyle || 'numeric');
   const [openInNewTab, setOpenInNewTab] = useState(defaultTarget === '_blank');
+  const [relOpts, setRelOpts] = useState({
+    nofollow: defaultRel?.includes('nofollow') || false,
+    noopener: defaultRel?.includes('noopener') || false,
+    noreferrer: defaultRel?.includes('noreferrer') || false,
+    external: defaultRel?.includes('external') || false,
+  });
+  const originalRelRef = useRef(defaultRel || '');
   const isEditing = Boolean(defaultUrl);
 
   useEffect(() => {
@@ -1565,14 +1605,24 @@ export function RefModal({
       setUrl(defaultUrl || '');
       setText(defaultText || '');
       setStyle(defaultStyle || 'numeric');
+      originalRelRef.current = defaultRel || '';
+      setRelOpts({
+        nofollow: defaultRel?.includes('nofollow') || false,
+        noopener: defaultRel?.includes('noopener') || false,
+        noreferrer: defaultRel?.includes('noreferrer') || false,
+        external: defaultRel?.includes('external') || false,
+      });
       setOpenInNewTab(defaultTarget === '_blank');
     }
-  }, [isOpen, defaultUrl, defaultText, defaultStyle, defaultTarget]);
+  }, [isOpen, defaultUrl, defaultText, defaultStyle, defaultTarget, defaultRel]);
 
   if (!isOpen) return null;
 
   const handleConfirm = () => {
-    onConfirm(url, text, style, openInNewTab ? '_blank' : '');
+    const relParts = Object.entries(relOpts)
+      .filter(([_, v]) => v)
+      .map(([k]) => k);
+    onConfirm(url, text, style, openInNewTab ? '_blank' : '', relParts.join(' '));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1628,12 +1678,61 @@ export function RefModal({
               <option value="abjad">Abjad (ابجد...)</option>
             </select>
           </div>
+
           <div>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Link options</p>
+            <div className="mb-3 grid grid-cols-2 gap-3">
+              <label className={`flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)] ${relOpts.noopener && openInNewTab ? 'opacity-60' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={relOpts.nofollow}
+                  onChange={(e) => setRelOpts((r) => ({ ...r, nofollow: e.target.checked }))}
+                  className="h-4 w-4 accent-[var(--pulse-red)]"
+                />
+                nofollow
+              </label>
+              <label className={`flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)] ${openInNewTab ? 'opacity-60' : ''}`} title={openInNewTab ? 'noopener is required for security when opening in a new tab' : ''}>
+                <input
+                  type="checkbox"
+                  checked={relOpts.noopener}
+                  disabled={openInNewTab}
+                  onChange={(e) => setRelOpts((r) => ({ ...r, noopener: e.target.checked }))}
+                  className="h-4 w-4 accent-[var(--pulse-red)]"
+                />
+                noopener
+              </label>
+              <label className="flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)]">
+                <input
+                  type="checkbox"
+                  checked={relOpts.noreferrer}
+                  onChange={(e) => setRelOpts((r) => ({ ...r, noreferrer: e.target.checked }))}
+                  className="h-4 w-4 accent-[var(--pulse-red)]"
+                />
+                noreferrer
+              </label>
+              <label className="flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)]">
+                <input
+                  type="checkbox"
+                  checked={relOpts.external}
+                  onChange={(e) => setRelOpts((r) => ({ ...r, external: e.target.checked }))}
+                  className="h-4 w-4 accent-[var(--pulse-red)]"
+                />
+                external
+              </label>
+            </div>
             <label className="flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)]">
               <input
                 type="checkbox"
                 checked={openInNewTab}
-                onChange={(e) => setOpenInNewTab(e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setOpenInNewTab(checked);
+                  if (checked) {
+                    setRelOpts((r) => ({ ...r, noopener: true }));
+                  } else {
+                    setRelOpts((r) => ({ ...r, noopener: originalRelRef.current.includes('noopener') }));
+                  }
+                }}
                 className="h-4 w-4 accent-[var(--pulse-red)]"
               />
               Open in new tab

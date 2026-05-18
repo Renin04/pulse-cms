@@ -348,13 +348,16 @@ function renderInlineContent(text: string, refCounter: { value: number }): strin
       const textMatch = attrs.match(/text="([^"]*)"/)
       const styleMatch = attrs.match(/style="([^"]*)"/)
       const targetMatch = attrs.match(/target="([^"]*)"/)
+      const relMatch = attrs.match(/rel="([^"]*)"/)
       const refText = textMatch ? textMatch[1] : ''
       const style = (styleMatch ? styleMatch[1] : 'numeric') as RefStyle
       const target = targetMatch ? targetMatch[1] : ''
+      const rel = relMatch ? relMatch[1] : ''
       const num = formatReferenceNumber(refCounter.value, style)
       const titleAttr = refText ? ` title="${escapeHtml(refText)}"` : ''
       const targetAttr = target ? ` target="${escapeHtml(target)}"` : ''
-      result += `<sup class="pulse-reference"><a href="${escapeHtml(url)}"${titleAttr}${targetAttr}>${num}</a></sup>`
+      const relAttr = rel ? ` rel="${escapeHtml(rel)}"` : ''
+      result += `<sup class="pulse-reference"><a href="${escapeHtml(url)}"${titleAttr}${targetAttr}${relAttr}>${num}</a></sup>`
     } else {
       const relMatch = attrs.match(/rel="([^"]*)"/)
       const rel = relMatch ? relMatch[1] : ''
