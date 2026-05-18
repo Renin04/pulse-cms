@@ -1268,6 +1268,26 @@ img {
   border-bottom: none;
 }
 
+/* Editor abjad list */
+.pulse-editor-list-abjad {
+  list-style: none;
+  padding-left: 0;
+}
+
+.pulse-editor-list-abjad li {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.pulse-editor-list-abjad li::before {
+  content: attr(data-marker) ".";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: 600;
+  color: var(--pulse-red);
+}
+
 .pulse-ref-marker {
   font-weight: 600;
   color: var(--pulse-red);
@@ -1288,6 +1308,33 @@ img {
 
 .studio-rendered ol {
   list-style-type: decimal;
+}
+
+.studio-rendered ol.pulse-list-roman {
+  list-style-type: upper-roman;
+}
+
+.studio-rendered ol.pulse-list-numeric {
+  list-style-type: decimal;
+}
+
+.studio-rendered ol[data-list-style="abjad"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.studio-rendered ol[data-list-style="abjad"] li {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.studio-rendered ol[data-list-style="abjad"] li::before {
+  content: attr(data-marker) ".";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-weight: 600;
+  color: var(--pulse-red);
 }
 
 .studio-rendered li {
@@ -1582,6 +1629,114 @@ img {
     margin: 1.5rem -1rem;
     border-radius: 0.5rem;
   }
+}
+
+/* ── Studio preview panel: device-mode typography scaling ──
+   The preview panel simulates mobile/tablet by narrowing the container,
+   but CSS media queries still see the desktop viewport. These rules
+   let the studio explicitly shrink typography when the user picks
+   mobile or tablet mode.
+*/
+
+[data-device-mode="mobile"] .studio-rendered h1 {
+  font-size: 2rem;
+}
+
+[data-device-mode="mobile"] .studio-rendered h2 {
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+}
+
+[data-device-mode="mobile"] .studio-rendered h3 {
+  font-size: 1.25rem;
+  margin-top: 2rem;
+}
+
+[data-device-mode="mobile"] .studio-rendered p,
+[data-device-mode="mobile"] .studio-rendered li {
+  font-size: 1rem;
+}
+
+[data-device-mode="mobile"] .studio-rendered > p:first-of-type {
+  font-size: 1.125rem;
+}
+
+[data-device-mode="mobile"] .studio-rendered blockquote {
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+}
+
+[data-device-mode="mobile"] .studio-rendered blockquote::before {
+  font-size: 2.5rem;
+  left: 0.5rem;
+}
+
+[data-device-mode="mobile"] .studio-rendered blockquote p {
+  font-size: 1.125rem;
+  padding-left: 1rem;
+}
+
+[data-device-mode="mobile"] .studio-rendered blockquote cite,
+[data-device-mode="mobile"] .studio-rendered blockquote footer {
+  padding-left: 1rem;
+}
+
+[data-device-mode="mobile"] .studio-rendered pre {
+  padding: 1rem;
+  margin: 1.5rem -1rem;
+  border-radius: 0.5rem;
+}
+
+[data-device-mode="mobile"] .studio-rendered ul,
+[data-device-mode="mobile"] .studio-rendered ol {
+  padding-left: 1rem;
+  margin: 1rem 0;
+}
+
+[data-device-mode="tablet"] .studio-rendered h1 {
+  font-size: 2.25rem;
+}
+
+[data-device-mode="tablet"] .studio-rendered h2 {
+  font-size: 1.625rem;
+  margin-top: 2.75rem;
+}
+
+[data-device-mode="tablet"] .studio-rendered h3 {
+  font-size: 1.375rem;
+  margin-top: 2.25rem;
+}
+
+[data-device-mode="tablet"] .studio-rendered p,
+[data-device-mode="tablet"] .studio-rendered li {
+  font-size: 1.0625rem;
+}
+
+[data-device-mode="tablet"] .studio-rendered > p:first-of-type {
+  font-size: 1.125rem;
+}
+
+[data-device-mode="tablet"] .studio-rendered blockquote {
+  padding: 1.35rem 1.75rem;
+  margin: 2.25rem 0;
+}
+
+[data-device-mode="tablet"] .studio-rendered blockquote::before {
+  font-size: 2.75rem;
+}
+
+[data-device-mode="tablet"] .studio-rendered blockquote p {
+  font-size: 1.125rem;
+}
+
+[data-device-mode="tablet"] .studio-rendered pre {
+  padding: 1.125rem;
+  margin: 1.75rem -0.5rem;
+}
+
+[data-device-mode="tablet"] .studio-rendered ul,
+[data-device-mode="tablet"] .studio-rendered ol {
+  padding-left: 1.25rem;
 }
 
 /* Print styles */

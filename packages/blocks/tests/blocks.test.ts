@@ -357,7 +357,7 @@ describe("HeadingBlock", () => {
 describe("ListBlock", () => {
   it("renders ordered and unordered list variants", () => {
     const ordered = ListBlock.render({
-      style: "ordered",
+      style: "numeric",
       items: ["first", "second"],
       start: 4,
     });
@@ -390,6 +390,23 @@ describe("ListBlock", () => {
       style: "unordered",
       items: ["alpha"],
     });
+  });
+
+  it("renders roman and abjad list variants", () => {
+    const roman = ListBlock.render({
+      style: "roman",
+      items: ["first", "second"],
+    });
+    const abjad = ListBlock.render({
+      style: "abjad",
+      items: ["اول", "دوم"],
+    });
+
+    expect(roman).toContain('class="pulse-list-roman"');
+    expect(roman).toContain("<ol");
+    expect(abjad).toContain('data-list-style="abjad"');
+    expect(abjad).toContain('data-marker="ا"');
+    expect(abjad).toContain('data-marker="ب"');
   });
 
   it("allows empty items via schema", () => {

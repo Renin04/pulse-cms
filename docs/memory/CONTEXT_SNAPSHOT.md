@@ -4,20 +4,26 @@
 > Update this at the end of every session.
 
 **Last Updated:** 2026-05-18
-**Current Session:** Session 88 — Bug Fixes 8.1/8.2/8.3 (reference update, rel options, contrary option prevention) + global sequential ref numbering
+**Current Session:** Session 89 — Bug Fixes 9/11/12 (404 redesign, move-to clamping, list dropdown with Roman & Abjad)
 **Current Phase:** Phase 4 — AI Builder & Automation Runtime (bug-fixing branch)
 
 ---
 
 ## Current Focus
 
-**What we just completed (Session 88):**
+**What we just completed (Session 89):**
+- Bug #9: 404 page redesigned — Created `apps/website/app/not-found.tsx` with dark Pulse-brand theme, glitch-effect on "404", rotating sarcastic excuses (10 different messages), floating gradient orbs, noise texture background, and dual CTAs ("Take me home" + "Explore the blog").
+- Bug #11: Move-to input bounds clamping — Values `< 1` clamp to position 1 (start), values `> total` clamp to position total (end). Added `onBlur` safety commit in addition to Enter key.
+- Bug #12: List block Roman & Abjad dropdown — Replaced separate "Bullet / Numbered" buttons with a single `<select>` dropdown offering Bullet • Numbered • Roman • ابجد. Implemented correct traditional abjad order (ا ب ج د ه و ز ح ط ي ك ل م ن س ع ف ص ق ر ش ت ث خ ذ ض ظ غ). Updated `ListBlock.ts` schema to accept `"unordered" | "numeric" | "roman" | "abjad"` with legacy `"ordered"` auto-migration. Added renderer CSS for `.pulse-list-roman`, `.pulse-list-numeric`, and `data-list-style="abjad"` with custom `::before` markers.
+- Also fixed: list item placeholder text (empty string + placeholder="List item" instead of hardcoded "New item"), which addresses bug #14.
+- Quality gates passed: `lint`, `typecheck`, `build`, `test` (1071/1071 passed) green.
+
+**Previous Session 88:**
 - Bug #8.1: Fixed reference update not working — replaced fragile textContent matching with direct DOM element tracking (`existingRefElementRef`) across heading, text, and blockquote blocks.
 - Bug #8.2: Reference now has all link options — RefModal rebuilt with nofollow, noopener, noreferrer, external checkboxes, matching LinkModal parity.
 - Bug #8.3: Contrary options prevented + runtime safety — noopener is auto-enforced and disabled when "Open in new tab" is checked in both LinkModal and RefModal; rel attributes render correctly in preview and blog post; no runtime errors.
 - Global sequential ref numbering: Editor reference numbers are now globally sequential (1,2,3,4,5) across all blocks instead of per-block restarting (1,2,1,2,3). Implemented via `useLayoutEffect` in `StudioBlockCanvas` that renumbers all `.pulse-editor-ref` spans after each render.
 - Blockquote right-click: Added missing right-click context menu support for references in blockquote block.
-- Quality gates passed: `lint`, `typecheck`, `build` green.
 
 **Previous Session 87:**
 - Bug #6: Fixed reference rendering in editor — refs now show as superscript numbers (1, a, α, ا) via `pulse-reference-editor` class instead of plain citation text.

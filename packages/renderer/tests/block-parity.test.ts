@@ -177,14 +177,14 @@ describe("List block renderer", () => {
   });
 
   it("renders ordered list", () => {
-    const block = makeBlock("list", { style: "ordered", items: ["First", "Second"] });
+    const block = makeBlock("list", { style: "numeric", items: ["First", "Second"] });
     const { html } = renderBlock(block);
     expect(html).toMatch(/^<ol/);
     expect(html).toContain("<li>First</li>");
   });
 
   it("renders ordered list with start attribute", () => {
-    const block = makeBlock("list", { style: "ordered", items: ["Item"], start: 5 });
+    const block = makeBlock("list", { style: "numeric", items: ["Item"], start: 5 });
     const { html } = renderBlock(block);
     expect(html).toContain('start="5"');
   });

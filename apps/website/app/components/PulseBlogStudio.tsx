@@ -1151,7 +1151,7 @@ return (
 
                   {/* Preview content */}
                   <div className="flex-1 overflow-y-auto p-4">
-                    <div className="mx-auto transition-all duration-300" style={{ maxWidth: deviceWidth }}>
+                    <div className="mx-auto transition-all duration-300" style={{ maxWidth: deviceWidth }} data-device-mode={deviceMode}>
                       {previewMode === 'article' ? (
                         <div className="rounded-xl border border-[var(--neutral-200)] bg-white p-6 shadow-sm">
                           {draft.featuredImage && (
@@ -1162,7 +1162,7 @@ return (
                           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--pulse-red)]">{draft.eyebrow}</p>
                           <h1 className="mt-1 text-2xl font-bold text-[var(--pulse-black)]">{draft.title}</h1>
                           <p className="mt-3 text-sm leading-relaxed text-[var(--neutral-600)]">{draft.excerpt}</p>
-                          <div className="mt-6" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                          <div className="studio-rendered mt-6" dangerouslySetInnerHTML={{ __html: previewHtml }} />
                         </div>
                       ) : (
                         <div className="rounded-xl border border-[var(--neutral-200)] bg-white shadow-sm overflow-hidden">

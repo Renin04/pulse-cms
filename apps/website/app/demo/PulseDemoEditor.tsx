@@ -1218,27 +1218,52 @@ function EditableCode({ block, adapter }: { block: Block<BlockData>; adapter: Ed
   );
 }
 
+const ABJAD_LETTERS = [
+  'ا', 'ب', 'ج', 'د', 'ه', 'و', 'ز', 'ح', 'ط', 'ي', 'ك', 'ل', 'م', 'ن',
+  'س', 'ع', 'ف', 'ص', 'ق', 'ر', 'ش', 'ت', 'ث', 'خ', 'ذ', 'ض', 'ظ', 'غ',
+];
+
+function getAbjadMarker(index: number): string {
+  if (index < 1) return 'ا';
+  if (index <= ABJAD_LETTERS.length) return ABJAD_LETTERS[index - 1];
+  const cycles = Math.floor((index - 1) / ABJAD_LETTERS.length);
+  const remainder = ((index - 1) % ABJAD_LETTERS.length) + 1;
+  const letter = ABJAD_LETTERS[remainder - 1];
+  return cycles > 0 ? `${letter}(${cycles + 1})` : letter;
+}
+
 function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { style: 'ordered' | 'unordered'; items: string[] };
-  const ListTag = data.style === 'ordered' ? 'ol' : 'ul';
+  const data = block.data as { style: 'unordered' | 'numeric' | 'roman' | 'abjad'; items: string[] };
+  const ListTag = data.style === 'unordered' ? 'ul' : 'ol';
+  const listStyleClass =
+    data.style === 'unordered' ? 'list-disc' :
+    data.style === 'roman' ? 'list-[upper-roman]' :
+    data.style === 'abjad' ? 'pulse-editor-list-abjad' :
+    'list-decimal';
+
+  const styleOptions: { value: typeof data.style; label: string }[] = [
+    { value: 'unordered', label: 'Bullet' },
+    { value: 'numeric', label: 'Numbered' },
+    { value: 'roman', label: 'Roman' },
+    { value: 'abjad', label: 'ابجد' },
+  ];
+
   return (
     <div>
       <div className="mb-2 flex items-center gap-2">
-        {(['unordered', 'ordered'] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, style: s } }))}
-            className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
-              data.style === s ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
-            }`}
-          >
-            {s === 'unordered' ? 'Bullet' : 'Numbered'}
-          </button>
-        ))}
+        <select
+          value={data.style || 'unordered'}
+          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, style: e.target.value as typeof data.style } }))}
+          className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-700)] outline-none focus:border-[var(--pulse-red)]"
+        >
+          {styleOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
-      <ListTag className={data.style === 'ordered' ? 'list-decimal' : 'list-disc'}>
+      <ListTag className={listStyleClass}>
         {data.items.map((item, i) => (
-          <li key={i} className="mb-2">
+          <li key={i} className="mb-2" data-marker={data.style === 'abjad' ? getAbjadMarker(i + 1) : undefined}>
             <div className="flex items-start gap-2">
               <input
                 value={item}
@@ -1247,7 +1272,8 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
                   next[i] = e.target.value;
                   adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: next } }));
                 }}
-                className="min-w-0 flex-1 rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-1.5 text-sm text-[var(--neutral-700)] outline-none"
+                placeholder="List item"
+                className="min-w-0 flex-1 rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-1.5 text-sm text-[var(--neutral-700)] outline-none placeholder:text-[var(--neutral-400)]"
               />
               <button
                 onClick={() => {
@@ -1263,7 +1289,7 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
         ))}
       </ListTag>
       <button
-        onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: [...data.items, 'New item'] } }))}
+        onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, items: [...data.items, ''] } }))}
         className="mt-2 inline-flex items-center gap-1 rounded-md bg-[var(--neutral-100)] px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]"
       >
         <Plus className="h-3 w-3" />
