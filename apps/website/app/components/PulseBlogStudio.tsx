@@ -10,11 +10,12 @@ import {
   ShieldCheck, Trash2, Tag, Hash, BarChart3, Globe, User,
   FileText, Sparkles, ArrowLeft, ChevronDown, ChevronUp, X,
   PanelLeft, PanelLeftClose, Monitor, Tablet, Smartphone, Focus,
-  Columns2, Minimize2, HelpCircle, Image as ImageIcon, Upload, List,
+  Columns2, HelpCircle, Image as ImageIcon, Upload, List,
   Search, MessageSquare, BookOpen,
 } from 'lucide-react'
 import { countWords, formatReadTime } from '../../lib/blog-studio'
 import { ToastProvider, useToast } from './ToastProvider'
+import { StudioTooltip } from './StudioTooltip'
 import { useAuth } from '../../lib/use-api'
 import type { EditorStateAdapter } from '@pulse/editor'
 import { createEditorStateAdapter, DEFAULT_SHORTCUT_BINDINGS } from '@pulse/editor'
@@ -83,7 +84,7 @@ function StatusDot({ status }: { status: EntryStatus }) {
   return <span className={cx('h-1.5 w-1.5 rounded-full', map[status])} />
 }
 
-function LiveStats({ editorBlocks, draft, selectedEntry }: { editorBlocks: StudioBlock[]; draft: DraftFormState | null; selectedEntry: BlogStudioEntry | null }) {
+function LiveStats({ editorBlocks, draft }: { editorBlocks: StudioBlock[]; draft: DraftFormState | null }) {
   const wordCount = countWords(editorBlocks)
   const readTime = formatReadTime(wordCount)
 
@@ -156,10 +157,12 @@ function Section({ title, icon: Icon, children, defaultOpen = true }: {
 
 function IconBtn({ onClick, active, title, children }: { onClick?: () => void; active?: boolean; title: string; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} title={title}
-      className={cx('rounded-md p-1.5 transition-colors', active ? 'bg-[var(--pulse-black)] text-white' : 'text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)]')}>
-      {children}
-    </button>
+    <StudioTooltip text={title} side="bottom" delay={400}>
+      <button onClick={onClick}
+        className={cx('rounded-md p-1.5 transition-colors', active ? 'bg-[var(--pulse-black)] text-white' : 'text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)]')}>
+        {children}
+      </button>
+    </StudioTooltip>
   )
 }
 
@@ -405,12 +408,11 @@ function PulseBlogStudioInner() {
   const sidebarOpenBeforeFocusRef = useRef(true)
   const [previewMode, setPreviewMode] = useState<'article' | 'list'>('article')
   const previewContainerRef = useRef<HTMLDivElement>(null)
-  const [previewZoom, setPreviewZoom] = useState(() => {
-    // Safe initial zoom so the first frame never overflows while ResizeObserver warms up
-    if (typeof window === 'undefined') return 1
-    const panelWidth = window.innerWidth * 0.45 - 32
-    return Math.max(0.3, Math.min(1, panelWidth / 1200))
-  })
+  const previewContentRef = useRef<HTMLDivElement>(null)
+  const zoomRef = useRef(
+    typeof window === 'undefined' ? 0.7 : Math.max(0.3, Math.min(1, (window.innerWidth * 0.45 - 32) / 1200))
+  )
+  const prevDeviceWidthRef = useRef('1200px')
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imageSettingsOpen, setImageSettingsOpen] = useState(false)
   const [pendingImage, setPendingImage] = useState<{ url: string; name: string; width?: number; height?: number } | null>(null)
@@ -747,6 +749,46 @@ function PulseBlogStudioInner() {
           }
         });
       });
+
+      // --- Code blocks (run / demo mode) ---
+      preview.querySelectorAll('.pulse-code-block[data-mode="run"], .pulse-code-block[data-mode="demo"]').forEach((block) => {
+        if ((block as any).__codeHydrated) return;
+        (block as any).__codeHydrated = true;
+
+        const pre = block.querySelector('pre[data-block-type="code"]');
+        const mode = block.getAttribute('data-mode');
+        const code = pre?.querySelector('code')?.textContent || '';
+        const lang = block.getAttribute('data-language') || 'javascript';
+
+        // Create sandbox iframe after the code block
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pulse-code-sandbox';
+        wrapper.innerHTML = `
+          <div class="pulse-code-sandbox-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+            <span>${mode === 'demo' ? 'Live Demo' : 'Output'}</span>
+            ${mode === 'run' ? `<button class="pulse-editor-code-run-btn" style="margin-left:auto;padding:0.25rem 0.625rem;font-size:0.65rem" onclick="this.closest('.pulse-code-sandbox').querySelector('iframe').contentWindow.location.reload()">Run</button>` : ''}
+          </div>
+          <iframe sandbox="allow-scripts" style="width:100%;min-height:${mode === 'demo' ? '200px' : '120px'};border:none;display:block;background:#fff"></iframe>
+        `;
+        const iframe = wrapper.querySelector('iframe') as HTMLIFrameElement;
+
+        const isJson = lang === 'json';
+        const isHtml = lang === 'html' || lang === 'markdown';
+        const isCss = lang === 'css';
+
+        let srcdoc: string;
+        if (isHtml) {
+          srcdoc = code;
+        } else if (isCss) {
+          srcdoc = `<style>${code}</style><div style="padding:1rem;font-family:sans-serif">CSS applied to this page</div>`;
+        } else {
+          srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:1rem;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6;background:#fff;color:#24292e}.entry{margin-bottom:0.25rem;white-space:pre-wrap;word-break:break-word}.entry.error{color:#cf222e}.entry.warn{color:#9a6700}.entry.info{color:#0969da}.entry.log{color:#24292e}</style></head><body><div id="output"></div><script>(function(){const output=document.getElementById('output');function addEntry(type,args){const msg=Array.from(args).map(a=>typeof a==='object'?JSON.stringify(a,null,2):String(a)).join(' ');const div=document.createElement('div');div.className='entry '+type;div.textContent=msg;output.appendChild(div);}${isJson ? `try{const data=JSON.parse(\`${code.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`);addEntry('log',[JSON.stringify(data,null,2)]);}catch(e){addEntry('error',[e.message]);}` : `try{${code}}catch(e){addEntry('error',[e.name+': '+e.message]);}`}})();</script></body></html>`;
+        }
+
+        iframe.srcdoc = srcdoc;
+        block.parentNode?.insertBefore(wrapper, block.nextSibling);
+      });
     }, 300);
     return () => clearTimeout(t);
   }, [previewHtml]);
@@ -926,33 +968,56 @@ function PulseBlogStudioInner() {
   /* Device preview widths */
   const deviceWidth = { desktop: '1200px', tablet: '768px', mobile: '375px' }[deviceMode]
 
-  /* Preview zoom: smoothly interpolate so mode switches feel fluid */
+  /* Preview zoom: animate both zoom and visual width for smooth mode switches */
   useEffect(() => {
-    const el = previewContainerRef.current
-    if (!el) return
+    const containerEl = previewContainerRef.current
+    const contentEl = previewContentRef.current
+    if (!containerEl || !contentEl) return
 
     let rafId = 0
-    let currentZoom = previewZoom
 
-    function animateTo(targetZoom: number) {
+    function animateTo(targetZoom: number, startFrom?: number) {
+      let currentZoom = startFrom !== undefined ? startFrom : zoomRef.current
+
+      if (startFrom !== undefined) {
+        zoomRef.current = currentZoom
+        contentEl!.style.zoom = String(currentZoom)
+      }
+
       function tick() {
         currentZoom = currentZoom + (targetZoom - currentZoom) * 0.12
         if (Math.abs(currentZoom - targetZoom) < 0.001) {
-          setPreviewZoom(targetZoom)
+          zoomRef.current = targetZoom
+          contentEl!.style.zoom = String(targetZoom)
+          rafId = 0
           return
         }
-        setPreviewZoom(currentZoom)
+        zoomRef.current = currentZoom
+        contentEl!.style.zoom = String(currentZoom)
         rafId = requestAnimationFrame(tick)
       }
+
       cancelAnimationFrame(rafId)
       rafId = requestAnimationFrame(tick)
     }
 
-    // Kick off animation immediately when deviceMode changes
-    const contentWidth = el.clientWidth - 32
+    const contentWidth = containerEl.clientWidth - 32
     const targetWidth = parseInt(deviceWidth)
     const targetZoom = Math.max(0.3, Math.min(1, contentWidth / targetWidth))
-    animateTo(targetZoom)
+
+    const isModeSwitch = prevDeviceWidthRef.current !== deviceWidth
+    if (isModeSwitch) {
+      // Continuity zoom: preserve visual width across the mode switch
+      const oldWidth = parseInt(prevDeviceWidthRef.current)
+      const oldZoom = zoomRef.current
+      const oldVisualWidth = oldWidth * oldZoom
+      const continuityZoom = Math.max(0.3, Math.min(1, oldVisualWidth / targetWidth))
+      prevDeviceWidthRef.current = deviceWidth
+      animateTo(targetZoom, continuityZoom)
+    } else {
+      // Initial open or preview toggle: animate from current ref zoom
+      animateTo(targetZoom)
+    }
 
     const observer = new ResizeObserver((entries) => {
       const contentWidth = entries[0].contentRect.width
@@ -960,12 +1025,13 @@ function PulseBlogStudioInner() {
       const targetZoom = Math.max(0.3, Math.min(1, contentWidth / targetWidth))
       animateTo(targetZoom)
     })
-    observer.observe(el)
+    observer.observe(containerEl)
+
     return () => {
       cancelAnimationFrame(rafId)
       observer.disconnect()
     }
-  }, [deviceWidth])
+  }, [previewOpen, deviceWidth])
 
   if (!snapshot) {
     return (
@@ -1015,9 +1081,11 @@ return (
             className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--neutral-200)] bg-white/90 px-3 backdrop-blur"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <button onClick={() => { setFocusMode(false); setSidebarOpen(sidebarOpenBeforeFocusRef.current) }} className="rounded p-1 text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors" title="Exit focus (Esc)">
-                <Minimize2 className="h-4 w-4" />
-              </button>
+              <StudioTooltip text="Exit focus (Esc)" side="bottom">
+                <button onClick={() => { setFocusMode(false); setSidebarOpen(sidebarOpenBeforeFocusRef.current) }} className="rounded p-1 text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              </StudioTooltip>
               <span className="truncate text-xs font-semibold text-[var(--pulse-black)] max-w-[200px]">{draft.title || 'Untitled'}</span>
               {isDirty && <span className="text-[10px] font-bold text-amber-600">• Unsaved</span>}
             </div>
@@ -1045,9 +1113,11 @@ return (
           >
             {/* Left */}
             <div className="flex items-center gap-1.5 min-w-0">
-              <Link href="/admin/content" className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors" title="Back to Content Library">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
+              <StudioTooltip text="Back to Content Library" side="bottom">
+                <Link href="/admin/content" className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors inline-flex">
+                  <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </StudioTooltip>
               <IconBtn onClick={() => setSidebarOpen(!sidebarOpen)} active={sidebarOpen} title={sidebarOpen ? 'Hide sidebar (Ctrl+\\)' : 'Show sidebar (Ctrl+\\)'}>
                 {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
               </IconBtn>
@@ -1055,7 +1125,9 @@ return (
                 <Focus className="h-4 w-4" />
               </IconBtn>
               <div className="mx-1.5 h-4 w-px bg-[var(--neutral-200)]" />
-              <span className="truncate text-xs font-semibold text-[var(--pulse-black)] max-w-[200px] sm:max-w-xs" title={draft.title}>{draft.title || 'Untitled'}</span>
+              <StudioTooltip text={draft.title || 'Untitled'} side="bottom">
+                <span className="truncate text-xs font-semibold text-[var(--pulse-black)] max-w-[200px] sm:max-w-xs">{draft.title || 'Untitled'}</span>
+              </StudioTooltip>
               <span className="hidden sm:flex items-center gap-1 rounded-full border border-[var(--neutral-200)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
                 <StatusDot status={currentStatus} />{currentStatus}
               </span>
@@ -1091,12 +1163,16 @@ return (
               <IconBtn onClick={() => { setNotebookOpen(n => !n); setCommentsOpen(false); setPreviewOpen(false); setHelpOpen(false) }} active={notebookOpen} title="Notebook (Ctrl+Shift+N)">
                 <BookOpen className="h-4 w-4" />
               </IconBtn>
-              <Link href={`/blog/preview?slug=${selectedEntry.slug}`} target="_blank" className="rounded p-1 text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors" title="Open preview in new tab">
-                <Eye className="h-4 w-4" />
-              </Link>
-              <button onClick={handleCreate} className="rounded p-1 text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors" title="New entry">
-                <Plus className="h-4 w-4" />
-              </button>
+              <StudioTooltip text="Open preview in new tab" side="bottom">
+                <Link href={`/blog/preview?slug=${selectedEntry.slug}`} target="_blank" className="rounded p-1 text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors inline-flex">
+                  <Eye className="h-4 w-4" />
+                </Link>
+              </StudioTooltip>
+              <StudioTooltip text="New entry" side="bottom">
+                <button onClick={handleCreate} className="rounded p-1 text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors">
+                  <Plus className="h-4 w-4" />
+                </button>
+              </StudioTooltip>
               <button onClick={handlePublish} className="ml-1 rounded-md bg-[var(--pulse-black)] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[var(--pulse-red)] transition-colors">
                 Publish
               </button>
@@ -1267,7 +1343,7 @@ return (
               <input value={draft.title} onChange={e => updateDraft('title', e.target.value)}
                 className="w-full bg-transparent text-3xl font-bold leading-tight text-[var(--pulse-black)] outline-none placeholder:text-[var(--neutral-300)] md:text-4xl"
                 placeholder="Article title" />
-              <LiveStats editorBlocks={editorBlocks} draft={draft} selectedEntry={selectedEntry} />
+              <LiveStats editorBlocks={editorBlocks} draft={draft} />
               <div className="mt-8">
                 <StudioBlockCanvas
                   adapter={editorAdapter}
@@ -1310,12 +1386,16 @@ return (
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Preview</span>
                     <div className="flex items-center gap-0.5">
                       <div className="mr-1 flex items-center gap-0.5 rounded-md border border-[var(--neutral-200)] bg-[var(--neutral-50)] p-0.5">
-                        <button onClick={() => setPreviewMode('article')} className={cx('rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors', previewMode === 'article' ? 'bg-white text-[var(--pulse-black)] shadow-sm' : 'text-[var(--neutral-500)] hover:text-[var(--pulse-black)]')} title="Article view">
-                          <FileText className="h-3 w-3" />
-                        </button>
-                        <button onClick={() => setPreviewMode('list')} className={cx('rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors', previewMode === 'list' ? 'bg-white text-[var(--pulse-black)] shadow-sm' : 'text-[var(--neutral-500)] hover:text-[var(--pulse-black)]')} title="List card view">
-                          <List className="h-3 w-3" />
-                        </button>
+                        <StudioTooltip text="Article view" side="bottom">
+                          <button onClick={() => setPreviewMode('article')} className={cx('rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors', previewMode === 'article' ? 'bg-white text-[var(--pulse-black)] shadow-sm' : 'text-[var(--neutral-500)] hover:text-[var(--pulse-black)]')}>
+                            <FileText className="h-3 w-3" />
+                          </button>
+                        </StudioTooltip>
+                        <StudioTooltip text="List card view" side="bottom">
+                          <button onClick={() => setPreviewMode('list')} className={cx('rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors', previewMode === 'list' ? 'bg-white text-[var(--pulse-black)] shadow-sm' : 'text-[var(--neutral-500)] hover:text-[var(--pulse-black)]')}>
+                            <List className="h-3 w-3" />
+                          </button>
+                        </StudioTooltip>
                       </div>
                       <IconBtn onClick={() => setDeviceMode('desktop')} active={deviceMode === 'desktop'} title="Desktop">
                         <Monitor className="h-3.5 w-3.5" />
@@ -1327,15 +1407,17 @@ return (
                         <Smartphone className="h-3.5 w-3.5" />
                       </IconBtn>
                       <div className="mx-1 h-3 w-px bg-[var(--neutral-200)]" />
-                      <button onClick={() => setPreviewOpen(false)} className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors" title="Close preview">
-                        <X className="h-3.5 w-3.5" />
-                      </button>
+                      <StudioTooltip text="Close preview" side="bottom">
+                        <button onClick={() => setPreviewOpen(false)} className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors">
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </StudioTooltip>
                     </div>
                   </div>
 
                   {/* Preview content */}
                   <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4">
-                    <div className="mx-auto" style={{ width: deviceWidth, zoom: previewZoom }} data-device-mode={deviceMode}>
+                    <div ref={previewContentRef} className="mx-auto" style={{ width: deviceWidth }} data-device-mode={deviceMode}>
                       {previewMode === 'article' ? (
                         <div className="rounded-xl border border-[var(--neutral-200)] bg-white p-6 shadow-sm">
                           {draft.featuredImage && (
@@ -1389,9 +1471,11 @@ return (
                 <div className="flex h-full flex-col">
                   <div className="flex items-center justify-between border-b border-[var(--neutral-200)] bg-white px-3 py-1.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Help</span>
-                    <button onClick={() => setHelpOpen(false)} className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors" title="Close help">
-                      <X className="h-3.5 w-3.5" />
-                    </button>
+                    <StudioTooltip text="Close help" side="bottom">
+                      <button onClick={() => setHelpOpen(false)} className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </StudioTooltip>
                   </div>
                   <div className="flex-1 overflow-y-auto p-4">
                     <HelpReference />

@@ -4,6 +4,7 @@ import Footer from '../../components/Footer';
 import BlogPostContent from '../BlogPostContent';
 import { getBlogFeaturedMedia } from '../../../lib/blog-feature-media';
 import { adaptEntryDetail } from '../../../lib/entry-adapter';
+import { initShikiHighlighter } from '../../../lib/shiki-highlighter';
 import { prisma } from '../../../lib/db';
 import { generateBlogPostStructuredData } from '../../../lib/structured-data';
 
@@ -44,6 +45,7 @@ async function getFullEntryBySlug(slug: string) {
       })) ?? [],
     };
 
+    await initShikiHighlighter();
     return adaptEntryDetail(serialized as any);
   } catch {
     return null;

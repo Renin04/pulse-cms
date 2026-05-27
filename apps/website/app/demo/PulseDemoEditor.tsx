@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Sparkles, Command, Keyboard, MousePointer, Plus,
@@ -10,6 +10,7 @@ import {
   LayoutGrid, Video, Music, Globe, BookOpen, Clock, Layers,
   Monitor, FileText, Star, Share2, Bookmark, GitBranch,
   ChevronDown, ChevronUp, ArrowRight,
+  Play, Terminal,
 } from 'lucide-react';
 import { createEditorStateAdapter, type EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
@@ -30,6 +31,7 @@ import {
   markdownToHtml, htmlToMarkdown,
   getLinkAtCursor, getLinkFromEvent, getRefAtCursor, getRefFromEvent, getRefElementAtCursor, getRefElementFromEvent,
 } from '../components/StudioBlockEditors';
+import CodeSandbox from '../components/CodeSandbox';
 
 // Ensure builtin blocks and renderers are registered once
 let registryReady = false;
@@ -1306,20 +1308,52 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
   );
 }
 
+const CODE_LANGUAGES = ['typescript', 'tsx', 'javascript', 'jsx', 'json', 'html', 'css', 'markdown', 'bash', 'python', 'go', 'rust'];
+const CODE_MODES: { value: 'show' | 'run' | 'demo'; label: string }[] = [
+  { value: 'show', label: 'Show' },
+  { value: 'run', label: 'Run' },
+  { value: 'demo', label: 'Demo' },
+];
+
 function EditableCode({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { code: string; language: string; showLineNumbers?: boolean };
+  const data = block.data as { code: string; language: string; showLineNumbers?: boolean; mode?: 'show' | 'run' | 'demo' };
+  const mode = data.mode ?? 'show';
+  const [runKey, setRunKey] = useState(0);
+
+  const handleRun = useCallback(() => {
+    setRunKey((k) => k + 1);
+  }, []);
+
   return (
-    <div>
-      <div className="mb-2 flex items-center gap-2">
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
         <select
           value={data.language}
           onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, language: e.target.value } }))}
           className="rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] outline-none"
         >
-          {['typescript', 'tsx', 'javascript', 'jsx', 'json', 'html', 'css', 'markdown', 'bash', 'python', 'go', 'rust'].map((l) => (
+          {CODE_LANGUAGES.map((l) => (
             <option key={l} value={l}>{l}</option>
           ))}
         </select>
+        <div className="inline-flex items-center rounded-lg border border-[var(--neutral-200)] bg-white overflow-hidden">
+          {CODE_MODES.map((m) => {
+            const active = mode === m.value;
+            return (
+              <button
+                key={m.value}
+                onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, mode: m.value } }))}
+                className={`px-2 py-1 text-xs font-semibold transition-colors ${
+                  active
+                    ? 'bg-[var(--pulse-red)] text-white'
+                    : 'text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]'
+                }`}
+              >
+                {m.label}
+              </button>
+            );
+          })}
+        </div>
         <label className="flex items-center gap-1.5 text-xs text-[var(--neutral-600)]">
           <input
             type="checkbox"
@@ -1330,12 +1364,40 @@ function EditableCode({ block, adapter }: { block: Block<BlockData>; adapter: Ed
           Line numbers
         </label>
       </div>
-      <textarea
-        value={data.code}
-        onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, code: e.target.value } }))}
-        rows={4}
-        className="w-full rounded-xl border border-[var(--neutral-200)] bg-[#0d0d0e] p-3 font-mono text-sm text-[#a5ffce] outline-none"
-      />
+      <div className="pulse-editor-code-block">
+        <div className="pulse-editor-code-header">
+          <Terminal className="h-3.5 w-3.5 text-[var(--pulse-red)]" />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">
+            {data.language}
+          </span>
+          {mode !== 'show' && (
+            <>
+              <div style={{ flex: 1 }} />
+              <button onClick={handleRun} className="pulse-editor-code-run-btn">
+                <Play className="h-3 w-3" />
+                Run
+              </button>
+            </>
+          )}
+        </div>
+        <textarea
+          value={data.code}
+          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, code: e.target.value } }))}
+          rows={Math.max(4, data.code.split('\n').length)}
+          className="pulse-editor-code-textarea"
+          placeholder="Type your code here..."
+          spellCheck={false}
+        />
+      </div>
+      {mode !== 'show' && (
+        <CodeSandbox
+          key={runKey}
+          code={data.code}
+          language={data.language}
+          mode={mode}
+          onRun={handleRun}
+        />
+      )}
     </div>
   );
 }

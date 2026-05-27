@@ -26,6 +26,8 @@ export interface CodeBlockData extends Record<string, unknown> {
   language: SupportedCodeLanguage;
   theme: string;
   showLineNumbers: boolean;
+  mode: "show" | "run" | "demo";
+  align?: "left" | "center" | "right" | "justify";
 }
 
 export interface ShikiLikeHighlighter {
@@ -40,6 +42,7 @@ export const codeBlockDataSchema = z
     language: codeLanguageSchema,
     theme: z.string().default("github-light"),
     showLineNumbers: z.boolean().default(true),
+    mode: z.enum(["show", "run", "demo"]).default("show"),
     align: z.enum(["left", "center", "right", "justify"]).optional(),
   })
   .strict() as z.ZodType<CodeBlockData>;
@@ -60,9 +63,19 @@ export function supportsCodeLanguage(
 
 function renderFallbackCode(data: CodeBlockData): string {
   const escapedCode = escapeHtml(data.code);
-  const lineNumbers = data.showLineNumbers ? " data-line-numbers=\"true\"" : "";
+  const lineNumbers = data.showLineNumbers ? ' data-line-numbers="true"' : '';
+  const modeAttr = data.mode !== 'show' ? ` data-mode="${data.mode}"` : '';
+  const alignStyle = data.align && data.align !== 'left' ? ` style="text-align: ${data.align};"` : '';
 
-  return `<pre data-block-type="code" data-language="${data.language}"${lineNumbers}><code class="language-${data.language}">${escapedCode}</code></pre>`;
+  return wrapCodeBlock(
+    `<pre data-block-type="code" data-language="${data.language}"${lineNumbers}${modeAttr}${alignStyle}><code class="language-${data.language}">${escapedCode}</code></pre>`,
+    data,
+  );
+}
+
+function wrapCodeBlock(innerHtml: string, data: CodeBlockData): string {
+  const modeAttr = data.mode !== 'show' ? ` data-mode="${data.mode}"` : '';
+  return `<div class="pulse-code-block" data-language="${data.language}"${modeAttr}>\n  <div class="pulse-code-header">\n    <div class="pulse-code-dots">\n      <span class="pulse-code-dot red"></span>\n      <span class="pulse-code-dot yellow"></span>\n      <span class="pulse-code-dot green"></span>\n    </div>\n    <span class="pulse-code-lang">${data.language}</span>\n  </div>\n  <div class="pulse-code-body">\n    ${innerHtml}\n  </div>\n</div>`;
 }
 
 export const CodeBlock: BlockTypeDefinition<CodeBlockData> = {
@@ -75,6 +88,7 @@ export const CodeBlock: BlockTypeDefinition<CodeBlockData> = {
     language: "typescript",
     theme: "github-light",
     showLineNumbers: true,
+    mode: "show",
   },
   config: {
     category: "basic",
@@ -88,10 +102,22 @@ export const CodeBlock: BlockTypeDefinition<CodeBlockData> = {
     }
 
     try {
-      return activeHighlighter.codeToHtml(parsed.code, {
+      let html = activeHighlighter.codeToHtml(parsed.code, {
         lang: parsed.language,
         theme: parsed.theme,
       });
+
+      // Inject Pulse data attributes into the Shiki output
+      const lineNumbers = parsed.showLineNumbers ? ' data-line-numbers="true"' : '';
+      const modeAttr = parsed.mode !== 'show' ? ` data-mode="${parsed.mode}"` : '';
+      const alignStyle = parsed.align && parsed.align !== 'left' ? ` style="text-align: ${parsed.align};"` : '';
+
+      html = html.replace(
+        /<pre/,
+        `<pre data-block-type="code" data-language="${parsed.language}"${lineNumbers}${modeAttr}${alignStyle}`,
+      );
+
+      return wrapCodeBlock(html, parsed);
     } catch {
       // Fallback keeps rendering resilient even if highlighting fails.
       return renderFallbackCode(parsed);

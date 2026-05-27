@@ -10,6 +10,7 @@ import {
   LayoutGrid, Video, Music, Globe, BookOpen, Clock, Layers,
   Monitor, FileText, Star, Share2, Bookmark, GitBranch,
   ChevronDown, ChevronUp, ArrowRight, GripVertical,
+  Play, Terminal, Eye, Sparkles,
 } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
@@ -25,6 +26,8 @@ import {
   markdownToHtml, htmlToMarkdown,
   getLinkAtCursor, getLinkFromEvent, getRefAtCursor, getRefFromEvent, getRefElementAtCursor, getRefElementFromEvent,
 } from './StudioBlockEditors';
+import { StudioTooltip } from './StudioTooltip';
+import CodeSandbox from './CodeSandbox';
 
 const blockTypeToIcon: Record<string, React.ElementType> = {
   text: Type,
@@ -102,6 +105,45 @@ const blockTypeToLabel: Record<string, string> = {
   file: 'File',
   link: 'Link',
   'horizontal-rule': 'Divider',
+};
+
+const blockTypeToDescription: Record<string, string> = {
+  text: 'Plain text with formatting',
+  heading: 'Section heading in 6 levels',
+  list: 'Bulleted, numbered, or custom lists',
+  code: 'Syntax-highlighted code block',
+  blockquote: 'Styled quotation with citation',
+  callout: 'Info box with icon and color',
+  image: 'Upload or link an image',
+  video: 'YouTube, Vimeo, or self-hosted',
+  audio: 'MP3 player with captions',
+  table: 'Structured data table',
+  quiz: 'Single or multiple choice quiz',
+  poll: 'Live voting with results',
+  survey: 'Multi-question form block',
+  accordion: 'Collapsible content panels',
+  tabs: 'Tabbed content sections',
+  toggle: 'Expandable on/off content',
+  spoiler: 'Hidden content reveal',
+  chart: 'Bar, line, pie, or doughnut',
+  map: 'Interactive location map',
+  'math-equation': 'LaTeX-style math rendering',
+  diagram: 'Flowchart or visual diagram',
+  manga: 'Comic-style panel grid',
+  'speech-bubble': 'Dialogue or thought bubble',
+  card: 'Image card with CTA button',
+  gallery: 'Masonry or grid image gallery',
+  carousel: 'Sliding image carousel',
+  flashcard: 'Flip-card for learning',
+  timeline: 'Chronological event timeline',
+  comparison: 'Side-by-side comparison',
+  'before-after': 'Interactive image slider',
+  'hero-section': 'Full-width hero banner',
+  'annotated-image': 'Image with clickable hotspots',
+  embed: 'External content iframe',
+  file: 'Downloadable file attachment',
+  link: 'Rich link preview card',
+  'horizontal-rule': 'Visual section divider',
 };
 
 function getBlockDefaultData(type: string): BlockData {
@@ -388,22 +430,24 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
             }
           }}
         />
-        <button
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={openLinkModal}
-          className="mt-1 rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
-          title="Link selected text (Ctrl+K)"
-        >
-          Link
-        </button>
-        <button
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={openRefModal}
-          className="mt-1 rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
-          title="Add reference citation"
-        >
-          Ref
-        </button>
+        <StudioTooltip text="Link selected text (Ctrl+K)" side="top">
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={openLinkModal}
+            className="mt-1 rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
+          >
+            Link
+          </button>
+        </StudioTooltip>
+        <StudioTooltip text="Add reference citation" side="top">
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={openRefModal}
+            className="mt-1 rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
+          >
+            Ref
+          </button>
+        </StudioTooltip>
       </div>
       <LinkModal
         isOpen={linkModalOpen}
@@ -777,22 +821,24 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
               {a}
             </button>
           ))}
-          <button
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={openLinkModal}
-            className="rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--pulse-jasmine)] hover:text-[var(--pulse-black)]"
-            title="Link selected text (Ctrl+K)"
-          >
-            Link
-          </button>
-          <button
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={openRefModal}
-            className="rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--pulse-jasmine)] hover:text-[var(--pulse-black)]"
-            title="Add reference citation"
-          >
-            Ref
-          </button>
+          <StudioTooltip text="Link selected text (Ctrl+K)" side="top">
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={openLinkModal}
+              className="rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--pulse-jasmine)] hover:text-[var(--pulse-black)]"
+            >
+              Link
+            </button>
+          </StudioTooltip>
+          <StudioTooltip text="Add reference citation" side="top">
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={openRefModal}
+              className="rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--pulse-jasmine)] hover:text-[var(--pulse-black)]"
+            >
+              Ref
+            </button>
+          </StudioTooltip>
         </div>
       </div>
       <LinkModal
@@ -1168,22 +1214,24 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
           {...makeEditableHandlers('quote')}
         />
         <div className="flex shrink-0 gap-1">
-          <button
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => openLinkModal('quote')}
-            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
-            title="Link selected text (Ctrl+K)"
-          >
-            Link
-          </button>
-          <button
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => openRefModal('quote')}
-            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
-            title="Add reference citation"
-          >
-            Ref
-          </button>
+          <StudioTooltip text="Link selected text (Ctrl+K)" side="top">
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => openLinkModal('quote')}
+              className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
+            >
+              Link
+            </button>
+          </StudioTooltip>
+          <StudioTooltip text="Add reference citation" side="top">
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => openRefModal('quote')}
+              className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
+            >
+              Ref
+            </button>
+          </StudioTooltip>
         </div>
       </div>
 
@@ -1198,22 +1246,24 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
           {...makeEditableHandlers('citation')}
         />
         <div className="flex shrink-0 gap-1">
-          <button
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => openLinkModal('citation')}
-            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
-            title="Link selected text (Ctrl+K)"
-          >
-            Link
-          </button>
-          <button
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => openRefModal('citation')}
-            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
-            title="Add reference citation"
-          >
-            Ref
-          </button>
+          <StudioTooltip text="Link selected text (Ctrl+K)" side="top">
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => openLinkModal('citation')}
+              className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
+            >
+              Link
+            </button>
+          </StudioTooltip>
+          <StudioTooltip text="Add reference citation" side="top">
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => openRefModal('citation')}
+              className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
+            >
+              Ref
+            </button>
+          </StudioTooltip>
         </div>
       </div>
 
@@ -1350,20 +1400,59 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
   );
 }
 
+const CODE_LANGUAGES = ['typescript', 'tsx', 'javascript', 'jsx', 'json', 'html', 'css', 'markdown', 'bash', 'python', 'go', 'rust'];
+const CODE_MODES: { value: 'show' | 'run' | 'demo'; label: string; icon: React.ElementType }[] = [
+  { value: 'show', label: 'Show', icon: Eye },
+  { value: 'run', label: 'Run', icon: Play },
+  { value: 'demo', label: 'Demo', icon: Sparkles },
+];
+
 function EditableCode({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { code: string; language: string; showLineNumbers?: boolean };
+  const data = block.data as { code: string; language: string; showLineNumbers?: boolean; mode?: 'show' | 'run' | 'demo' };
+  const mode = data.mode ?? 'show';
+  const [runKey, setRunKey] = useState(0);
+
+  const handleRun = useCallback(() => {
+    setRunKey((k) => k + 1);
+  }, []);
+
   return (
-    <div>
-      <div className="mb-2 flex items-center gap-2">
+    <div className="space-y-2">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2">
         <select
           value={data.language}
           onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, language: e.target.value } }))}
           className="rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] outline-none"
         >
-          {['typescript', 'tsx', 'javascript', 'jsx', 'json', 'html', 'css', 'markdown', 'bash', 'python', 'go', 'rust'].map((l) => (
+          {CODE_LANGUAGES.map((l) => (
             <option key={l} value={l}>{l}</option>
           ))}
         </select>
+
+        {/* Mode toggle */}
+        <div className="inline-flex items-center rounded-lg border border-[var(--neutral-200)] bg-white overflow-hidden">
+          {CODE_MODES.map((m) => {
+            const Icon = m.icon;
+            const active = mode === m.value;
+            return (
+              <button
+                key={m.value}
+                onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, mode: m.value } }))}
+                className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold transition-colors ${
+                  active
+                    ? 'bg-[var(--pulse-red)] text-white'
+                    : 'text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]'
+                }`}
+                title={m.label}
+              >
+                <Icon className="h-3 w-3" />
+                {m.label}
+              </button>
+            );
+          })}
+        </div>
+
         <label className="flex items-center gap-1.5 text-xs text-[var(--neutral-600)]">
           <input
             type="checkbox"
@@ -1374,12 +1463,44 @@ function EditableCode({ block, adapter }: { block: Block<BlockData>; adapter: Ed
           Line numbers
         </label>
       </div>
-      <textarea
-        value={data.code}
-        onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, code: e.target.value } }))}
-        rows={4}
-        className="w-full rounded-xl border border-[var(--neutral-200)] bg-[#0d0d0e] p-3 font-mono text-sm text-[#a5ffce] outline-none"
-      />
+
+      {/* Code editor */}
+      <div className="pulse-editor-code-block">
+        <div className="pulse-editor-code-header">
+          <Terminal className="h-3.5 w-3.5 text-[var(--pulse-red)]" />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">
+            {data.language}
+          </span>
+          {mode !== 'show' && (
+            <>
+              <div style={{ flex: 1 }} />
+              <button onClick={handleRun} className="pulse-editor-code-run-btn">
+                <Play className="h-3 w-3" />
+                Run
+              </button>
+            </>
+          )}
+        </div>
+        <textarea
+          value={data.code}
+          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, code: e.target.value } }))}
+          rows={Math.max(4, data.code.split('\n').length)}
+          className="pulse-editor-code-textarea"
+          placeholder="Type your code here..."
+          spellCheck={false}
+        />
+      </div>
+
+      {/* Run output (only in run/demo mode) */}
+      {mode !== 'show' && (
+        <CodeSandbox
+          key={runKey}
+          code={data.code}
+          language={data.language}
+          mode={mode}
+          onRun={handleRun}
+        />
+      )}
     </div>
   );
 }
@@ -1726,24 +1847,26 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
               {a}
             </button>
           ))}
-          <button
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => focusedItemIndex !== null && openLinkModal(focusedItemIndex)}
-            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] disabled:opacity-40"
-            disabled={focusedItemIndex === null}
-            title="Link selected text in focused item (Ctrl+K)"
-          >
-            Link
-          </button>
-          <button
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => focusedItemIndex !== null && openRefModal(focusedItemIndex)}
-            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] disabled:opacity-40"
-            disabled={focusedItemIndex === null}
-            title="Add reference to focused item"
-          >
-            Ref
-          </button>
+          <StudioTooltip text="Link selected text in focused item (Ctrl+K)" side="top">
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => focusedItemIndex !== null && openLinkModal(focusedItemIndex)}
+              className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] disabled:opacity-40"
+              disabled={focusedItemIndex === null}
+            >
+              Link
+            </button>
+          </StudioTooltip>
+          <StudioTooltip text="Add reference to focused item" side="top">
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => focusedItemIndex !== null && openRefModal(focusedItemIndex)}
+              className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] disabled:opacity-40"
+              disabled={focusedItemIndex === null}
+            >
+              Ref
+            </button>
+          </StudioTooltip>
         </div>
         <ListTag className={listStyleClass} style={{ textAlign: align as any }}>
           {data.items.map((item, i) => (
@@ -2070,26 +2193,28 @@ function EditableBlock({
     >
       {/* Subtle left-edge marker for active comments */}
       {activeCommentCount !== undefined && activeCommentCount > 0 && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onCommentClick?.(); }}
-          className="absolute -left-[3px] top-3 bottom-3 w-[3px] rounded-full bg-amber-400/80 hover:bg-amber-500 transition-colors"
-          title={`${activeCommentCount} unresolved comment${activeCommentCount > 1 ? 's' : ''}`}
-        />
+        <StudioTooltip text={`${activeCommentCount} unresolved comment${activeCommentCount > 1 ? 's' : ''}`} side="left">
+          <button
+            onClick={(e) => { e.stopPropagation(); onCommentClick?.(); }}
+            className="absolute -left-[3px] top-3 bottom-3 w-[3px] rounded-full bg-amber-400/80 hover:bg-amber-500 transition-colors"
+          />
+        </StudioTooltip>
       )}
 
       {/* Left controls: drag handle + block number */}
       <div className="flex flex-col items-center gap-1 pt-1">
-        <div
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setData('text/plain', block.id);
-            e.dataTransfer.effectAllowed = 'move';
-          }}
-          className="cursor-grab active:cursor-grabbing rounded p-1 text-[var(--neutral-300)] hover:text-[var(--neutral-500)]"
-          title="Drag to reorder"
-        >
-          <GripVertical className="h-4 w-4" />
-        </div>
+        <StudioTooltip text="Drag to reorder" side="left">
+          <div
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData('text/plain', block.id);
+              e.dataTransfer.effectAllowed = 'move';
+            }}
+            className="cursor-grab active:cursor-grabbing rounded p-1 text-[var(--neutral-300)] hover:text-[var(--neutral-500)]"
+          >
+            <GripVertical className="h-4 w-4" />
+          </div>
+        </StudioTooltip>
         <span className="text-[9px] font-bold text-[var(--neutral-400)]">{index + 1}</span>
       </div>
 
@@ -2100,34 +2225,37 @@ function EditableBlock({
 
       {/* Comment indicator (always visible when comments exist) */}
       {commentCount !== undefined && commentCount > 0 && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onCommentClick?.(); }}
-          className="absolute -right-1 top-1/2 -translate-y-1/2 translate-x-full ml-2 flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 shadow-sm hover:bg-amber-200 transition-colors"
-          title={`${commentCount} comment${commentCount > 1 ? 's' : ''}`}
-        >
-          <MessageSquare className="h-2.5 w-2.5" />
-          {commentCount}
-        </button>
+        <StudioTooltip text={`${commentCount} comment${commentCount > 1 ? 's' : ''}`} side="right">
+          <button
+            onClick={(e) => { e.stopPropagation(); onCommentClick?.(); }}
+            className="absolute -right-1 top-1/2 -translate-y-1/2 translate-x-full ml-2 flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 shadow-sm hover:bg-amber-200 transition-colors"
+          >
+            <MessageSquare className="h-2.5 w-2.5" />
+            {commentCount}
+          </button>
+        </StudioTooltip>
       )}
 
       {/* Hover actions */}
       <div className="absolute -right-2 -top-2 hidden items-center gap-1 rounded-lg border border-[var(--neutral-200)] bg-white p-1 shadow-sm group-hover:flex">
-        <button
-          onClick={() => { const idx = adapter.getSnapshot().document.blocks.findIndex((b) => b.id === block.id); if (idx > 0) adapter.moveBlock(block.id, idx - 1); }}
-          disabled={isFirst}
-          className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] disabled:opacity-30"
-          title="Move up"
-        >
-          <ChevronUp className="h-3 w-3" />
-        </button>
-        <button
-          onClick={() => { const idx = adapter.getSnapshot().document.blocks.findIndex((b) => b.id === block.id); if (idx < total - 1) adapter.moveBlock(block.id, idx + 1); }}
-          disabled={isLast}
-          className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] disabled:opacity-30"
-          title="Move down"
-        >
-          <ChevronDown className="h-3 w-3" />
-        </button>
+        <StudioTooltip text="Move up" side="top">
+          <button
+            onClick={() => { const idx = adapter.getSnapshot().document.blocks.findIndex((b) => b.id === block.id); if (idx > 0) adapter.moveBlock(block.id, idx - 1); }}
+            disabled={isFirst}
+            className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] disabled:opacity-30"
+          >
+            <ChevronUp className="h-3 w-3" />
+          </button>
+        </StudioTooltip>
+        <StudioTooltip text="Move down" side="top">
+          <button
+            onClick={() => { const idx = adapter.getSnapshot().document.blocks.findIndex((b) => b.id === block.id); if (idx < total - 1) adapter.moveBlock(block.id, idx + 1); }}
+            disabled={isLast}
+            className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] disabled:opacity-30"
+          >
+            <ChevronDown className="h-3 w-3" />
+          </button>
+        </StudioTooltip>
         <div className="mx-0.5 h-3 w-px bg-[var(--neutral-200)]" />
         <div className="flex items-center gap-1 px-1">
           <span className="text-[9px] text-[var(--neutral-400)]">Move to</span>
@@ -2162,51 +2290,55 @@ function EditableBlock({
           />
         </div>
         <div className="mx-0.5 h-3 w-px bg-[var(--neutral-200)]" />
-        <button
-          onClick={() => onAddComment?.()}
-          className="rounded p-1 text-[var(--neutral-400)] hover:bg-amber-50 hover:text-amber-600"
-          title="Add comment to this block"
-        >
-          <MessageSquare className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={() => {
-            const dup = { ...block, id: `dup-${Date.now()}`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Block<BlockData>;
-            adapter.insertBlock(dup, index + 1);
-          }}
-          className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)]"
-          title="Duplicate"
-        >
-          <Copy className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={() => {
-            const blockDef = BUILTIN_BLOCK_DEFINITIONS.find(d => d.type === block.type);
-            const rawDefault = blockDef
-              ? (typeof blockDef.defaultData === 'function' ? blockDef.defaultData() : blockDef.defaultData)
-              : {};
-            const emptyData = rawDefault ? JSON.parse(JSON.stringify(rawDefault)) : {};
-            const dup = {
-              ...block,
-              id: `dup-${Date.now()}`,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              data: emptyData,
-            } as Block<BlockData>;
-            adapter.insertBlock(dup, index + 1);
-          }}
-          className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-red)]"
-          title="Duplicate without content"
-        >
-          <CopyX className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={() => adapter.removeBlock(block.id)}
-          className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-red)]"
-          title="Delete"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        <StudioTooltip text="Add comment to this block" side="top">
+          <button
+            onClick={() => onAddComment?.()}
+            className="rounded p-1 text-[var(--neutral-400)] hover:bg-amber-50 hover:text-amber-600"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+          </button>
+        </StudioTooltip>
+        <StudioTooltip text="Duplicate" side="top">
+          <button
+            onClick={() => {
+              const dup = { ...block, id: `dup-${Date.now()}`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Block<BlockData>;
+              adapter.insertBlock(dup, index + 1);
+            }}
+            className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)]"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        </StudioTooltip>
+        <StudioTooltip text="Duplicate without content" side="top">
+          <button
+            onClick={() => {
+              const blockDef = BUILTIN_BLOCK_DEFINITIONS.find(d => d.type === block.type);
+              const rawDefault = blockDef
+                ? (typeof blockDef.defaultData === 'function' ? blockDef.defaultData() : blockDef.defaultData)
+                : {};
+              const emptyData = rawDefault ? JSON.parse(JSON.stringify(rawDefault)) : {};
+              const dup = {
+                ...block,
+                id: `dup-${Date.now()}`,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                data: emptyData,
+              } as Block<BlockData>;
+              adapter.insertBlock(dup, index + 1);
+            }}
+            className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-red)]"
+          >
+            <CopyX className="h-3.5 w-3.5" />
+          </button>
+        </StudioTooltip>
+        <StudioTooltip text="Delete" side="top">
+          <button
+            onClick={() => adapter.removeBlock(block.id)}
+            className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-red)]"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </StudioTooltip>
       </div>
     </div>
   );
@@ -2510,28 +2642,38 @@ export default function StudioBlockCanvas({
 
               {!positionMode && (
                 <>
-                  <div className="flex flex-wrap gap-2 border-b border-[var(--neutral-200)] bg-[var(--neutral-50)] p-3">
-                    {categories.map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => setActiveCategory(cat)}
-                        className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                          activeCategory === cat
-                            ? 'bg-[var(--pulse-black)] text-white'
-                            : 'bg-white text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
+                  <div className="flex flex-wrap gap-2 border-b border-[var(--neutral-200)] bg-[var(--neutral-50)] px-4 py-3">
+                    {categories.map((cat) => {
+                      const isActive = activeCategory === cat;
+                      const catColor = cat === 'media' ? (isActive ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-sky-700 border-sky-200 hover:bg-sky-50') :
+                        cat === 'interactive' ? (isActive ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50') :
+                        cat === 'advanced' ? (isActive ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-violet-700 border-violet-200 hover:bg-violet-50') :
+                        (isActive ? 'bg-[var(--pulse-black)] text-white border-[var(--pulse-black)]' : 'bg-white text-[var(--neutral-600)] border-[var(--neutral-200)] hover:bg-[var(--neutral-100)]');
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => setActiveCategory(cat)}
+                          className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${catColor}`}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  <div className="grid gap-2 overflow-y-auto p-3 sm:grid-cols-2">
+                  <div className="grid gap-2.5 overflow-y-auto p-4 sm:grid-cols-2">
                     {filteredDefs.map((def, idx) => {
                       const Icon = blockTypeToIcon[def.type] || FileText;
                       const headingLevel = (def as any)._headingLevel;
                       const label = headingLevel ? `Heading ${headingLevel}` : (blockTypeToLabel[def.type] || def.name);
+                      const description = headingLevel ? `H${headingLevel} section divider` : (blockTypeToDescription[def.type] || def.config?.category || 'basic');
                       const dataOverrides = headingLevel ? { level: headingLevel } : undefined;
+                      const category = def.config?.category || 'basic';
+                      const categoryColor = category === 'media' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                        category === 'interactive' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        category === 'advanced' ? 'bg-violet-50 text-violet-700 border-violet-200' :
+                        'bg-[var(--neutral-100)] text-[var(--neutral-600)] border-[var(--neutral-200)]';
+                      const isFirst = idx === 0;
                       return (
                         <button
                           key={headingLevel ? `heading-${headingLevel}` : def.type}
@@ -2546,18 +2688,35 @@ export default function StudioBlockCanvas({
                               setPositionMode({ type: def.type });
                             }
                           }}
-                          className={`group flex items-center gap-3 rounded-xl border p-3 text-left transition-all hover:border-[var(--pulse-red)]/30 hover:bg-[var(--pulse-red)]/5 ${idx === 0 ? 'border-[var(--pulse-red)]/30 bg-[var(--pulse-red)]/5 ring-1 ring-[var(--pulse-red)]/20' : 'border-[var(--neutral-200)] bg-white'}`}
+                          className={`group relative flex items-start gap-3.5 rounded-xl border p-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${isFirst ? 'border-[var(--pulse-red)]/40 bg-[var(--pulse-red)]/[0.03] shadow-sm ring-1 ring-[var(--pulse-red)]/10' : 'border-[var(--neutral-200)] bg-white hover:border-[var(--pulse-red)]/30'}`}
                         >
-                          <div className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors group-hover:bg-white ${idx === 0 ? 'bg-[var(--pulse-red)]/10' : 'bg-[var(--neutral-100)]'}`}>
-                            <Icon className={`h-4 w-4 ${idx === 0 ? 'text-[var(--pulse-red)]' : 'text-[var(--neutral-600)]'}`} />
+                          {/* Active indicator stripe */}
+                          <div className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-full transition-opacity ${isFirst ? 'bg-[var(--pulse-red)] opacity-100' : 'bg-[var(--pulse-red)] opacity-0 group-hover:opacity-100'}`} />
+
+                          {/* Icon */}
+                          <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all duration-200 group-hover:scale-105 ${isFirst ? 'bg-[var(--pulse-red)]/10 border-[var(--pulse-red)]/20' : 'bg-[var(--neutral-50)] border-[var(--neutral-200)] group-hover:bg-[var(--pulse-red)]/5 group-hover:border-[var(--pulse-red)]/20'}`}>
+                            <Icon className={`h-[18px] w-[18px] transition-colors ${isFirst ? 'text-[var(--pulse-red)]' : 'text-[var(--neutral-500)] group-hover:text-[var(--pulse-red)]'}`} />
                           </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-[var(--pulse-black)]">{label}</p>
-                            <p className="text-[10px] uppercase tracking-wider text-[var(--neutral-500)]">{def.config?.category || 'basic'}</p>
+
+                          {/* Text */}
+                          <div className="min-w-0 flex-1 pt-0.5">
+                            <div className="flex items-baseline gap-2">
+                              <span className="truncate text-sm font-bold leading-none text-[var(--pulse-black)]">{label}</span>
+                              <span className={`shrink-0 rounded-full border px-2 py-[2px] text-[9px] font-bold uppercase tracking-wider leading-none whitespace-nowrap ${categoryColor}`}>
+                                {category}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs leading-relaxed text-[var(--neutral-500)]">{description}</p>
                           </div>
-                          <div className="flex flex-col items-end gap-0.5">
-                            <Plus className="h-4 w-4 text-[var(--neutral-400)] opacity-0 transition-opacity group-hover:opacity-100" />
-                            <span className="text-[9px] text-[var(--neutral-400)] opacity-0 group-hover:opacity-100">Shift+Enter for position</span>
+
+                          {/* Add hint */}
+                          <div className="mt-1 flex shrink-0 flex-col items-end gap-1">
+                            <div className={`flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-200 ${isFirst ? 'border-[var(--pulse-red)]/30 bg-[var(--pulse-red)]/10 text-[var(--pulse-red)]' : 'border-[var(--neutral-200)] bg-white text-[var(--neutral-400)] opacity-0 group-hover:opacity-100 group-hover:border-[var(--pulse-red)]/30 group-hover:text-[var(--pulse-red)]'}`}>
+                              <Plus className="h-3.5 w-3.5" />
+                            </div>
+                            <span className="text-[9px] font-medium text-[var(--neutral-400)] opacity-0 transition-opacity group-hover:opacity-100">
+                              Shift+Enter
+                            </span>
                           </div>
                         </button>
                       );

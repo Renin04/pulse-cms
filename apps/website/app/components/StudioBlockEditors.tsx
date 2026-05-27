@@ -255,8 +255,31 @@ export function EditableHorizontalRule() {
 }
 
 export function EditableLink({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { text: string; url: string; openInNewTab: boolean; title?: string; align?: string };
+  const data = block.data as { text: string; url: string; openInNewTab: boolean; title?: string; rel?: string; align?: string };
   const align = data.align || 'left';
+
+  const relOpts = {
+    nofollow: data.rel?.includes('nofollow') || false,
+    noopener: data.rel?.includes('noopener') || false,
+    noreferrer: data.rel?.includes('noreferrer') || false,
+    external: data.rel?.includes('external') || false,
+  };
+
+  const buildRel = (opts: typeof relOpts) => {
+    const parts = Object.entries(opts).filter(([_, v]) => v).map(([k]) => k);
+    return parts.join(' ') || undefined;
+  };
+
+  const setRelOpt = (key: keyof typeof relOpts, checked: boolean) => {
+    const next = { ...relOpts, [key]: checked };
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, rel: buildRel(next) } }));
+  };
+
+  const setOpenInNewTab = (checked: boolean) => {
+    const nextRel = { ...relOpts, noopener: checked ? true : relOpts.noopener };
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, openInNewTab: checked, rel: buildRel(nextRel) } }));
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
@@ -264,8 +287,26 @@ export function EditableLink({ block, adapter }: { block: Block<BlockData>; adap
         <Input value={data.url} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, url: e.target.value } }))} placeholder="https://..." className="flex-[2]" />
       </div>
       <div className="flex items-center gap-3">
-        <Checkbox label="Open in new tab" checked={data.openInNewTab} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, openInNewTab: e.target.checked } }))} />
+        <Checkbox label="Open in new tab" checked={data.openInNewTab} onChange={(e) => setOpenInNewTab(e.target.checked)} />
         <Input value={data.title || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Title (optional)" className="flex-1" />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <label className={`flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)] ${data.openInNewTab ? 'opacity-60' : ''}`} title={data.openInNewTab ? 'noopener is required for security when opening in a new tab' : ''}>
+          <input type="checkbox" checked={relOpts.noopener} disabled={data.openInNewTab} onChange={(e) => setRelOpt('noopener', e.target.checked)} className="h-4 w-4 accent-[var(--pulse-red)]" />
+          noopener
+        </label>
+        <label className="flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)]">
+          <input type="checkbox" checked={relOpts.noreferrer} onChange={(e) => setRelOpt('noreferrer', e.target.checked)} className="h-4 w-4 accent-[var(--pulse-red)]" />
+          noreferrer
+        </label>
+        <label className="flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)]">
+          <input type="checkbox" checked={relOpts.nofollow} onChange={(e) => setRelOpt('nofollow', e.target.checked)} className="h-4 w-4 accent-[var(--pulse-red)]" />
+          nofollow
+        </label>
+        <label className="flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2 text-xs text-[var(--neutral-600)] cursor-pointer hover:bg-[var(--neutral-100)]">
+          <input type="checkbox" checked={relOpts.external} onChange={(e) => setRelOpt('external', e.target.checked)} className="h-4 w-4 accent-[var(--pulse-red)]" />
+          external
+        </label>
       </div>
       <div className="flex flex-wrap gap-2">
         {(['left','center','right','justify'] as const).map((a) => (

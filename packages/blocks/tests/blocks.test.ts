@@ -495,6 +495,7 @@ describe("CodeBlock", () => {
       language: "typescript",
       theme: "github-light",
       showLineNumbers: true,
+      mode: "show",
     });
 
     expect(html).toContain("<pre");
@@ -513,6 +514,7 @@ describe("CodeBlock", () => {
       language: "javascript",
       theme: "github-dark",
       showLineNumbers: false,
+      mode: "show",
     });
 
     expect(html).toContain('data-lang="javascript"');
@@ -533,6 +535,7 @@ describe("CodeBlock", () => {
       language: "http",
       theme: "github-light",
       showLineNumbers: true,
+      mode: "show",
     });
   });
 });

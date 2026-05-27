@@ -1419,3 +1419,30 @@
 - `apps/website/app/components/StudioBlockCanvas.tsx`
 
 **Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files passed)
+
+
+---
+
+## Session 94 — 2026-05-27
+**Bugs Fixed:** #30, #31, #32, #33
+
+- ✅ Bug #30: Link block missing options
+  - Added nofollow, noopener, noreferrer, external checkboxes to `EditableLink` editor panel
+  - noopener auto-enforced when "Open in new tab" is checked, matching `LinkModal` parity
+- ✅ Bug #31: Better tooltip UI
+  - Created `StudioTooltip` component with dark rounded card, red accent dot, smooth fade+translate animation
+  - Replaced all native `title` attributes on toolbar buttons in `PulseBlogStudio.tsx` and `StudioBlockCanvas.tsx`
+- ✅ Bug #32: Link options working properly
+  - `EditableLink` now stores `rel` correctly in block data
+  - `LinkBlock.ts` renderer uses all attributes (rel, target, title, align)
+- ✅ Bug #33: Creative link block rendering
+  - Replaced bare `<a>` with a creative link preview card: brand-gradient icon badge, bold link text, extracted domain, optional title subtitle, external-link arrow, hover lift+shadow animation
+
+**Files Changed:**
+- `packages/blocks/src/LinkBlock.ts`
+- `apps/website/app/components/StudioBlockEditors.tsx`
+- `apps/website/app/components/StudioTooltip.tsx` (new)
+- `apps/website/app/components/PulseBlogStudio.tsx`
+- `apps/website/app/components/StudioBlockCanvas.tsx`
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files, 1071 tests passed)

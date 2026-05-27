@@ -1,5 +1,6 @@
 import { prisma } from './db';
 import { adaptEntryDetail, type AdaptedBlogEntry } from './entry-adapter';
+import { initShikiHighlighter } from './shiki-highlighter';
 
 export async function getPublishedBlogEntries(): Promise<AdaptedBlogEntry[]> {
   try {
@@ -17,6 +18,7 @@ export async function getPublishedBlogEntries(): Promise<AdaptedBlogEntry[]> {
       orderBy: { publishedAt: 'desc' },
     });
 
+    await initShikiHighlighter();
     return entries
       .map((entry) => {
         const serialized = {

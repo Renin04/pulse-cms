@@ -4,12 +4,22 @@
 > Update this at the end of every session.
 
 **Last Updated:** 2026-05-27
-**Current Session:** Session 93 — Bugs 24/25/27/28/29 (Quote preview, preview zoom, live stats, duplicate fix, duplicate-empty)
+**Current Session:** Session 94 — Bugs 30/31/32/33 (Link block options, tooltip UI, link options parity, creative link card)
 **Current Phase:** Phase 4 — AI Builder & Automation Runtime (bug-fixing branch)
 
 ---
 
 ## Current Focus
+
+**What we just completed (Session 94):**
+- Bug #30: Link block editor now has all rel options. `EditableLink` in `StudioBlockEditors.tsx` added nofollow, noopener, noreferrer, external checkboxes matching `LinkModal` parity. noopener auto-enforced when "Open in new tab" is checked.
+- Bug #31: Custom tooltip UI across the studio. Created `StudioTooltip` component with dark rounded card, red accent dot, smooth fade+translate animation, and directional arrows. Replaced all native `title` attributes on toolbar buttons in `PulseBlogStudio.tsx` (via updated `IconBtn`) and `StudioBlockCanvas.tsx` block action toolbars. **Fix:** bumped z-index from 700 to 9999 to stay above all UI layers.
+- Bug #32: Link options fully functional. `EditableLink` now stores `rel` correctly in block data. `LinkBlock.ts` renderer already supported all attributes (rel, target, title, align). noopener auto-enforcement prevents contrary options.
+- Bug #33: Creative link preview card renderer. `LinkBlock.ts` now renders a beautiful link preview card instead of a bare `<a>` tag: brand-gradient icon badge with link SVG, bold link text title, extracted domain name, optional title subtitle (italic, better color), external-link arrow icon, subtle hover lift+shadow animation, and alignment support. **Fix:** card now uses `width:100%` to occupy the full row.
+- Bug #34: Complete block palette redesign. Added `blockTypeToDescription` mapping with useful descriptions for every block type. Redesigned cards with better spacing, left red indicator stripe on hover, larger rounded icon badges with border, bold label + color-coded category badge + description layout, subtle hover lift+shadow. Category filter buttons now have color-coded borders (sky/media, emerald/interactive, violet/advanced, neutral/basic).
+- Quick fixes during review: link card width 100%, tooltip z-index 9999, title text styled as italic subtitle.
+- Files changed: `packages/blocks/src/LinkBlock.ts`, `apps/website/app/components/StudioBlockEditors.tsx`, `apps/website/app/components/StudioTooltip.tsx` (new), `apps/website/app/components/PulseBlogStudio.tsx`, `apps/website/app/components/StudioBlockCanvas.tsx`, `pulse bug list.md`.
+- Quality gates passed: `lint`, `typecheck`, `build`, `test` (51 test files, 1071 tests passed) green.
 
 **What we just completed (Session 93):**
 - Bug #24: Fixed quote rendering in preview. `BlockquoteBlock.ts` core renderer now uses `renderInlineMarkdown` to handle links and references, matching `TextBlock`/`ListBlock` parity. Both preview panel and blog post render blockquote inline content correctly.

@@ -14,6 +14,7 @@ import {
   registerBuiltinRenderers,
 } from '@pulse/renderer'
 import { BUILTIN_BLOCK_DEFINITIONS, formatReferenceNumber } from '@pulse/blocks'
+import { initShikiHighlighter } from './shiki-highlighter'
 
 export interface StudioTextMarks {
   bold: boolean
@@ -457,6 +458,9 @@ function registerCustomRenderers(registry: RendererRegistry, refCounter: { value
 
 function ensureRendererReady(): void {
   registerBuiltinRenderers(RendererRegistry.getInstance())
+  // Fire-and-forget Shiki initialization; first render may use fallback,
+  // subsequent renders will use syntax highlighting once loaded.
+  initShikiHighlighter().catch(() => {})
 }
 
 export function renderStudioBlocksHtml(blocks: StudioBlock[]): string {

@@ -1,6 +1,6 @@
 import type { Block, BlockData, EntryStatus } from "@pulse/core";
 import { PulseRenderer, RendererRegistry, registerBuiltinRenderers, renderBranch, renderConditional, renderCodePlayground } from "@pulse/renderer";
-import { formatReferenceNumber, sanitizeUrl } from "@pulse/blocks";
+import { formatReferenceNumber, sanitizeUrl } from "@pulse/blocks"
 import type { EntryDetail } from "./api-client";
 
 export interface AdaptedBlogEntry {

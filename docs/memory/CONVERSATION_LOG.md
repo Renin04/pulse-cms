@@ -3134,3 +3134,24 @@ pm run build in pps/website)
 
 **Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files, 1071 tests passed)
 **Commit:** `17b623c` fix(bugs): resolve bugs 24,25,27,28,29 + preview zoom scaling
+
+
+---
+
+## Session 94 — 2026-05-27
+**Bugs Fixed:** #30 (Link block missing options), #31 (Better tooltip UI), #32 (Link options working properly), #33 (Creative link block rendering)
+
+**Summary:**
+- Created `StudioTooltip` component with dark rounded card, red accent dot, smooth fade+translate animation, and directional arrows (top/bottom/left/right). Replaced all native `title` attributes across the studio toolbar and block action buttons.
+- Updated `EditableLink` editor panel to include nofollow, noopener, noreferrer, external checkboxes with noopener auto-enforcement when "Open in new tab" is checked, matching `LinkModal` parity.
+- Redesigned `LinkBlock.ts` renderer to output a creative link preview card: brand-gradient icon badge, bold link text, extracted domain name, optional title subtitle, external-link arrow, subtle hover lift+shadow animation, and alignment support.
+
+**Files Changed:**
+- `packages/blocks/src/LinkBlock.ts` — Replaced bare `<a>` renderer with creative link preview card HTML.
+- `apps/website/app/components/StudioBlockEditors.tsx` — Added rel options (nofollow, noopener, noreferrer, external) to `EditableLink` with auto-enforcement logic.
+- `apps/website/app/components/StudioTooltip.tsx` — New tooltip component with brand styling and smooth animations.
+- `apps/website/app/components/PulseBlogStudio.tsx` — Updated `IconBtn` to use `StudioTooltip`; replaced native `title` on toolbar buttons.
+- `apps/website/app/components/StudioBlockCanvas.tsx` — Replaced all native `title` attributes on block action buttons and inline Link/Ref buttons with `StudioTooltip`.
+- `C:\Users\z0512\Desktop\pulse bug list.md` — Marked #30, #31, #32, #33 as complete.
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files, 1071 tests passed)
