@@ -239,9 +239,13 @@ function renderHtml(blocks: Block<BlockData>[]): string {
     });
 
     RendererRegistry.getInstance().override("blockquote", (block) => {
-      const data = block.data as { quote: string; citation?: string };
-      const citation = data.citation ? `<cite>${escapeHtml(data.citation)}</cite>` : "";
-      return `<blockquote data-block-type="blockquote"><p>${renderInlineContent(data.quote, refCounter)}</p>${citation}</blockquote>`;
+      const data = block.data as { quote: string; citation?: string; align?: string; citationAlign?: string };
+      const align = data.align ?? "left";
+      const alignAttr = align === "left" ? "" : ` style="text-align: ${escapeHtml(align)};"`;
+      const citationAlign = data.citationAlign ?? "left";
+      const citationAlignAttr = `text-align: ${escapeHtml(citationAlign)};`;
+      const citation = data.citation ? `<cite style="display: block; ${citationAlignAttr}">${renderInlineContent(data.citation, refCounter)}</cite>` : "";
+      return `<blockquote data-block-type="blockquote"${alignAttr}><p>${renderInlineContent(data.quote, refCounter)}</p>${citation}</blockquote>`;
     });
 
     RendererRegistry.getInstance().override("list", (block) => {

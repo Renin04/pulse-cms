@@ -3,23 +3,36 @@
 > Quick reference for the next agent session.
 > Update this at the end of every session.
 
-**Last Updated:** 2026-05-18
-**Current Session:** Session 90 — Bug Fixes 14/15/16/17/18 (List block overhaul: Ctrl+Enter, Link/Ref, multiline, alignment, Insert button)
+**Last Updated:** 2026-05-27
+**Current Session:** Session 93 — Bugs 24/25/27/28/29 (Quote preview, preview zoom, live stats, duplicate fix, duplicate-empty)
 **Current Phase:** Phase 4 — AI Builder & Automation Runtime (bug-fixing branch)
 
 ---
 
 ## Current Focus
 
-**What we just completed (Session 90):**
-- Bug #14: Ctrl+Enter in list block adds a new empty list item after the current one and focuses it with cursor at start.
-- Bug #15: Link and Reference options added to every list item — full modal support with Ctrl+K shortcut, right-click context menu (edit/remove), and all link options (nofollow, noopener, noreferrer, external, open in new tab).
-- Bug #16: List items switched from `<input>` to `contentEditable` divs with `markdownToHtml`/`htmlToMarkdown`, enabling multiline paragraphs and rich inline content (links, refs, inline code).
-- Bug #17: Shift+Enter position modal now has an explicit "Insert" button alongside Enter key and Cancel.
-- Bug #18: List alignment renders live in the editor — each contentEditable item inherits `textAlign` from the block's alignment setting.
-- Renderer updates: `ListBlock.ts` now parses inline markdown links/refs in list items; `blog-studio.ts` and `entry-adapter.ts` both override the list renderer with `renderInlineContent()` and collect refs from list blocks for global sequential footnote numbering.
-- Quality gates passed: `lint`, `typecheck`, `build`, `test` (1071/1071 passed) green.
-- Committed: pending approval
+**What we just completed (Session 93):**
+- Bug #24: Fixed quote rendering in preview. `BlockquoteBlock.ts` core renderer now uses `renderInlineMarkdown` to handle links and references, matching `TextBlock`/`ListBlock` parity. Both preview panel and blog post render blockquote inline content correctly.
+- Bug #25: Fixed preview panel device mode distinction. Changed device widths to fixed pixels (desktop 1200px, tablet 768px, mobile 375px). Added `ResizeObserver`-driven CSS `zoom` scaling so desktop layout shrinks to fit the panel width without horizontal scrolling. Mobile/tablet stay at native size. Clear visual distinction between all three modes, zero scrollbars.
+- Bug #27: Live stats in editor. Added `LiveStats` sub-component in `PulseBlogStudio.tsx` that computes word count and read time directly from `editorBlocks` via newly-exported `countWords`/`formatReadTime` from `blog-studio.ts`. SEO score recomputes live from `draft` fields (title, excerpt, featured image, tags, word count, SEO title/description).
+- Bug #28: Fixed duplicate position. `adapter.insertBlock(dup, index + 1)` now passes the correct insertion index so duplicates appear immediately after the original block.
+- Bug #29: Added duplicate-without-content button. Uses `CopyX` icon (red hover) next to the regular duplicate. Creates an empty copy using the block type's `defaultData`, inserted right after the original.
+- Files changed: `packages/blocks/src/BlockquoteBlock.ts`, `apps/website/lib/blog-studio.ts`, `apps/website/app/components/PulseBlogStudio.tsx`, `apps/website/app/components/StudioBlockCanvas.tsx`, `pulse bug list.md`.
+- Quality gates passed: `lint`, `typecheck`, `build`, `test` (51 test files, 1071 tests passed) green.
+
+**What we just completed (Session 92):**
+- Bug #22: Commenting system for blocks. Built a creative threaded comment UI using the existing `CommentSystem` from `@pulse/core`. Features: per-block comment badges (amber dot with count on block hover), right-slide panel (380px) with filter tabs (all/active/resolved), admin selector dropdown, threaded replies with avatars/initials, resolve/reject/delete actions, time-ago timestamps, block reference navigation. Comments persisted per-entry in localStorage.
+- Bug #23: Notebook for articles. Built a warm, creative notebook UI with paper-like amber theme. Features: pin/unpin notes, search filtering, author avatars with color coding, date stamps, expandable long notes with "read more", pinned-first sorting, smooth spring animations. Unique per article, persisted in localStorage. Accessible via Ctrl+Shift+N and toolbar button.
+- Integration: Both panels integrated into `PulseBlogStudio.tsx` with keyboard shortcuts (Ctrl+Shift+C for comments, Ctrl+Shift+N for notebook), toolbar buttons with badges, mutual exclusivity (opening one closes others). Updated `StudioBlockCanvas.tsx` to show comment count badges on blocks and scroll-to-block navigation.
+- Files changed: `apps/website/app/components/StudioCommentsPanel.tsx` (new), `apps/website/app/components/StudioNotebookPanel.tsx` (new), `apps/website/app/components/StudioBlockCanvas.tsx`, `apps/website/app/components/PulseBlogStudio.tsx`.
+- Quality gates passed: `lint`, `typecheck`, `build`, `test` (51 test files, 1071 tests passed) green.
+
+**Previous Session 91:**
+- Bug #20: Separate link/ref/alignment controls for quote and citation in blockquote block. Citation is now `contentEditable` with full Link/Ref modal support, right-click context menus, and independent alignment (left/center/right/justify).
+- Bug #21: Bolder, more creative quote block UI. Editor: rounded card with warm gradient background (`pulse-off-white` → white → `pulse-jasmine-light`), large serif decorative quotation mark, distinct typography (lg medium for quote, sm uppercase tracking-wide for citation). Renderer: gradient background with subtle shadow, decorative quote mark with text-shadow, gradient left accent bar, refined spacing and responsive breakpoints.
+- Bug #19.1 (discovered during validation): Removing a reference caused duplicated text (e.g., "testtest" / "QuoteQuote"). Root cause: `selection.collapseToEnd()` was called before `document.execCommand('insertText')` in ref modal confirm handlers, preventing the selected text from being replaced — the markdown was appended after the original text. Removed `collapseToEnd()` from all ref confirm handlers (heading/text/blockquote in both `StudioBlockCanvas.tsx` and `PulseDemoEditor.tsx`). Also fixed broken context-menu ref removal in `PulseDemoEditor.tsx` heading/text blocks: they were comparing `span.textContent` (rendered number like "1") against `ref.text` (original text like "test") which always failed; now using captured `refContextMenu.element` directly.
+- Files changed: `packages/blocks/src/BlockquoteBlock.ts`, `apps/website/app/components/StudioBlockCanvas.tsx`, `apps/website/app/demo/PulseDemoEditor.tsx`, `apps/website/lib/blog-studio.ts`, `apps/website/lib/entry-adapter.ts`, `apps/website/app/globals.css`.
+- Quality gates passed: `lint`, `typecheck`, `build`, `test` (51 test files passed) green.
 
 **Previous Session 88:**
 - Bug #8.1: Fixed reference update not working — replaced fragile textContent matching with direct DOM element tracking (`existingRefElementRef`) across heading, text, and blockquote blocks.

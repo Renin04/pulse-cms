@@ -11,9 +11,11 @@ import {
   FileText, Sparkles, ArrowLeft, ChevronDown, ChevronUp, X,
   PanelLeft, PanelLeftClose, Monitor, Tablet, Smartphone, Focus,
   Columns2, Minimize2, HelpCircle, Image as ImageIcon, Upload, List,
-  Search,
+  Search, MessageSquare, BookOpen,
 } from 'lucide-react'
+import { countWords, formatReadTime } from '../../lib/blog-studio'
 import { ToastProvider, useToast } from './ToastProvider'
+import { useAuth } from '../../lib/use-api'
 import type { EditorStateAdapter } from '@pulse/editor'
 import { createEditorStateAdapter, DEFAULT_SHORTCUT_BINDINGS } from '@pulse/editor'
 import {
@@ -27,6 +29,7 @@ import {
   PHASE2_EXPANSION_BLOCK_SHORTCUT_BINDINGS,
 } from '@pulse/editor'
 import type { EntryStatus } from '@pulse/core'
+import { CommentSystem, createCommentSystem } from '@pulse/core'
 import {
   BlogStudioWorkspace, renderStudioBlocksHtml,
   type BlogStudioEntry, type BlogStudioSnapshot, type StudioBlock,
@@ -35,6 +38,8 @@ import { fetchBackendStudioSnapshot, syncEntryToBackend } from '../../lib/studio
 import { entries as entriesApi, taxonomies as taxonomiesApi, media as mediaApi } from '../../lib/api-client'
 import type { TaxonomyItem, TaxonomyTermItem } from '../../lib/api-client'
 import StudioBlockCanvas from './StudioBlockCanvas'
+import StudioCommentsPanel from './StudioCommentsPanel'
+import StudioNotebookPanel from './StudioNotebookPanel'
 
 /* ─── Types ─── */
 type DraftFormState = {
@@ -76,6 +81,33 @@ function StatusDot({ status }: { status: EntryStatus }) {
     scheduled: 'bg-violet-400', published: 'bg-emerald-400', archived: 'bg-neutral-400',
   }
   return <span className={cx('h-1.5 w-1.5 rounded-full', map[status])} />
+}
+
+function LiveStats({ editorBlocks, draft, selectedEntry }: { editorBlocks: StudioBlock[]; draft: DraftFormState | null; selectedEntry: BlogStudioEntry | null }) {
+  const wordCount = countWords(editorBlocks)
+  const readTime = formatReadTime(wordCount)
+
+  const seoScore = useMemo(() => {
+    let score = 0
+    if (draft?.title?.trim().length) score += 20
+    if (draft?.excerpt?.trim().length) score += 20
+    if (draft?.featuredImage?.trim().length) score += 20
+    if (draft?.tags?.trim().length) score += 10
+    if (wordCount > 300) score += 10
+    if (draft?.seoTitle?.trim().length) score += 10
+    if (draft?.seoDescription?.trim().length) score += 10
+    return Math.min(100, score)
+  }, [draft, wordCount])
+
+  return (
+    <div className="mt-2 flex items-center gap-3 text-[11px] text-[var(--neutral-500)]">
+      <span>{wordCount} words</span>
+      <span>•</span>
+      <span>{readTime}</span>
+      <span>•</span>
+      <span>SEO {seoScore}</span>
+    </div>
+  )
 }
 
 function TermChip({ term, selected, onClick }: { term: TaxonomyTermItem; selected: boolean; onClick: () => void }) {
@@ -245,6 +277,8 @@ function collectShortcutBindings(isMac: boolean): { category: string; items: { k
       { keys: formatShortcutCombo('mod+\\', isMac), action: 'Toggle sidebar' },
       { keys: formatShortcutCombo('mod+p', isMac), action: 'Toggle preview' },
       { keys: formatShortcutCombo('mod+h', isMac), action: 'Toggle help' },
+      { keys: formatShortcutCombo('mod+shift+c', isMac), action: 'Toggle comments' },
+      { keys: formatShortcutCombo('mod+alt+n', isMac) + ' / ' + formatShortcutCombo('mod+shift+y', isMac), action: 'Toggle notebook' },
       { keys: formatShortcutCombo('mod+.', isMac), action: 'Focus mode' },
       { keys: 'Esc', action: 'Exit focus mode' },
       { keys: formatShortcutCombo('mod+s', isMac), action: 'Save' },
@@ -342,6 +376,7 @@ export default function PulseBlogStudio() {
 
 function PulseBlogStudioInner() {
   const { showToast } = useToast()
+  const { user: _user } = useAuth()
   const searchParams = useSearchParams()
   const editId = searchParams.get('edit')
 
@@ -363,13 +398,33 @@ function PulseBlogStudioInner() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [commentsOpen, setCommentsOpen] = useState(false)
+  const [notebookOpen, setNotebookOpen] = useState(false)
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop')
   const [focusMode, setFocusMode] = useState(false)
   const sidebarOpenBeforeFocusRef = useRef(true)
   const [previewMode, setPreviewMode] = useState<'article' | 'list'>('article')
+  const previewContainerRef = useRef<HTMLDivElement>(null)
+  const [previewZoom, setPreviewZoom] = useState(1)
+
+  /* Preview zoom: scale down desktop layout so it fits without horizontal scroll */
+  useEffect(() => {
+    const el = previewContainerRef.current
+    if (!el) return
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0].contentRect
+      const targetWidth = parseInt(deviceWidth)
+      const zoom = Math.min(1, (rect.width - 32) / targetWidth)
+      setPreviewZoom(zoom)
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [deviceWidth])
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imageSettingsOpen, setImageSettingsOpen] = useState(false)
   const [pendingImage, setPendingImage] = useState<{ url: string; name: string; width?: number; height?: number } | null>(null)
+  const [activeBlockId, setActiveBlockId] = useState<string | null>(null)
+  const [pulseBlockId, setPulseBlockId] = useState<string | null>(null)
 
   /* Load snapshot */
   useEffect(() => {
@@ -404,7 +459,7 @@ function PulseBlogStudioInner() {
     return () => clearTimeout(t)
   }, [snapshot, selectedSlug, isDirty])
 
-  /* Keyboard shortcuts */
+  /* Keyboard shortcuts — capture phase to intercept browser defaults */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && focusMode) { setFocusMode(false); setSidebarOpen(sidebarOpenBeforeFocusRef.current); e.preventDefault(); return }
@@ -437,6 +492,25 @@ function PulseBlogStudioInner() {
         handleSave()
         e.preventDefault(); return
       }
+      // Comments panel
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
+        e.preventDefault()
+        setCommentsOpen((o) => !o)
+        setNotebookOpen(false)
+        setPreviewOpen(false)
+        setHelpOpen(false)
+        return
+      }
+      // Notebook panel — Ctrl+Alt+N primary, Ctrl+Shift+Y fallback
+      if ((e.metaKey || e.ctrlKey) && ((e.altKey && e.key.toLowerCase() === 'n') || (e.shiftKey && e.key.toLowerCase() === 'y'))) {
+        e.preventDefault()
+        e.stopPropagation()
+        setNotebookOpen((o) => !o)
+        setCommentsOpen(false)
+        setPreviewOpen(false)
+        setHelpOpen(false)
+        return
+      }
       // Undo / Redo
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
         e.preventDefault()
@@ -448,14 +522,14 @@ function PulseBlogStudioInner() {
         editorAdapter?.redo()
         return
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'y') {
         e.preventDefault()
         editorAdapter?.redo()
         return
       }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
   }, [focusMode, handleSave, editorAdapter])
 
   useEffect(() => {
@@ -469,6 +543,52 @@ function PulseBlogStudioInner() {
     if (!workspace || !selectedSlug) return null
     try { return workspace.getEntry(selectedSlug) } catch { return null }
   }, [selectedSlug, workspace])
+
+  /* Comment system */
+  const [commentSystem, setCommentSystem] = useState<CommentSystem>(() => createCommentSystem())
+  const [, commentTick] = useState(0)
+
+  // Load comments when entry changes
+  useEffect(() => {
+    if (!selectedEntry) return
+    const key = `pulse-comments-${selectedEntry.id || selectedEntry.slug}`
+    const raw = localStorage.getItem(key)
+    const cs = createCommentSystem()
+    if (raw) {
+      try {
+        const data = JSON.parse(raw)
+        cs.import(data)
+      } catch { /* ignore */ }
+    }
+    setCommentSystem(cs)
+    setCommentsOpen(false)
+    setNotebookOpen(false)
+  }, [selectedEntry?.id, selectedEntry?.slug])
+
+  // Persist comments
+  useEffect(() => {
+    if (!selectedEntry) return
+    const key = `pulse-comments-${selectedEntry.id || selectedEntry.slug}`
+    const data = commentSystem.export()
+    localStorage.setItem(key, JSON.stringify(data))
+  }, [commentSystem, selectedEntry?.id, selectedEntry?.slug])
+
+  // Compute block comment counts (total + active only)
+  const { blockCommentCounts, blockActiveCommentCounts } = useMemo(() => {
+    const counts: Record<string, number> = {}
+    const activeCounts: Record<string, number> = {}
+    const threads = commentSystem.getThreads()
+    for (const thread of threads) {
+      const bid = thread.comment.range?.blockId
+      if (bid) {
+        counts[bid] = (counts[bid] || 0) + 1
+        if (thread.comment.status === 'active') {
+          activeCounts[bid] = (activeCounts[bid] || 0) + 1
+        }
+      }
+    }
+    return { blockCommentCounts: counts, blockActiveCommentCounts: activeCounts }
+  }, [commentSystem, commentTick])
 
   useEffect(() => {
     if (!selectedEntry) return
@@ -813,7 +933,7 @@ function PulseBlogStudioInner() {
   }
 
   /* Device preview widths */
-  const deviceWidth = { desktop: '100%', tablet: '768px', mobile: '375px' }[deviceMode]
+  const deviceWidth = { desktop: '1200px', tablet: '768px', mobile: '375px' }[deviceMode]
   if (!snapshot) {
     return (
       <div className="flex h-full items-center justify-center bg-[var(--neutral-50)]">
@@ -870,8 +990,14 @@ return (
             </div>
             <div className="flex items-center gap-1">
               <IconBtn onClick={handleSave} active={isDirty} title="Save (Ctrl+S)"> <Save className="h-4 w-4" /> </IconBtn>
-              <IconBtn onClick={() => { setPreviewOpen(p => !p); setHelpOpen(false) }} active={previewOpen} title="Toggle preview (Ctrl+P)"> <Columns2 className="h-4 w-4" /> </IconBtn>
-              <IconBtn onClick={() => { setHelpOpen(h => !h); setPreviewOpen(false) }} active={helpOpen} title="Help (Ctrl+H)"> <HelpCircle className="h-4 w-4" /> </IconBtn>
+              <IconBtn onClick={() => { setPreviewOpen(p => !p); setHelpOpen(false); setCommentsOpen(false); setNotebookOpen(false) }} active={previewOpen} title="Toggle preview (Ctrl+P)"> <Columns2 className="h-4 w-4" /> </IconBtn>
+              <IconBtn onClick={() => { setHelpOpen(h => !h); setPreviewOpen(false); setCommentsOpen(false); setNotebookOpen(false) }} active={helpOpen} title="Help (Ctrl+H)"> <HelpCircle className="h-4 w-4" /> </IconBtn>
+              <IconBtn onClick={() => { setCommentsOpen(c => !c); setNotebookOpen(false); setPreviewOpen(false); setHelpOpen(false) }} active={commentsOpen} title="Comments (Ctrl+Shift+C)">
+                <MessageSquare className="h-4 w-4" />
+              </IconBtn>
+              <IconBtn onClick={() => { setNotebookOpen(n => !n); setCommentsOpen(false); setPreviewOpen(false); setHelpOpen(false) }} active={notebookOpen} title="Notebook (Ctrl+Alt+N or Ctrl+Shift+Y)">
+                <BookOpen className="h-4 w-4" />
+              </IconBtn>
               <button onClick={handlePublish} className="ml-1 rounded-md bg-[var(--pulse-black)] px-2.5 py-1 text-[11px] font-bold text-white hover:bg-[var(--pulse-red)] transition-colors">Publish</button>
             </div>
           </motion.header>
@@ -918,8 +1044,19 @@ return (
               <IconBtn onClick={() => { setPreviewOpen(p => !p); setHelpOpen(false) }} active={previewOpen} title="Toggle preview (Ctrl+P)">
                 <Columns2 className="h-4 w-4" />
               </IconBtn>
-              <IconBtn onClick={() => { setHelpOpen(h => !h); setPreviewOpen(false) }} active={helpOpen} title="Help (Ctrl+H)">
+              <IconBtn onClick={() => { setHelpOpen(h => !h); setPreviewOpen(false); setCommentsOpen(false); setNotebookOpen(false) }} active={helpOpen} title="Help (Ctrl+H)">
                 <HelpCircle className="h-4 w-4" />
+              </IconBtn>
+              <IconBtn onClick={() => { setCommentsOpen(c => !c); setNotebookOpen(false); setPreviewOpen(false); setHelpOpen(false) }} active={commentsOpen} title="Comments (Ctrl+Shift+C)">
+                <MessageSquare className="h-4 w-4" />
+                {Object.keys(blockCommentCounts).length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[var(--pulse-red)] text-[7px] font-bold text-white">
+                    {Object.keys(blockCommentCounts).length}
+                  </span>
+                )}
+              </IconBtn>
+              <IconBtn onClick={() => { setNotebookOpen(n => !n); setCommentsOpen(false); setPreviewOpen(false); setHelpOpen(false) }} active={notebookOpen} title="Notebook (Ctrl+Shift+N)">
+                <BookOpen className="h-4 w-4" />
               </IconBtn>
               <Link href={`/blog/preview?slug=${selectedEntry.slug}`} target="_blank" className="rounded p-1 text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)] transition-colors" title="Open preview in new tab">
                 <Eye className="h-4 w-4" />
@@ -1097,15 +1234,29 @@ return (
               <input value={draft.title} onChange={e => updateDraft('title', e.target.value)}
                 className="w-full bg-transparent text-3xl font-bold leading-tight text-[var(--pulse-black)] outline-none placeholder:text-[var(--neutral-300)] md:text-4xl"
                 placeholder="Article title" />
-              <div className="mt-2 flex items-center gap-3 text-[11px] text-[var(--neutral-500)]">
-                <span>{selectedEntry.wordCount} words</span>
-                <span>•</span>
-                <span>{selectedEntry.readTime}</span>
-                <span>•</span>
-                <span>SEO {selectedEntry.seoScore}</span>
-              </div>
+              <LiveStats editorBlocks={editorBlocks} draft={draft} selectedEntry={selectedEntry} />
               <div className="mt-8">
-                <StudioBlockCanvas adapter={editorAdapter} blocks={editorBlocks} />
+                <StudioBlockCanvas
+                  adapter={editorAdapter}
+                  blocks={editorBlocks}
+                  blockCommentCounts={blockCommentCounts}
+                  blockActiveCommentCounts={blockActiveCommentCounts}
+                  pulseBlockId={pulseBlockId}
+                  onBlockCommentClick={(blockId) => {
+                    setActiveBlockId(blockId)
+                    setCommentsOpen(true)
+                    setNotebookOpen(false)
+                    setPreviewOpen(false)
+                    setHelpOpen(false)
+                  }}
+                  onAddBlockComment={(blockId) => {
+                    setActiveBlockId(blockId)
+                    setCommentsOpen(true)
+                    setNotebookOpen(false)
+                    setPreviewOpen(false)
+                    setHelpOpen(false)
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -1150,8 +1301,8 @@ return (
                   </div>
 
                   {/* Preview content */}
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <div className="mx-auto transition-all duration-300" style={{ maxWidth: deviceWidth }} data-device-mode={deviceMode}>
+                  <div ref={previewContainerRef} className="flex-1 overflow-y-auto p-4">
+                    <div className="mx-auto transition-all duration-300" style={{ width: deviceWidth, zoom: previewZoom }} data-device-mode={deviceMode}>
                       {previewMode === 'article' ? (
                         <div className="rounded-xl border border-[var(--neutral-200)] bg-white p-6 shadow-sm">
                           {draft.featuredImage && (
@@ -1174,7 +1325,7 @@ return (
                           <div className="p-4">
                             <div className="flex items-center gap-2">
                               <span className="rounded-full bg-[var(--pulse-red)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">{draft.eyebrow || 'Post'}</span>
-                              <span className="text-[10px] text-[var(--neutral-400)]">{selectedEntry.readTime}</span>
+                              <span className="text-[10px] text-[var(--neutral-400)]">{formatReadTime(countWords(editorBlocks))}</span>
                             </div>
                             <h3 className="mt-2 text-base font-bold text-[var(--pulse-black)] leading-snug line-clamp-2">{draft.title}</h3>
                             <p className="mt-1.5 text-xs leading-relaxed text-[var(--neutral-600)] line-clamp-3">{draft.excerpt}</p>
@@ -1216,6 +1367,55 @@ return (
               </motion.div>
             )}
          </AnimatePresence>
+
+          {/* Comments panel */}
+          <AnimatePresence>
+            {commentsOpen && selectedEntry && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 380, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="flex-shrink-0 overflow-hidden border-l border-[var(--neutral-200)]"
+              >
+                <StudioCommentsPanel
+                  commentSystem={commentSystem}
+                  entryId={selectedEntry.id || selectedEntry.slug}
+                  activeBlockId={activeBlockId}
+                  blocks={editorBlocks}
+                  onSelectBlock={(blockId) => {
+                    setActiveBlockId(blockId)
+                    setPulseBlockId(blockId)
+                    setTimeout(() => setPulseBlockId(null), 2200)
+                    // Wait for panel animation (300ms) then smooth-scroll block into center view
+                    setTimeout(() => {
+                      const el = document.querySelector(`[data-block-id="${blockId}"]`)
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      }
+                    }, 350)
+                  }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Notebook panel */}
+          <AnimatePresence>
+            {notebookOpen && selectedEntry && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 340, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="flex-shrink-0 overflow-hidden border-l border-[var(--neutral-200)]"
+              >
+                <StudioNotebookPanel
+                  entryId={selectedEntry.id || selectedEntry.slug}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
      </div>
 

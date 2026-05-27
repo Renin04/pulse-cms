@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Command, Plus,
-  Trash2, Copy, X, EyeOff, Type, Heading,
+  Trash2, Copy, CopyX, X, EyeOff, Type, Heading,
   List, Code, Quote, MessageSquare, Image as ImageIcon,
   Table, CheckSquare, BarChart3, Map, Calculator, HelpCircle,
   LayoutGrid, Video, Music, Globe, BookOpen, Clock, Layers,
@@ -324,7 +324,11 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
     if (!el) return;
     skipBlurRef.current = false;
     if (existingRefElementRef.current) {
-      existingRefElementRef.current.replaceWith(document.createTextNode(existingRefRef.current?.text || ''));
+      const next = existingRefElementRef.current.nextSibling;
+      if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u200B') {
+        next.remove();
+      }
+      existingRefElementRef.current.remove();
       existingRefElementRef.current = null;
     }
     skipBlurRef.current = false;
@@ -480,7 +484,11 @@ function EditableHeading({ block, adapter }: { block: Block<BlockData>; adapter:
             const el = headingRef.current;
             if (!el) return;
             if (refContextMenu.element) {
-              refContextMenu.element.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
+              const next = refContextMenu.element.nextSibling;
+              if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u200B') {
+                next.remove();
+              }
+              refContextMenu.element.remove();
             }
             setRefContextMenu(null);
             setTimeout(() => {
@@ -705,7 +713,11 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
     if (!el) return;
     skipBlurRef.current = false;
     if (existingRefElementRef.current) {
-      existingRefElementRef.current.replaceWith(document.createTextNode(existingRefRef.current?.text || ''));
+      const next = existingRefElementRef.current.nextSibling;
+      if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u200B') {
+        next.remove();
+      }
+      existingRefElementRef.current.remove();
       existingRefElementRef.current = null;
     }
     skipBlurRef.current = false;
@@ -862,7 +874,11 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
             const el = textRef.current;
             if (!el) return;
             if (refContextMenu.element) {
-              refContextMenu.element.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
+              const next = refContextMenu.element.nextSibling;
+              if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u200B') {
+                next.remove();
+              }
+              refContextMenu.element.remove();
             }
             setRefContextMenu(null);
             setTimeout(() => {
@@ -878,9 +894,14 @@ function EditableText({ block, adapter }: { block: Block<BlockData>; adapter: Ed
 }
 
 function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { quote: string; citation?: string; align?: string };
+  const data = block.data as { quote: string; citation?: string; align?: string; citationAlign?: string };
   const align = data.align || 'left';
+  const citationAlign = data.citationAlign || 'left';
   const quoteRef = useRef<HTMLParagraphElement>(null);
+  const citeRef = useRef<HTMLParagraphElement>(null);
+  const activeRef = useRef<'quote' | 'citation'>('quote');
+
+  // Link modal state
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [linkModalText, setLinkModalText] = useState('');
   const [linkModalUrl, setLinkModalUrl] = useState('');
@@ -890,6 +911,8 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
   const skipBlurRef = useRef(false);
   const existingLinkRef = useRef<{ text: string; url: string; rel: string; target: string } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; link: { text: string; url: string; rel: string; target: string } } | null>(null);
+
+  // Ref modal state
   const [refModalOpen, setRefModalOpen] = useState(false);
   const [refModalUrl, setRefModalUrl] = useState('');
   const [refModalText, setRefModalText] = useState('');
@@ -907,8 +930,20 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     }
   }, [data.quote]);
 
-  const openLinkModal = () => {
-    const el = quoteRef.current;
+  useLayoutEffect(() => {
+    const el = citeRef.current;
+    if (el) {
+      el.innerHTML = markdownToHtml(data.citation || '');
+    }
+  }, [data.citation]);
+
+  const getActiveEl = () => {
+    return activeRef.current === 'citation' ? citeRef.current : quoteRef.current;
+  };
+
+  const openLinkModal = (target: 'quote' | 'citation') => {
+    activeRef.current = target;
+    const el = target === 'citation' ? citeRef.current : quoteRef.current;
     if (!el) return;
     skipBlurRef.current = true;
     const existingLink = getLinkAtCursor(el);
@@ -916,6 +951,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
       setLinkModalText(existingLink.text);
       setLinkModalUrl(existingLink.url);
       setLinkModalRel(existingLink.rel);
+      setLinkModalTarget(existingLink.target);
       existingLinkRef.current = existingLink;
       savedRangeRef.current = null;
       setLinkModalOpen(true);
@@ -931,11 +967,12 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     setLinkModalText(selectedText);
     setLinkModalUrl('');
     setLinkModalRel('');
+    setLinkModalTarget('');
     setLinkModalOpen(true);
   };
 
   const handleLinkConfirm = (url: string, rel: string, target: string) => {
-    const el = quoteRef.current;
+    const el = getActiveEl();
     if (!el) return;
     skipBlurRef.current = false;
     const parts: string[] = [];
@@ -963,14 +1000,15 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     setLinkModalOpen(false);
     existingLinkRef.current = null;
     savedRangeRef.current = null;
+    const field = activeRef.current;
     setTimeout(() => {
       const markdown = htmlToMarkdown(el.innerHTML);
-      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, quote: markdown } }));
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [field]: markdown } }));
     }, 0);
   };
 
   const handleLinkRemove = () => {
-    const el = quoteRef.current;
+    const el = getActiveEl();
     if (!el) return;
     if (existingLinkRef.current) {
       const links = el.querySelectorAll('span.pulse-editor-link');
@@ -984,14 +1022,16 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     setLinkModalOpen(false);
     existingLinkRef.current = null;
     savedRangeRef.current = null;
+    const field = activeRef.current;
     setTimeout(() => {
       const markdown = htmlToMarkdown(el.innerHTML);
-      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, quote: markdown } }));
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [field]: markdown } }));
     }, 0);
   };
 
-  const openRefModal = () => {
-    const el = quoteRef.current;
+  const openRefModal = (target: 'quote' | 'citation') => {
+    activeRef.current = target;
+    const el = target === 'citation' ? citeRef.current : quoteRef.current;
     if (!el) return;
     skipBlurRef.current = true;
     const existingRef = getRefAtCursor(el);
@@ -1024,7 +1064,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
   };
 
   const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string, rel: string) => {
-    const el = quoteRef.current;
+    const el = getActiveEl();
     if (!el) return;
     skipBlurRef.current = false;
     const parts: string[] = [];
@@ -1051,100 +1091,165 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
     existingRefRef.current = null;
     existingRefElementRef.current = null;
     savedRangeRef.current = null;
+    const field = activeRef.current;
     setTimeout(() => {
       const markdown = htmlToMarkdown(el.innerHTML);
-      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, quote: markdown } }));
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [field]: markdown } }));
     }, 0);
   };
 
   const handleRefRemove = () => {
-    const el = quoteRef.current;
+    const el = getActiveEl();
     if (!el) return;
     skipBlurRef.current = false;
     if (existingRefElementRef.current) {
-      existingRefElementRef.current.replaceWith(document.createTextNode(existingRefRef.current?.text || ''));
+      const next = existingRefElementRef.current.nextSibling;
+      if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u200B') {
+        next.remove();
+      }
+      existingRefElementRef.current.remove();
       existingRefElementRef.current = null;
     }
     skipBlurRef.current = false;
     setRefModalOpen(false);
     existingRefRef.current = null;
     savedRangeRef.current = null;
+    const field = activeRef.current;
     setTimeout(() => {
       const markdown = htmlToMarkdown(el.innerHTML);
-      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, quote: markdown } }));
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [field]: markdown } }));
     }, 0);
   };
 
+  const makeEditableHandlers = (target: 'quote' | 'citation') => ({
+    onBlur: (e: React.FocusEvent<HTMLParagraphElement>) => {
+      if (skipBlurRef.current) return;
+      const markdown = htmlToMarkdown(e.currentTarget.innerHTML);
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [target]: markdown } }));
+    },
+    onKeyDown: (e: React.KeyboardEvent<HTMLParagraphElement>) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        openLinkModal(target);
+      }
+    },
+    onContextMenu: (e: React.MouseEvent<HTMLParagraphElement>) => {
+      const link = getLinkFromEvent(e);
+      if (link) {
+        e.preventDefault();
+        activeRef.current = target;
+        setContextMenu({ x: e.clientX, y: e.clientY, link });
+        return;
+      }
+      const ref = getRefFromEvent(e);
+      const refEl = getRefElementFromEvent(e);
+      if (ref && refEl) {
+        e.preventDefault();
+        activeRef.current = target;
+        setRefContextMenu({ x: e.clientX, y: e.clientY, ref, element: refEl });
+      }
+    },
+  });
+
   return (
-    <blockquote className="border-l-4 border-[var(--pulse-jasmine)] pl-4 italic text-[var(--neutral-700)]" style={{ textAlign: align as any }}>
-      <div className="flex items-start gap-2">
+    <div className="pulse-editor-blockquote relative rounded-xl border border-[var(--neutral-200)] bg-gradient-to-br from-[var(--pulse-off-white)] via-white to-[var(--pulse-jasmine-light)] p-5 shadow-sm">
+      {/* Decorative large quote mark */}
+      <div className="pointer-events-none absolute left-3 top-1 select-none font-serif text-6xl leading-none text-[var(--pulse-jasmine)] opacity-70" aria-hidden="true">
+        &#8220;
+      </div>
+
+      {/* Quote text */}
+      <div className="relative z-10 flex items-start gap-2" style={{ textAlign: align as any }}>
         <p
           ref={quoteRef}
           contentEditable
           suppressContentEditableWarning
-          className="min-h-[1.5em] flex-1 outline-none"
-          onBlur={(e) => {
-            if (skipBlurRef.current) return;
-            const markdown = htmlToMarkdown(e.currentTarget.innerHTML);
-            adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, quote: markdown } }));
-          }}
-          onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-              e.preventDefault();
-              openLinkModal();
-            }
-          }}
-          onContextMenu={(e) => {
-            const link = getLinkFromEvent(e);
-            if (link) {
-              e.preventDefault();
-              setContextMenu({ x: e.clientX, y: e.clientY, link });
-              return;
-            }
-            const ref = getRefFromEvent(e);
-            const refEl = getRefElementFromEvent(e);
-            if (ref && refEl) {
-              e.preventDefault();
-              setRefContextMenu({ x: e.clientX, y: e.clientY, ref, element: refEl });
-            }
-          }}
+          className="min-h-[1.5em] flex-1 pl-6 text-lg font-medium leading-relaxed text-[var(--pulse-black)] outline-none"
+          {...makeEditableHandlers('quote')}
         />
-        <button
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={openLinkModal}
-          className="mt-0.5 rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
-          title="Link selected text (Ctrl+K)"
-        >
-          Link
-        </button>
-        <button
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={openRefModal}
-          className="mt-0.5 rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
-          title="Add reference citation"
-        >
-          Ref
-        </button>
-      </div>
-      <input
-        value={data.citation || ''}
-        onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, citation: e.target.value } }))}
-        placeholder="Citation (optional)"
-        className="mt-2 w-full bg-transparent text-sm text-[var(--neutral-500)] outline-none placeholder:text-[var(--neutral-400)]"
-      />
-      <div className="mt-2 flex flex-wrap gap-2">
-        {(['left','center','right','justify'] as const).map((a) => (
+        <div className="flex shrink-0 gap-1">
           <button
-            key={a}
-            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
-            className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
-              align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
-            }`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => openLinkModal('quote')}
+            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
+            title="Link selected text (Ctrl+K)"
           >
-            {a}
+            Link
           </button>
-        ))}
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => openRefModal('quote')}
+            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
+            title="Add reference citation"
+          >
+            Ref
+          </button>
+        </div>
       </div>
+
+      {/* Citation */}
+      <div className="relative z-10 mt-3 flex items-start gap-2" style={{ textAlign: citationAlign as any }}>
+        <p
+          ref={citeRef}
+          contentEditable
+          suppressContentEditableWarning
+          className="min-h-[1.2em] flex-1 text-sm font-semibold uppercase tracking-wide text-[var(--neutral-500)] outline-none placeholder:text-[var(--neutral-400)]"
+          data-placeholder="Citation (optional)"
+          {...makeEditableHandlers('citation')}
+        />
+        <div className="flex shrink-0 gap-1">
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => openLinkModal('citation')}
+            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
+            title="Link selected text (Ctrl+K)"
+          >
+            Link
+          </button>
+          <button
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => openRefModal('citation')}
+            className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] shadow-sm hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)] transition-colors"
+            title="Add reference citation"
+          >
+            Ref
+          </button>
+        </div>
+      </div>
+
+      {/* Alignment controls */}
+      <div className="relative z-10 mt-3 flex flex-wrap items-center gap-3 border-t border-[var(--neutral-200)] pt-3">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-400)]">Quote</span>
+        <div className="flex flex-wrap gap-1">
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+        <div className="mx-1 h-4 w-px bg-[var(--neutral-200)]" />
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-400)]">Citation</span>
+        <div className="flex flex-wrap gap-1">
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, citationAlign: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                citationAlign === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--pulse-jasmine-light)] hover:text-[var(--pulse-black)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <LinkModal
         isOpen={linkModalOpen}
         onClose={() => {
@@ -1173,7 +1278,7 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
             setContextMenu(null);
           }}
           onRemove={() => {
-            const el = quoteRef.current;
+            const el = getActiveEl();
             if (!el) return;
             const links = el.querySelectorAll('span.pulse-editor-link');
             links.forEach((span) => {
@@ -1184,7 +1289,8 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
             setContextMenu(null);
             setTimeout(() => {
               const markdown = htmlToMarkdown(el.innerHTML);
-              adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, quote: markdown } }));
+              const field = activeRef.current;
+              adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [field]: markdown } }));
             }, 0);
           }}
           onClose={() => setContextMenu(null)}
@@ -1221,21 +1327,26 @@ function EditableBlockquote({ block, adapter }: { block: Block<BlockData>; adapt
             setRefContextMenu(null);
           }}
           onRemove={() => {
-            const el = quoteRef.current;
+            const el = getActiveEl();
             if (!el) return;
             if (refContextMenu.element) {
-              refContextMenu.element.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
+              const next = refContextMenu.element.nextSibling;
+              if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u200B') {
+                next.remove();
+              }
+              refContextMenu.element.remove();
             }
             setRefContextMenu(null);
             setTimeout(() => {
               const markdown = htmlToMarkdown(el.innerHTML);
-              adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, quote: markdown } }));
+              const field = activeRef.current;
+              adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [field]: markdown } }));
             }, 0);
           }}
           onClose={() => setRefContextMenu(null)}
         />
       )}
-    </blockquote>
+    </div>
   );
 }
 
@@ -1543,7 +1654,11 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
         if (span.getAttribute('data-url') === existingRefRef.current?.url &&
             span.getAttribute('data-text') === existingRefRef.current?.text &&
             span.getAttribute('data-style') === existingRefRef.current?.style) {
-          span.replaceWith(document.createTextNode(existingRefRef.current.text || ''));
+          const next = span.nextSibling;
+          if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u200B') {
+            next.remove();
+          }
+          span.remove();
         }
       });
     }
@@ -1667,22 +1782,6 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
                 />
                 <div className="flex flex-col gap-1">
                   <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => openLinkModal(i)}
-                    className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
-                    title="Link selected text (Ctrl+K)"
-                  >
-                    Link
-                  </button>
-                  <button
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => openRefModal(i)}
-                    className="rounded-md border border-[var(--neutral-200)] bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
-                    title="Add reference citation"
-                  >
-                    Ref
-                  </button>
-                  <button
                     onClick={() => {
                       const next = data.items.filter((_, idx) => idx !== i);
                       itemRefs.current = itemRefs.current.filter((_, idx) => idx !== i);
@@ -1793,7 +1892,11 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
               if (span.getAttribute('data-url') === refContextMenu.ref.url &&
                   span.getAttribute('data-text') === refContextMenu.ref.text &&
                   span.getAttribute('data-style') === refContextMenu.ref.style) {
-                span.replaceWith(document.createTextNode(refContextMenu.ref.text || ''));
+                const next = span.nextSibling;
+                if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u200B') {
+                  next.remove();
+                }
+                span.remove();
               }
             });
             setRefContextMenu(null);
@@ -1877,6 +1980,11 @@ function EditableBlock({
   isLast,
   index,
   total,
+  commentCount,
+  activeCommentCount,
+  onCommentClick,
+  onAddComment,
+  isPulsing,
 }: {
   block: Block<BlockData>;
   adapter: EditorStateAdapter<Block<BlockData>>;
@@ -1884,6 +1992,11 @@ function EditableBlock({
   isLast: boolean;
   index: number;
   total: number;
+  commentCount?: number;
+  activeCommentCount?: number;
+  onCommentClick?: () => void;
+  onAddComment?: () => void;
+  isPulsing?: boolean;
 }) {
   const [isActive, setIsActive] = useState(false);
   const [moveTarget, setMoveTarget] = useState('');
@@ -1947,13 +2060,23 @@ function EditableBlock({
           }
         }
       }}
-      className={`group relative flex items-start gap-2 rounded-xl border border-transparent bg-white p-4 shadow-sm transition-all hover:border-[var(--neutral-200)] ${
+      data-block-id={block.id}
+      className={`group relative flex items-start gap-2 rounded-xl border border-transparent bg-white p-4 shadow-sm transition-all transition-shadow duration-500 hover:border-[var(--neutral-200)] ${
         isActive ? 'border-[var(--pulse-red)]/30 ring-1 ring-[var(--pulse-red)]/20' : ''
-      }`}
+      } ${isPulsing ? 'animate-block-pulse' : ''}`}
       onClick={() => setIsActive(true)}
       onBlur={() => setIsActive(false)}
       tabIndex={-1}
     >
+      {/* Subtle left-edge marker for active comments */}
+      {activeCommentCount !== undefined && activeCommentCount > 0 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onCommentClick?.(); }}
+          className="absolute -left-[3px] top-3 bottom-3 w-[3px] rounded-full bg-amber-400/80 hover:bg-amber-500 transition-colors"
+          title={`${activeCommentCount} unresolved comment${activeCommentCount > 1 ? 's' : ''}`}
+        />
+      )}
+
       {/* Left controls: drag handle + block number */}
       <div className="flex flex-col items-center gap-1 pt-1">
         <div
@@ -1974,6 +2097,18 @@ function EditableBlock({
       <div className="min-w-0 flex-1">
         {content}
       </div>
+
+      {/* Comment indicator (always visible when comments exist) */}
+      {commentCount !== undefined && commentCount > 0 && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onCommentClick?.(); }}
+          className="absolute -right-1 top-1/2 -translate-y-1/2 translate-x-full ml-2 flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 shadow-sm hover:bg-amber-200 transition-colors"
+          title={`${commentCount} comment${commentCount > 1 ? 's' : ''}`}
+        >
+          <MessageSquare className="h-2.5 w-2.5" />
+          {commentCount}
+        </button>
+      )}
 
       {/* Hover actions */}
       <div className="absolute -right-2 -top-2 hidden items-center gap-1 rounded-lg border border-[var(--neutral-200)] bg-white p-1 shadow-sm group-hover:flex">
@@ -2028,14 +2163,42 @@ function EditableBlock({
         </div>
         <div className="mx-0.5 h-3 w-px bg-[var(--neutral-200)]" />
         <button
+          onClick={() => onAddComment?.()}
+          className="rounded p-1 text-[var(--neutral-400)] hover:bg-amber-50 hover:text-amber-600"
+          title="Add comment to this block"
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+        </button>
+        <button
           onClick={() => {
             const dup = { ...block, id: `dup-${Date.now()}`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Block<BlockData>;
-            adapter.insertBlock(dup);
+            adapter.insertBlock(dup, index + 1);
           }}
           className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-black)]"
           title="Duplicate"
         >
           <Copy className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={() => {
+            const blockDef = BUILTIN_BLOCK_DEFINITIONS.find(d => d.type === block.type);
+            const rawDefault = blockDef
+              ? (typeof blockDef.defaultData === 'function' ? blockDef.defaultData() : blockDef.defaultData)
+              : {};
+            const emptyData = rawDefault ? JSON.parse(JSON.stringify(rawDefault)) : {};
+            const dup = {
+              ...block,
+              id: `dup-${Date.now()}`,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              data: emptyData,
+            } as Block<BlockData>;
+            adapter.insertBlock(dup, index + 1);
+          }}
+          className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-red)]"
+          title="Duplicate without content"
+        >
+          <CopyX className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={() => adapter.removeBlock(block.id)}
@@ -2054,9 +2217,19 @@ function EditableBlock({
 export default function StudioBlockCanvas({
   adapter,
   blocks,
+  blockCommentCounts,
+  blockActiveCommentCounts,
+  pulseBlockId,
+  onBlockCommentClick,
+  onAddBlockComment,
 }: {
   adapter: EditorStateAdapter<Block<BlockData>> | null;
   blocks: Block<BlockData>[];
+  blockCommentCounts?: Record<string, number>;
+  blockActiveCommentCounts?: Record<string, number>;
+  pulseBlockId?: string | null;
+  onBlockCommentClick?: (blockId: string) => void;
+  onAddBlockComment?: (blockId: string) => void;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showPalette, setShowPalette] = useState(false);
@@ -2251,6 +2424,11 @@ export default function StudioBlockCanvas({
             isLast={i === blocks.length - 1}
             index={i}
             total={blocks.length}
+            commentCount={blockCommentCounts?.[block.id]}
+            activeCommentCount={blockActiveCommentCounts?.[block.id]}
+            isPulsing={pulseBlockId === block.id}
+            onCommentClick={() => onBlockCommentClick?.(block.id)}
+            onAddComment={() => onAddBlockComment?.(block.id)}
           />
         ))}
       </div>

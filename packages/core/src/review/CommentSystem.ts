@@ -159,6 +159,18 @@ export class CommentSystem {
     return comment;
   }
 
+  reopenComment(commentId: string): Comment | null {
+    const comment = this.comments.get(commentId);
+    if (!comment || comment.status === "deleted") return null;
+
+    comment.status = "active";
+    comment.resolvedAt = undefined;
+    comment.resolvedBy = undefined;
+    comment.updatedAt = new Date().toISOString();
+
+    return comment;
+  }
+
   deleteComment(commentId: string): boolean {
     const comment = this.comments.get(commentId);
     if (!comment) return false;

@@ -429,7 +429,7 @@ describe("BlockquoteBlock", () => {
     });
 
     expect(html).toContain("<blockquote");
-    expect(html).toContain("<cite>Linus Torvalds</cite>");
+    expect(html).toContain(">Linus Torvalds</cite>");
   });
 
   it("serializes and deserializes blockquote data", () => {

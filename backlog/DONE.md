@@ -3,8 +3,27 @@
 > Archive of all completed tasks from the backlog. Tasks are moved here when marked as âœ… in BACKLOG.md.
 > This file serves as a historical record of project progress.
 
-**Last Updated:** 2026-05-18  
-**Total Completed Tasks:** 401
+**Last Updated:** 2026-05-21  
+**Total Completed Tasks:** 405
+
+---
+
+## Bug-Fix Session 92 — Commenting System + Notebook (Bugs #22-23)
+**Completed:** 2026-05-21
+
+- ✅ Bug #22: Commenting system for blocks — threaded comments with per-block badges, right-slide panel, filter tabs, admin selector, threaded replies, resolve/reject/delete, time-ago timestamps, block navigation, Ctrl+Shift+C shortcut, localStorage persistence per entry
+- ✅ Bug #23: Notebook for articles — warm paper-like UI with pin/unpin, search, author avatars, category pills (idea/todo/warning/question), expandable long notes, pinned-first sorting, spring animations, Ctrl+Shift+N shortcut, localStorage persistence per entry
+
+**Files Changed:**
+- `apps/website/app/components/StudioCommentsPanel.tsx` — new
+- `apps/website/app/components/StudioNotebookPanel.tsx` — new
+- `apps/website/app/components/StudioBlockCanvas.tsx` — comment badges, scroll-to-block
+- `apps/website/app/components/PulseBlogStudio.tsx` — integration, keyboard shortcuts, toolbar buttons
+- `packages/core/src/review/Notebook.ts` — new
+- `packages/core/src/review/index.ts` — added Notebook export
+- `packages/core/src/index.ts` — added review export
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (1071/1071)
 
 ---
 
@@ -1345,3 +1364,31 @@
 - Root: `npm run lint` ✅
 - Root: `npm run typecheck` ✅
 - Root: `npm run build` ✅
+
+---
+
+## Bug-Fix Session 91 — Blockquote Redesign (Bugs #20-21)
+**Completed:** 2026-05-21
+
+- ✅ Bug #20: Separate link/ref/alignment controls for quote and citation
+  - Citation upgraded from plain `<input>` to `contentEditable` with full inline markdown support
+  - Independent Link/Ref modals and right-click context menus for both quote and citation
+  - Separate alignment button groups: Quote (left/center/right/justify) and Citation (left/center/right/justify)
+- ✅ Bug #21: Bolder, more creative quote block UI
+  - Editor: rounded card with warm gradient background, large serif decorative quotation mark, distinct typography hierarchy
+  - Renderer: gradient background with subtle shadow, decorative quote mark with text-shadow, gradient left accent bar, refined responsive spacing
+- ✅ Bug #19.1 (discovered during validation): Removing a reference caused duplicated text (e.g., "testtest")
+  - Root cause: `selection.collapseToEnd()` before `document.execCommand('insertText')` in ref modal confirm handlers prevented selected text replacement
+  - Fix: Removed `collapseToEnd()` from all ref confirm handlers to match link confirm behavior
+
+**Files Changed:**
+- `packages/blocks/src/BlockquoteBlock.ts` — Added `citationAlign` to schema
+- `apps/website/app/components/StudioBlockCanvas.tsx` — EditableBlockquote complete rewrite; removed `collapseToEnd()` from ref confirm in EditableHeading/EditableText/EditableBlockquote
+- `apps/website/app/demo/PulseDemoEditor.tsx` — EditableBlockquote kept in sync; same `collapseToEnd()` fix
+- `apps/website/lib/blog-studio.ts` — Blockquote renderer override with alignment + inline citation
+- `apps/website/lib/entry-adapter.ts` — Same blockquote renderer updates
+- `apps/website/app/globals.css` — New `.studio-rendered blockquote` styles + responsive breakpoints + dark mode
+- `packages/blocks/tests/blocks.test.ts` — Citation assertion updated
+- `packages/renderer/tests/block-parity.test.ts` — Citation assertion updated
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files passed)

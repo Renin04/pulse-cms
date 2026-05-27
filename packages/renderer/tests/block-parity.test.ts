@@ -207,7 +207,7 @@ describe("Blockquote block renderer", () => {
   it("renders citation when provided", () => {
     const block = makeBlock("blockquote", { quote: "Be yourself", citation: "Oscar Wilde" });
     const { html } = renderBlock(block);
-    expect(html).toContain("<cite>Oscar Wilde</cite>");
+    expect(html).toContain(">Oscar Wilde</cite>");
   });
 });
 

@@ -3,8 +3,74 @@
 > Chronological record of all development sessions.
 > Each entry captures what was done, decisions made, and next steps.
 
-**Last Updated:** 2026-04-07  
-**Total Sessions:** 64
+**Last Updated:** 2026-05-21  
+**Total Sessions:** 92
+
+## Session 92 — Bug #22 + #23: Commenting System + Notebook
+**Date:** 2026-05-21  
+**Duration:** Extended  
+**Focus:** Implement creative threaded commenting and warm notebook UIs for Pulse Blog Studio with keyboard shortcuts and localStorage persistence
+
+### Summary
+Implemented two major blog studio collaboration features: a threaded comment system (Bug #22) and an article notebook (Bug #23). Both feature rich, warm, creative UIs with amber/paper themes, smooth animations via Framer Motion, keyboard shortcuts, and per-entry localStorage persistence. All quality gates pass.
+
+### What Was Done
+- ✅ **Bug #22 — Commenting System**:
+  - Built `StudioCommentsPanel.tsx` — a right-slide panel (380px) with warm amber/cream theme
+  - Features: filter tabs (all/active/resolved), admin selector dropdown, threaded replies with avatars/initials, resolve/reject/delete actions, time-ago timestamps, block reference navigation
+  - Per-block comment badges: amber dot with count on block hover/activation
+  - Keyboard shortcut: `Ctrl+Shift+C` toggles panel
+  - Comments persisted per-entry in localStorage key `pulse-comments-${entryId}`
+  - Integrated into `PulseBlogStudio.tsx` with toolbar button (badge shows total count)
+  - `StudioBlockCanvas.tsx` updated to show comment count badges and scroll-to-block navigation
+  - Uses existing `CommentSystem` from `@pulse/core` (exported from `packages/core/src/review/`)
+
+- ✅ **Bug #23 — Notebook**:
+  - Built `StudioNotebookPanel.tsx` — a warm, paper-like notebook UI with amber theme
+  - Created `Notebook` class in `packages/core/src/review/Notebook.ts` with CRUD, categories, timestamps, localStorage import/export
+  - Features: pin/unpin notes, search filtering, author avatars with color coding, date stamps, expandable long notes with "read more", pinned-first sorting, smooth spring animations
+  - Categories: general, idea, todo, warning, question
+  - Keyboard shortcut: `Ctrl+Shift+N` toggles panel
+  - Notebook persisted per-entry in localStorage key `pulse-notebook-${entryId}`
+  - Unique per article
+  - Integrated into `PulseBlogStudio.tsx` with toolbar button
+
+- ✅ **Integration & UX polish**:
+  - Both panels are mutually exclusive (opening one closes others: tools, outline, comments, notebook)
+  - Keyboard shortcuts registered globally in `PulseBlogStudio.tsx`
+  - Fixed `ReferenceError: Cannot access 'selectedEntry' before initialization` by removing `selectedEntry` from useEffect dependency array (it was declared later via useMemo)
+  - Updated `packages/core/src/review/index.ts` and `packages/core/src/index.ts` to export `Notebook`
+
+### Files Changed
+- `apps/website/app/components/StudioCommentsPanel.tsx` — new
+- `apps/website/app/components/StudioNotebookPanel.tsx` — new
+- `apps/website/app/components/StudioBlockCanvas.tsx` — comment badges, scroll-to-block
+- `apps/website/app/components/PulseBlogStudio.tsx` — integration, keyboard shortcuts, toolbar buttons
+- `packages/core/src/review/Notebook.ts` — new
+- `packages/core/src/review/index.ts` — added Notebook export
+- `packages/core/src/index.ts` — added review export
+
+### Quality Gates
+- ✅ `npm run lint` — passed
+- ✅ `npm run typecheck` — passed
+- ✅ `npm run build` — passed
+- ✅ `npm run test` — 51 test files, 1071 tests passed
+
+### Decisions Made
+- No new architectural decision ID added; implementation stays within existing React/Next.js app patterns and `@pulse/core` module boundaries.
+- Used Framer Motion for panel slide animations and spring-based UI transitions.
+- Used `lucide-react` icons exclusively (no new icon dependencies).
+- localStorage persistence is per-entry (keyed by `entryId`) to support multi-article isolation.
+
+### Blockers / Open Questions
+- Next.js dev server port 3001 startup needs `npx next dev -p 3001` instead of npm script extra args. This is a known quirk, not a blocker.
+- UI/UX verification via live dev server + Puppeteer pending (dev server startup issue to resolve first).
+
+### Next Session Goals
+- Resolve dev server startup for port 3001 and run live UI verification with Puppeteer.
+- Continue with remaining PM4 bug fixes or move to next PM4 session tasks.
+
+---
 
 ## Session 64 — PM4-8 CMS Media + SEO Ops Baseline
 **Date:** 2026-04-07  
@@ -2992,3 +3058,40 @@ pm run build in pps/website)
 
 **Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (1071/1071 passed)
 **Commit:** pending approval
+
+---
+
+## Session 91 — 2026-05-21
+**Agent:** Bug Fixes #20/#21 (Blockquote: separate quote/citation controls + creative UI redesign)
+
+**Issues Fixed:**
+- #20: link/ref/alignment weren't affecting the quote citation separately. Now citation has its own `contentEditable` field with independent Link/Ref modals, right-click context menus, and separate alignment controls (left/center/right/justify).
+- #21: Quote block UI was generic and bland. Redesigned with a rounded card, warm gradient background, large serif decorative quotation mark, distinct typography hierarchy, and refined renderer styles.
+
+**Files Changed:**
+- `packages/blocks/src/BlockquoteBlock.ts` — Added `citationAlign` to schema and default data; citation now renders with `display: block` and inline `text-align` style.
+- `apps/website/app/components/StudioBlockCanvas.tsx` — Complete `EditableBlockquote` rewrite: dual `contentEditable` fields (quote + citation), shared modal logic via `activeRef`, separate alignment button groups with labels.
+- `apps/website/app/demo/PulseDemoEditor.tsx` — Same `EditableBlockquote` rewrite (duplicated component kept in sync).
+- `apps/website/lib/blog-studio.ts` — Blockquote renderer override now handles `align` and `citationAlign`; citation uses `renderInlineContent()` for link/ref support.
+- `apps/website/lib/entry-adapter.ts` — Same blockquote renderer updates.
+- `apps/website/app/globals.css` — New `.studio-rendered blockquote` styles: gradient bg, decorative `::before` quote mark with text-shadow, gradient `::after` accent bar, refined typography. Updated mobile/tablet breakpoints and dark mode.
+- `packages/blocks/tests/blocks.test.ts` — Updated assertion to match new citation HTML structure.
+- `packages/renderer/tests/block-parity.test.ts` — Same citation assertion fix.
+- `C:\Users\z0512\Desktop\pulse bug list.md` — Marked #20-21 as complete.
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files passed)
+**Commit:** pending approval
+
+**Additional fix during validation:**
+- Bug #19.1: Removing a reference caused duplicated text (e.g., "testtest"). Root cause was `selection.collapseToEnd()` being called before `document.execCommand('insertText')` in ref modal confirm handlers. This collapsed the selection to a single cursor point, so `insertText` inserted the markdown AFTER the original selected text instead of REPLACING it. When the ref was later removed, both the original text and the replacement text were present, causing duplication. Removed `collapseToEnd()` from all 6 ref confirm handlers (heading/text/blockquote in both `StudioBlockCanvas.tsx` and `PulseDemoEditor.tsx`) to match the correct link confirm behavior.
+
+**Files Changed (additional):**
+- `apps/website/app/components/StudioBlockCanvas.tsx` — Removed `selection.collapseToEnd()` from `EditableHeading`, `EditableText`, and `EditableBlockquote` ref confirm handlers.
+- `apps/website/app/demo/PulseDemoEditor.tsx` — Same fix for `EditableHeading`, `EditableText`, and `EditableBlockquote` ref confirm handlers.
+- `C:\Users\z0512\Desktop\pulse bug list.md` — Added #19.1 as fixed.
+
+**Follow-up fix (Session 91 continued):**
+- User reported ref removal still caused duplication ("QuoteQuote" in quote block). Found a remaining `selection.collapseToEnd()` in `StudioBlockCanvas.tsx` `EditableBlockquote.handleRefConfirm` that was missed in the first pass. Removed it.
+- Also discovered and fixed broken context-menu ref removal in `PulseDemoEditor.tsx` heading and text blocks: `onRemove` was comparing `span.textContent?.trim()` (rendered ref number like "1") against `refContextMenu.ref.text` (original selected text like "Quote") — this always evaluated to false, so `replaceWith` never executed. Fixed by capturing the ref DOM element in `onContextMenu` via `getRefElementFromEvent` and storing it in `refContextMenu` state, then using `refContextMenu.element.replaceWith(...)` directly in `onRemove`.
+
+**Quality Gates (re-run):** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files passed)
