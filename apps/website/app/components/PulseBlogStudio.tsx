@@ -406,20 +406,6 @@ function PulseBlogStudioInner() {
   const [previewMode, setPreviewMode] = useState<'article' | 'list'>('article')
   const previewContainerRef = useRef<HTMLDivElement>(null)
   const [previewZoom, setPreviewZoom] = useState(1)
-
-  /* Preview zoom: scale down desktop layout so it fits without horizontal scroll */
-  useEffect(() => {
-    const el = previewContainerRef.current
-    if (!el) return
-    const observer = new ResizeObserver((entries) => {
-      const rect = entries[0].contentRect
-      const targetWidth = parseInt(deviceWidth)
-      const zoom = Math.min(1, (rect.width - 32) / targetWidth)
-      setPreviewZoom(zoom)
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [deviceWidth])
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imageSettingsOpen, setImageSettingsOpen] = useState(false)
   const [pendingImage, setPendingImage] = useState<{ url: string; name: string; width?: number; height?: number } | null>(null)
@@ -934,6 +920,21 @@ function PulseBlogStudioInner() {
 
   /* Device preview widths */
   const deviceWidth = { desktop: '1200px', tablet: '768px', mobile: '375px' }[deviceMode]
+
+  /* Preview zoom: scale down desktop layout so it fits without horizontal scroll */
+  useEffect(() => {
+    const el = previewContainerRef.current
+    if (!el) return
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0].contentRect
+      const targetWidth = parseInt(deviceWidth)
+      const zoom = Math.min(1, (rect.width - 32) / targetWidth)
+      setPreviewZoom(zoom)
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [deviceWidth])
+
   if (!snapshot) {
     return (
       <div className="flex h-full items-center justify-center bg-[var(--neutral-50)]">
