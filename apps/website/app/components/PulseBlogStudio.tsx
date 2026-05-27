@@ -405,7 +405,12 @@ function PulseBlogStudioInner() {
   const sidebarOpenBeforeFocusRef = useRef(true)
   const [previewMode, setPreviewMode] = useState<'article' | 'list'>('article')
   const previewContainerRef = useRef<HTMLDivElement>(null)
-  const [previewZoom, setPreviewZoom] = useState(1)
+  const [previewZoom, setPreviewZoom] = useState(() => {
+    // Safe initial zoom so the first frame never overflows while ResizeObserver warms up
+    if (typeof window === 'undefined') return 1
+    const panelWidth = window.innerWidth * 0.45 - 32
+    return Math.max(0.3, Math.min(1, panelWidth / 1200))
+  })
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imageSettingsOpen, setImageSettingsOpen] = useState(false)
   const [pendingImage, setPendingImage] = useState<{ url: string; name: string; width?: number; height?: number } | null>(null)
@@ -928,7 +933,7 @@ function PulseBlogStudioInner() {
     const observer = new ResizeObserver((entries) => {
       const rect = entries[0].contentRect
       const targetWidth = parseInt(deviceWidth)
-      const zoom = Math.min(1, (rect.width - 32) / targetWidth)
+      const zoom = Math.max(0.3, Math.min(1, (rect.width - 32) / targetWidth))
       setPreviewZoom(zoom)
     })
     observer.observe(el)
@@ -1302,7 +1307,7 @@ return (
                   </div>
 
                   {/* Preview content */}
-                  <div ref={previewContainerRef} className="flex-1 overflow-y-auto p-4">
+                  <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4">
                     <div className="mx-auto transition-all duration-300" style={{ width: deviceWidth, zoom: previewZoom }} data-device-mode={deviceMode}>
                       {previewMode === 'article' ? (
                         <div className="rounded-xl border border-[var(--neutral-200)] bg-white p-6 shadow-sm">
