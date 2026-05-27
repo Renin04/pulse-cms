@@ -1308,7 +1308,7 @@ return (
 
                   {/* Preview content */}
                   <div ref={previewContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4">
-                    <div className="mx-auto transition-all duration-300" style={{ width: deviceWidth, zoom: previewZoom }} data-device-mode={deviceMode}>
+                    <div className="mx-auto" style={{ width: deviceWidth, zoom: previewZoom }} data-device-mode={deviceMode}>
                       {previewMode === 'article' ? (
                         <div className="rounded-xl border border-[var(--neutral-200)] bg-white p-6 shadow-sm">
                           {draft.featuredImage && (
