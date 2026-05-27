@@ -926,18 +926,45 @@ function PulseBlogStudioInner() {
   /* Device preview widths */
   const deviceWidth = { desktop: '1200px', tablet: '768px', mobile: '375px' }[deviceMode]
 
-  /* Preview zoom: scale down desktop layout so it fits without horizontal scroll */
+  /* Preview zoom: smoothly interpolate so mode switches feel fluid */
   useEffect(() => {
     const el = previewContainerRef.current
     if (!el) return
+
+    let rafId = 0
+    let currentZoom = previewZoom
+
+    function animateTo(targetZoom: number) {
+      function tick() {
+        currentZoom = currentZoom + (targetZoom - currentZoom) * 0.12
+        if (Math.abs(currentZoom - targetZoom) < 0.001) {
+          setPreviewZoom(targetZoom)
+          return
+        }
+        setPreviewZoom(currentZoom)
+        rafId = requestAnimationFrame(tick)
+      }
+      cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(tick)
+    }
+
+    // Kick off animation immediately when deviceMode changes
+    const contentWidth = el.clientWidth - 32
+    const targetWidth = parseInt(deviceWidth)
+    const targetZoom = Math.max(0.3, Math.min(1, contentWidth / targetWidth))
+    animateTo(targetZoom)
+
     const observer = new ResizeObserver((entries) => {
-      const rect = entries[0].contentRect
+      const contentWidth = entries[0].contentRect.width
       const targetWidth = parseInt(deviceWidth)
-      const zoom = Math.max(0.3, Math.min(1, (rect.width - 32) / targetWidth))
-      setPreviewZoom(zoom)
+      const targetZoom = Math.max(0.3, Math.min(1, contentWidth / targetWidth))
+      animateTo(targetZoom)
     })
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      cancelAnimationFrame(rafId)
+      observer.disconnect()
+    }
   }, [deviceWidth])
 
   if (!snapshot) {
