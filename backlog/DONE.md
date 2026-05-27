@@ -1392,3 +1392,30 @@
 - `packages/renderer/tests/block-parity.test.ts` — Citation assertion updated
 
 **Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files passed)
+
+---
+
+## Bug-Fix Session 93 — Preview, Stats, Duplicate (Bugs #24-25, #27-29)
+**Completed:** 2026-05-27
+
+- ✅ Bug #24: Quote rendering in preview
+  - `BlockquoteBlock.ts` core renderer now uses `renderInlineMarkdown()` for both quote and citation text
+  - Links and references render as clickable `<a>` tags and `<sup>` superscripts in preview and blog posts
+- ✅ Bug #25: Preview panel device mode distinction
+  - Fixed device widths: desktop 1200px, tablet 768px, mobile 375px
+  - Added `ResizeObserver`-driven CSS `zoom` scaling so desktop layout shrinks to fit panel without horizontal scroll
+- ✅ Bug #27: Live editor stats
+  - `LiveStats` component computes word count and read time directly from `editorBlocks`
+  - SEO score recomputes live from `draft` metadata fields
+- ✅ Bug #28: Duplicate position
+  - `adapter.insertBlock(dup, index + 1)` inserts duplicate immediately after original
+- ✅ Bug #29: Duplicate without content
+  - `CopyX` icon button next to regular duplicate; creates empty block from type's `defaultData`
+
+**Files Changed:**
+- `packages/blocks/src/BlockquoteBlock.ts`
+- `apps/website/lib/blog-studio.ts`
+- `apps/website/app/components/PulseBlogStudio.tsx`
+- `apps/website/app/components/StudioBlockCanvas.tsx`
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files passed)

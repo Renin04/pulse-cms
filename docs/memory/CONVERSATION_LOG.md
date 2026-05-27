@@ -3095,3 +3095,42 @@ pm run build in pps/website)
 - Also discovered and fixed broken context-menu ref removal in `PulseDemoEditor.tsx` heading and text blocks: `onRemove` was comparing `span.textContent?.trim()` (rendered ref number like "1") against `refContextMenu.ref.text` (original selected text like "Quote") — this always evaluated to false, so `replaceWith` never executed. Fixed by capturing the ref DOM element in `onContextMenu` via `getRefElementFromEvent` and storing it in `refContextMenu` state, then using `refContextMenu.element.replaceWith(...)` directly in `onRemove`.
 
 **Quality Gates (re-run):** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files passed)
+
+---
+
+## Session 93 — Bug-Fix Batch (Bugs #24-25, #27-29)
+**Date:** 2026-05-27
+
+### Bug #24: Quote not rendering correctly in preview
+- **Root cause:** `BlockquoteBlock.ts` default renderer used `escapeHtml()` on quote/citation text, stripping any inline markdown links/refs and rendering them as literal text.
+- **Fix:** Added `renderInlineMarkdown()` function to `BlockquoteBlock.ts` that handles both `[label](url){attrs}` links and `[ref](url){attrs}` references with full target/rel support, matching `TextBlock.ts` and `ListBlock.ts` parity. The renderer now outputs proper `<a>` tags and `<sup class="pulse-reference">` elements.
+- **Result:** Blockquotes in both preview panel and blog posts render inline links and references correctly.
+
+### Bug #25: No visual difference between tablet/desktop in preview panel
+- **Root cause:** Preview panel is only 45% of screen width. Desktop mode used `maxWidth: 100%`, so it was visually identical to tablet (both constrained by the narrow panel).
+- **Fix:** Changed device widths to fixed pixels (`desktop: 1200px`, `tablet: 768px`, `mobile: 375px`). Added `ResizeObserver`-driven CSS `zoom` scaling that dynamically shrinks the desktop layout to fit the available panel width without horizontal scrolling.
+- **Result:** Desktop shows a wide 1200px layout visually scaled down; tablet shows 768px at native size; mobile shows 375px at native size. All three modes are visually distinct, and there are no horizontal scrollbars.
+
+### Bug #27: Editor stats not updating live
+- **Root cause:** `selectedEntry` was memoized on `selectedSlug` and `workspace` only. It did not recompute when `editorBlocks` changed, so word count, read time, and SEO score remained stale.
+- **Fix:** Created `LiveStats` sub-component that computes `wordCount` directly from `editorBlocks` via newly-exported `countWords()`/`formatReadTime()` from `blog-studio.ts`. SEO score is recomputed live from `draft` fields (title, excerpt, featured image, tags, word count, SEO title/description) with a simple 100-point scoring heuristic.
+- **Result:** Stats under the article title update in real time as the user types or edits metadata.
+
+### Bug #28: Duplicate button appends to end instead of inserting after original
+- **Root cause:** `adapter.insertBlock(dup)` was called without an index, defaulting to appending at the end of the block array.
+- **Fix:** Changed to `adapter.insertBlock(dup, index + 1)` where `index` is the block's current position.
+- **Result:** Duplicated blocks appear immediately after the original.
+
+### Bug #29: Add duplicate-without-content button
+- **Fix:** Added a second duplicate button using the `CopyX` icon (lucide-react) with red hover styling, positioned right next to the regular duplicate. On click, it looks up the block type's `defaultData` from `BUILTIN_BLOCK_DEFINITIONS`, handles both object and function forms of `defaultData`, deep-clones it, and inserts the empty block at `index + 1`.
+- **Result:** Users can quickly create an empty template of any block type in one click.
+
+**Files Changed:**
+- `packages/blocks/src/BlockquoteBlock.ts` — Added `renderInlineMarkdown()` for links/refs; updated `render()` to use it for both quote and citation.
+- `apps/website/lib/blog-studio.ts` — Exported `countWords()` and `formatReadTime()`.
+- `apps/website/app/components/PulseBlogStudio.tsx` — Added `LiveStats` component; added `previewContainerRef` + `previewZoom` state + `ResizeObserver` effect; applied `zoom` to preview content; changed device widths to fixed pixels; updated list-card preview to use live read time.
+- `apps/website/app/components/StudioBlockCanvas.tsx` — Fixed duplicate to use `index + 1`; added duplicate-without-content button (`CopyX`); imported `CopyX` from lucide-react.
+- `C:\Users\z0512\Desktop\pulse bug list.md` — Marked #24, #25, #27, #28, #29 as complete.
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files, 1071 tests passed)
+**Commit:** `17b623c` fix(bugs): resolve bugs 24,25,27,28,29 + preview zoom scaling
