@@ -33,6 +33,16 @@ const bahnschrift = localFont({
   display: 'swap',
 });
 
+const vazirmatn = localFont({
+  src: [
+    { path: './fonts/vazirmatn/Vazirmatn-Light.ttf', weight: '300', style: 'normal' },
+    { path: './fonts/vazirmatn/Vazirmatn-Regular.ttf', weight: '400', style: 'normal' },
+    { path: './fonts/vazirmatn/Vazirmatn-Bold.ttf', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-vazirmatn',
+  display: 'swap',
+});
+
 const siteUrl = getSiteUrl();
 
 export const viewport: Viewport = {
@@ -102,7 +112,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${codecPro.className} ${codecPro.variable} ${bahnschrift.variable} antialiased`}
+        className={`${codecPro.className} ${vazirmatn.className} ${codecPro.variable} ${bahnschrift.variable} ${vazirmatn.variable} antialiased`}
       >
         <a
           href="#main-content"

@@ -103,6 +103,7 @@ export interface VideoBlockData extends Record<string, unknown> {
   provider: VideoProvider;
   title: string;
   caption?: string;
+  captionAlign?: "left" | "center" | "right" | "justify";
   autoplay: boolean;
   startAtSeconds: number;
   privacyMode?: boolean;
@@ -121,6 +122,7 @@ export const videoBlockDataSchema = z
     provider: z.enum(["youtube", "vimeo", "html5"]),
     title: z.string(),
     caption: z.string().optional(),
+    captionAlign: z.enum(["left", "center", "right", "justify"]).optional(),
     autoplay: z.boolean(),
     startAtSeconds: z.number().int().min(0),
     privacyMode: z.boolean().optional(),
@@ -164,8 +166,9 @@ export const VideoBlock: BlockTypeDefinition<VideoBlockData> = {
       privacyMode,
     });
 
+    const captionAlignStyle = parsed.captionAlign ? ` style="text-align:${parsed.captionAlign};"` : "";
     const captionMarkup = parsed.caption
-      ? `<div class="pulse-video-caption"><span>${escapeHtml(
+      ? `<div class="pulse-video-caption"${captionAlignStyle}><span>${escapeHtml(
           parsed.caption,
         )}</span></div>`
       : "";

@@ -411,7 +411,8 @@ describe("Table block renderer", () => {
   it("renders caption when provided", () => {
     const block = makeBlock("table", { columns: ["X"], rows: [], caption: "Sample data" });
     const { html } = renderBlock(block);
-    expect(html).toContain("<caption>Sample data</caption>");
+    expect(html).toContain("Sample data");
+    expect(html).toContain('class="pulse-table-caption"');
   });
 });
 

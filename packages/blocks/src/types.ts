@@ -26,6 +26,10 @@ const ALLOWED_INLINE_PROTOCOLS = new Set(["http:", "https:", "mailto:", "tel:"])
 
 export function sanitizeUrl(url: string): string | null {
   if (!url) return null;
+  // Allow relative paths (starting with /, ./, or ../)
+  if (url.startsWith("/") || url.startsWith("./") || url.startsWith("../")) {
+    return url;
+  }
   try {
     const parsed = new URL(url);
     if (ALLOWED_INLINE_PROTOCOLS.has(parsed.protocol)) {

@@ -92,11 +92,17 @@ export const ReferenceBlock: BlockTypeDefinition<ReferenceBlockData> = {
     // Document-level renderers merge reference superscripts inline with
     // preceding blocks. This fallback renders a standalone superscript.
     const num = formatReferenceNumber(1, parsed.style);
-    const titleAttr = parsed.text ? ` title="${escapeHtml(parsed.text)}"` : "";
     if (parsed.url) {
-      return `<sup class="pulse-reference"><a href="${escapeHtml(parsed.url)}"${titleAttr}>${num}</a></sup>`;
+      const supRef = `<sup class="pulse-reference"><a href="${escapeHtml(parsed.url)}">${num}</a></sup>`;
+      if (parsed.text) {
+        return `<span class="pulse-reference-group"><a href="${escapeHtml(parsed.url)}" class="pulse-reference-text">${escapeHtml(parsed.text)}</a>${supRef}</span>`;
+      }
+      return supRef;
     }
-    return `<sup class="pulse-reference"${titleAttr}>${num}</sup>`;
+    if (parsed.text) {
+      return `<span class="pulse-reference-group"><span class="pulse-reference-text">${escapeHtml(parsed.text)}</span><sup class="pulse-reference">${num}</sup></span>`;
+    }
+    return `<sup class="pulse-reference">${num}</sup>`;
   },
   serialize(data) {
     return JSON.stringify(referenceBlockDataSchema.parse(data));

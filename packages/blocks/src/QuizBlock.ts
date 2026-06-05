@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { BlockTypeDefinition } from "./types";
 import { escapeHtml, parseJson } from "./types";
+import { renderInlineMarkdown } from "./BlockquoteBlock";
 
 export interface QuizOption {
   id: string;
@@ -16,6 +17,9 @@ export interface QuizBlockData extends Record<string, unknown> {
   allowMultiple: boolean;
   randomizeOptions: boolean;
   showExplanations: boolean;
+  align?: "left" | "center" | "right" | "justify";
+  successMessage?: string;
+  failureMessage?: string;
 }
 
 export const quizOptionSchema = z
@@ -34,8 +38,10 @@ export const quizBlockDataSchema = z
     allowMultiple: z.boolean(),
     randomizeOptions: z.boolean(),
     showExplanations: z.boolean(),
+    align: z.enum(["left", "center", "right", "justify"]).optional(),
+    successMessage: z.string().optional(),
+    failureMessage: z.string().optional(),
   })
-  .strict()
   .superRefine((value, context) => {
     const correctCount = value.options.filter((option) => option.isCorrect).length;
     if (correctCount < 1) {
@@ -136,19 +142,59 @@ export const QuizBlock: BlockTypeDefinition<QuizBlockData> = {
     canHaveChildren: false,
   },
   render(data) {
-    const parsed = quizBlockDataSchema.parse(data);
+    let parsed: QuizBlockData;
+    try {
+      parsed = quizBlockDataSchema.parse(data);
+    } catch {
+      return `<section class="pulse-quiz" data-block-type="quiz">
+  <h3 class="pulse-quiz-question">Quiz</h3>
+  <p style="color:var(--neutral-500);">This quiz block could not be displayed.</p>
+</section>`;
+    }
+
     const optionType = parsed.allowMultiple ? "checkbox" : "radio";
     const nameAttr = `quiz-${Math.random().toString(36).slice(2, 8)}`;
-    const optionsMarkup = parsed.options
+
+    let options = parsed.options;
+    if (parsed.randomizeOptions) {
+      options = [...options].sort(() => Math.random() - 0.5);
+    }
+
+    const alignAttr = parsed.align ? ` style="text-align:${escapeHtml(parsed.align)};"` : "";
+    const submitBtn = parsed.allowMultiple
+      ? `<button type="button" class="pulse-quiz-submit">Check answer</button>`
+      : "";
+
+    const optionsMarkup = options
       .map((option) => {
         const explanation = parsed.showExplanations && option.explanation
-          ? `<small class="pulse-quiz-explanation" style="display:none;color:#059669;margin-top:4px;">${escapeHtml(option.explanation)}</small>`
+          ? `<div class="pulse-quiz-explanation" hidden>${renderInlineMarkdown(option.explanation)}</div>`
           : "";
-        return `<li data-correct="${String(option.isCorrect)}"><label class="pulse-quiz-option" style="cursor:pointer;padding:8px 12px;border-radius:8px;border:1px solid var(--neutral-200);display:flex;align-items:center;gap:8px;margin-bottom:6px;"><input type="${optionType}" name="${nameAttr}" value="${escapeHtml(option.id)}" style="cursor:pointer;" /> ${escapeHtml(option.text)}</label>${explanation}</li>`;
+        return `<li class="pulse-quiz-option" data-correct="${String(option.isCorrect)}">
+  <label class="pulse-quiz-label">
+    <input type="${optionType}" name="${nameAttr}" value="${escapeHtml(option.id)}" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;" />
+    <span class="pulse-quiz-text">${escapeHtml(option.text)}</span>
+    <span class="pulse-quiz-status" aria-hidden="true"></span>
+  </label>
+  ${explanation}
+</li>`;
       })
       .join("");
 
-    return `<section data-block-type="quiz" class="pulse-quiz"><h3 style="margin-bottom:12px;">${escapeHtml(parsed.question)}</h3><ol style="list-style:none;padding:0;">${optionsMarkup}</ol><div class="pulse-quiz-result" style="margin-top:12px;font-weight:600;display:none;"></div></section>`;
+    const successMsg = escapeHtml(parsed.successMessage || "Correct!");
+    const failureMsg = escapeHtml(parsed.failureMessage || "Some answers are incorrect. Try again.");
+
+    return `<section class="pulse-quiz" data-block-type="quiz" data-multiple="${String(parsed.allowMultiple)}" data-success="${successMsg}" data-failure="${failureMsg}">
+  <div class="pulse-quiz-header">
+    <h3 class="pulse-quiz-question"${alignAttr}>${renderInlineMarkdown(parsed.question)}</h3>
+  </div>
+  <ol class="pulse-quiz-options">${optionsMarkup}</ol>
+  <div class="pulse-quiz-footer">${submitBtn}</div>
+  <div class="pulse-quiz-result" hidden>
+    <span class="pulse-quiz-result-icon" aria-hidden="true"></span>
+    <span class="pulse-quiz-result-text"></span>
+  </div>
+</section>`;
   },
   serialize(data) {
     const parsed = quizBlockDataSchema.parse(data);

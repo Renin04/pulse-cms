@@ -124,8 +124,85 @@ export default function BlogPostContent({
     });
     observer.observe(article, { childList: true, subtree: true });
 
+    function evaluateQuiz(quiz: HTMLElement) {
+      const opts = quiz.querySelectorAll('.pulse-quiz-option');
+      const res = quiz.querySelector('.pulse-quiz-result') as HTMLElement | null;
+      const successMsg = quiz.getAttribute('data-success') || 'Correct!';
+      const failureMsg = quiz.getAttribute('data-failure') || 'Some answers are incorrect. Try again.';
+
+      opts.forEach((o) => {
+        o.removeAttribute('data-evaluated');
+        const ex = o.querySelector('.pulse-quiz-explanation') as HTMLElement | null;
+        if (ex) ex.hidden = true;
+      });
+
+      const selected = quiz.querySelectorAll('input:checked');
+      let allCorrect = true;
+      let anySelected = false;
+
+      selected.forEach((s) => {
+        anySelected = true;
+        const li = s.closest('li') as HTMLElement | null;
+        if (!li) return;
+        const isCorrect = li.getAttribute('data-correct') === 'true';
+        if (isCorrect) {
+          li.setAttribute('data-evaluated', 'correct');
+        } else {
+          li.setAttribute('data-evaluated', 'incorrect');
+          allCorrect = false;
+        }
+      });
+
+      // Show explanations for ALL correct answers (always)
+      opts.forEach((o) => {
+        const isCorrect = o.getAttribute('data-correct') === 'true';
+        const ex = o.querySelector('.pulse-quiz-explanation') as HTMLElement | null;
+        if (isCorrect && ex) {
+          ex.hidden = false;
+        }
+      });
+
+      // Also show explanations for selected incorrect answers
+      selected.forEach((s) => {
+        const li = s.closest('li') as HTMLElement | null;
+        if (!li) return;
+        const isCorrect = li.getAttribute('data-correct') === 'true';
+        const ex = li.querySelector('.pulse-quiz-explanation') as HTMLElement | null;
+        if (!isCorrect && ex) {
+          ex.hidden = false;
+        }
+      });
+
+      // Only the user's selected options get data-evaluated styling
+
+      if (anySelected && res) {
+        const correctCount = quiz.querySelectorAll('li[data-correct="true"]').length;
+        const isFullyCorrect = allCorrect && selected.length === correctCount;
+        res.className = isFullyCorrect ? 'pulse-quiz-result correct' : 'pulse-quiz-result incorrect';
+        const textEl = res.querySelector('.pulse-quiz-result-text') as HTMLElement | null;
+        if (textEl) textEl.textContent = isFullyCorrect ? successMsg : failureMsg;
+        res.hidden = false;
+      }
+    }
+
     function handleClick(e: Event) {
       const target = e.target as HTMLElement;
+
+      // Alert dismiss with animation
+      const dismissBtn = target.closest('[data-dismiss-alert]');
+      if (dismissBtn) {
+        const alertEl = dismissBtn.closest('.pulse-alert') as HTMLElement | null;
+        if (alertEl) {
+          e.preventDefault();
+          e.stopPropagation();
+          alertEl.setAttribute('data-dismissing', 'true');
+          setTimeout(() => {
+            alertEl.hidden = true;
+            alertEl.removeAttribute('data-dismissing');
+          }, 350);
+        }
+        return;
+      }
 
       // Video play button (HTML5) — the overlay play btn has pointer-events:auto
       const playBtn = target.closest('.pulse-video-play-btn');
@@ -184,6 +261,25 @@ export default function BlogPostContent({
         });
         return;
       }
+
+      // Quiz submit button
+      const quizSubmit = target.closest('.pulse-quiz-submit');
+      if (quizSubmit) {
+        const quiz = quizSubmit.closest('.pulse-quiz');
+        if (quiz) evaluateQuiz(quiz as HTMLElement);
+        return;
+      }
+    }
+
+    function handleChange(e: Event) {
+      const target = e.target as HTMLElement;
+      if (!target.matches('.pulse-quiz-label input')) return;
+      const quiz = target.closest('.pulse-quiz');
+      if (!quiz) return;
+      const isMultiple = quiz.getAttribute('data-multiple') === 'true';
+      if (!isMultiple) {
+        evaluateQuiz(quiz as HTMLElement);
+      }
     }
 
     // Tooltip positioning for image figures (pseudo-elements can't follow mouse without CSS vars)
@@ -199,8 +295,10 @@ export default function BlogPostContent({
     article.addEventListener('mousemove', handleMouseMove);
 
     article.addEventListener('click', handleClick);
+    article.addEventListener('change', handleChange);
     return () => {
       article.removeEventListener('click', handleClick);
+      article.removeEventListener('change', handleChange);
       article.removeEventListener('mousemove', handleMouseMove);
       observer.disconnect();
     };

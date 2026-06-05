@@ -38,7 +38,24 @@
 
 ---
 
-**Last Updated:** 2026-05-15
+**Last Updated:** 2026-06-05
+
+### L-8 Media Block Redesign QA Notes (Session 79)
+- **Bugs 52–55 (Audio Block):** Complete redesign of audio block renderer and editor.
+  - ✅ Creative dark card UI with waveform animation, cover art support, track title/artist/caption all shown distinctly
+  - ✅ Alignment tools added to editor (left/center/right/justify)
+  - ✅ Source link option for external references
+  - ✅ Cover art upload button
+  - ✅ File size tracking and display
+- **Bugs 56–63 (File/Video/Font):**
+  - ✅ **56:** Fixed file upload MIME type rejection for `.docx` and office documents — changed default `UPLOAD_ALLOWED_TYPES` from `application/pdf` to `application/*`
+  - ✅ **57:** Added caption/content alignment options to Audio (`captionAlign`), Video (`captionAlign`), and File (`align` + `descriptionAlign`) blocks
+  - ✅ **58:** File preview checkbox with iframe preview — PDFs render directly, Office docs use Google Docs viewer, images show inline preview
+  - ✅ **59:** Added Vazirmatn font (Light/Regular/Bold) with `unicode-range` targeting Arabic/Persian characters (U+0600-06FF, etc.); wired into CSS font stack
+  - ✅ **60:** Beautiful file card UI with file type icon, metadata badge, prominent download button with hover animation
+  - ✅ **61:** File block editor redesigned — removed confusing raw MIME type / size-in-bytes inputs, replaced with clean metadata display bar
+  - ✅ **62:** File size displayed in human-readable format (MB/KB) instead of raw bytes
+  - ✅ **63:** File block optimization foundation — metadata display, preview toggle, clean structure for future server-side compression pipeline
 
 ### L-2 + L-3 Automated QA Notes (Session 73)
 - Puppeteer automated test script created: `apps/website/scripts/block-qa-puppeteer.mjs`

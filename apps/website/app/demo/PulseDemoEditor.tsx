@@ -1733,61 +1733,118 @@ export default function PulseDemoEditor() {
   // Hydrate interactive blocks after preview renders (React strips inline scripts from dangerouslySetInnerHTML)
   useEffect(() => {
     if (!showPreview) return;
-    const t = setTimeout(() => {
-      const preview = document.querySelector('[class*="prose prose-sm"]');
-      if (!preview) return;
 
-      // --- Quiz ---
-      preview.querySelectorAll('.pulse-quiz').forEach((quiz) => {
-        if ((quiz as any).__hydrated) return;
-        (quiz as any).__hydrated = true;
-        const opts = quiz.querySelectorAll('.pulse-quiz-option');
-        const res = quiz.querySelector('.pulse-quiz-result') as HTMLElement | null;
-        opts.forEach((l) => {
-          const input = l.querySelector('input');
-          if (!input) return;
-          l.addEventListener('click', (e) => {
-            if ((e.target as HTMLElement).tagName === 'INPUT') {
-              opts.forEach((o) => {
-                (o as HTMLElement).style.borderColor = 'var(--neutral-200)';
-                (o as HTMLElement).style.background = 'transparent';
-                const ex = o.parentElement?.querySelector('.pulse-quiz-explanation') as HTMLElement | null;
-                if (ex) ex.style.display = 'none';
-              });
-              const selected = quiz.querySelectorAll('input:checked');
-              let allCorrect = true;
-              let anySelected = false;
-              selected.forEach((s) => {
-                anySelected = true;
-                const li = s.closest('li');
-                const isCorrect = li?.getAttribute('data-correct') === 'true';
-                const label = s.closest('label') as HTMLElement;
-                if (isCorrect) {
-                  label.style.borderColor = '#059669';
-                  label.style.background = '#ecfdf5';
-                  const ex = li?.querySelector('.pulse-quiz-explanation') as HTMLElement | null;
-                  if (ex) ex.style.display = 'block';
-                } else {
-                  label.style.borderColor = '#dc2626';
-                  label.style.background = '#fef2f2';
-                  allCorrect = false;
-                }
-              });
-              if (anySelected && res) {
-                const correctCount = quiz.querySelectorAll('li[data-correct="true"]').length;
-                if (allCorrect && selected.length === correctCount) {
-                  res.textContent = '✅ Correct!';
-                  res.style.color = '#059669';
-                } else {
-                  res.textContent = '❌ Some answers are incorrect. Try again.';
-                  res.style.color = '#dc2626';
-                }
-                res.style.display = 'block';
-              }
-            }
-          });
-        });
+    function evaluateQuiz(quiz: HTMLElement) {
+      const opts = quiz.querySelectorAll('.pulse-quiz-option');
+      const res = quiz.querySelector('.pulse-quiz-result') as HTMLElement | null;
+      const successMsg = quiz.getAttribute('data-success') || 'Correct!';
+      const failureMsg = quiz.getAttribute('data-failure') || 'Some answers are incorrect. Try again.';
+
+      opts.forEach((o) => {
+        o.removeAttribute('data-evaluated');
+        const ex = o.querySelector('.pulse-quiz-explanation') as HTMLElement | null;
+        if (ex) ex.hidden = true;
       });
+
+      const selected = quiz.querySelectorAll('input:checked');
+      let allCorrect = true;
+      let anySelected = false;
+
+      selected.forEach((s) => {
+        anySelected = true;
+        const li = s.closest('li') as HTMLElement | null;
+        if (!li) return;
+        const isCorrect = li.getAttribute('data-correct') === 'true';
+        if (isCorrect) {
+          li.setAttribute('data-evaluated', 'correct');
+        } else {
+          li.setAttribute('data-evaluated', 'incorrect');
+          allCorrect = false;
+        }
+        const ex = li.querySelector('.pulse-quiz-explanation') as HTMLElement | null;
+        if (ex) ex.hidden = false;
+      });
+
+      opts.forEach((o) => {
+        const isCorrect = o.getAttribute('data-correct') === 'true';
+        const input = o.querySelector('input') as HTMLInputElement | null;
+        if (isCorrect && input && !input.checked) {
+          const isMultiple = quiz.getAttribute('data-multiple') === 'true';
+          if (!isMultiple) {
+            o.setAttribute('data-evaluated', 'correct');
+          }
+        }
+      });
+
+      if (anySelected && res) {
+        const correctCount = quiz.querySelectorAll('li[data-correct="true"]').length;
+        const isFullyCorrect = allCorrect && selected.length === correctCount;
+        res.className = isFullyCorrect ? 'pulse-quiz-result correct' : 'pulse-quiz-result incorrect';
+        const textEl = res.querySelector('.pulse-quiz-result-text') as HTMLElement | null;
+        if (textEl) textEl.textContent = isFullyCorrect ? successMsg : failureMsg;
+        res.hidden = false;
+      }
+    }
+
+    function handlePreviewClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+
+      const dismissBtn = target.closest('[data-dismiss-alert]');
+      if (dismissBtn) {
+        const alertEl = dismissBtn.closest('.pulse-alert') as HTMLElement | null;
+        if (alertEl) {
+          e.preventDefault();
+          e.stopPropagation();
+          alertEl.setAttribute('data-dismissing', 'true');
+          setTimeout(() => {
+            alertEl.hidden = true;
+            alertEl.removeAttribute('data-dismissing');
+          }, 350);
+        }
+        return;
+      }
+
+      const submitBtn = target.closest('.pulse-quiz-submit');
+      if (submitBtn) {
+        const quiz = submitBtn.closest('.pulse-quiz');
+        if (!quiz) return;
+        evaluateQuiz(quiz as HTMLElement);
+        return;
+      }
+    }
+
+    function handlePreviewChange(e: Event) {
+      const target = e.target as HTMLElement;
+      if (!target.matches('.pulse-quiz-label input')) return;
+      const quiz = target.closest('.pulse-quiz');
+      if (!quiz) return;
+      const isMultiple = quiz.getAttribute('data-multiple') === 'true';
+      if (!isMultiple) {
+        evaluateQuiz(quiz as HTMLElement);
+      }
+    }
+
+    // Attach event delegation immediately; the preview element may not exist yet on first render,
+    // so we query each time. For simplicity, attach to document and filter by preview.
+    const previewSelector = '[class*="prose prose-sm"]';
+    const handleDocClick = (e: MouseEvent) => {
+      const preview = (e.target as HTMLElement).closest(previewSelector);
+      if (!preview) return;
+      handlePreviewClick(e);
+    };
+    const handleDocChange = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (!target.matches('.pulse-quiz-label input')) return;
+      const preview = target.closest(previewSelector);
+      if (!preview) return;
+      handlePreviewChange(e);
+    };
+    document.addEventListener('click', handleDocClick);
+    document.addEventListener('change', handleDocChange);
+
+    const t = setTimeout(() => {
+      const preview = document.querySelector(previewSelector);
+      if (!preview) return;
 
       // --- Poll ---
       preview.querySelectorAll('.pulse-poll').forEach((poll) => {
@@ -1873,7 +1930,7 @@ export default function PulseDemoEditor() {
           e.preventDefault();
           const btn = form.querySelector('button[type="submit"]') as HTMLElement | null;
           if (btn) {
-            btn.textContent = '✅ Submitted!';
+            btn.textContent = 'Submitted!';
             btn.setAttribute('disabled', 'true');
             btn.style.opacity = '0.6';
             btn.style.cursor = 'default';
@@ -1881,7 +1938,12 @@ export default function PulseDemoEditor() {
         });
       });
     }, 300);
-    return () => clearTimeout(t);
+
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener('click', handleDocClick);
+      document.removeEventListener('change', handleDocChange);
+    };
   }, [previewHtml, showPreview]);
 
   const categories = useMemo(() => {

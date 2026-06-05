@@ -2,11 +2,14 @@ import { z } from "zod";
 
 import type { BlockTypeDefinition } from "./types";
 import { escapeHtml, parseJson } from "./types";
+import { renderInlineMarkdown } from "./BlockquoteBlock";
 
 export interface TableBlockData extends Record<string, unknown> {
   columns: string[];
   rows: string[][];
   caption?: string;
+  captionAlign?: "left" | "center" | "right";
+  columnAligns?: ("left" | "center" | "right")[];
 }
 
 export const tableBlockDataSchema = z
@@ -14,6 +17,8 @@ export const tableBlockDataSchema = z
     columns: z.array(z.string()).max(12),
     rows: z.array(z.array(z.string())),
     caption: z.string().optional(),
+    captionAlign: z.enum(["left", "center", "right"]).optional(),
+    columnAligns: z.array(z.enum(["left", "center", "right"])).max(12).optional(),
   })
   .strict()
   .superRefine((value, context) => {
@@ -26,6 +31,13 @@ export const tableBlockDataSchema = z
           path: ["rows", rowIndex],
         });
       }
+    }
+    if (value.columnAligns && value.columnAligns.length > value.columns.length) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `columnAligns length (${value.columnAligns.length}) cannot exceed columns length (${value.columns.length})`,
+        path: ["columnAligns"],
+      });
     }
   });
 
@@ -89,13 +101,37 @@ export const TableBlock: BlockTypeDefinition<TableBlockData> = {
   },
   render(data) {
     const parsed = tableBlockDataSchema.parse(data);
-    const headings = parsed.columns.map((column) => `<th>${escapeHtml(column)}</th>`).join("");
-    const bodyRows = parsed.rows
-      .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
-      .join("");
-    const captionMarkup = parsed.caption ? `<caption>${escapeHtml(parsed.caption)}</caption>` : "";
 
-    return `<figure data-block-type="table"><table>${captionMarkup}<thead><tr>${headings}</tr></thead><tbody>${bodyRows}</tbody></table></figure>`;
+    const captionAlign = parsed.captionAlign || "left";
+    const captionMarkup = parsed.caption
+      ? `<figcaption class="pulse-table-caption" style="text-align:${captionAlign};">${renderInlineMarkdown(parsed.caption)}</figcaption>`
+      : "";
+
+    const colAligns = parsed.columnAligns || [];
+    const getColAlign = (index: number) => colAligns[index] || "left";
+
+    const headings = parsed.columns
+      .map((column, i) => `<th style="text-align:${getColAlign(i)};">${renderInlineMarkdown(column)}</th>`)
+      .join("");
+
+    const bodyRows = parsed.rows
+      .map(
+        (row) =>
+          `<tr>${row
+            .map((cell, i) => `<td style="text-align:${getColAlign(i)};">${renderInlineMarkdown(cell)}</td>`)
+            .join("")}</tr>`,
+      )
+      .join("");
+
+    return `<figure class="pulse-table-wrapper" data-block-type="table">
+  <div class="pulse-table-scroll">
+    <table>
+      <thead><tr>${headings}</tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  </div>
+  ${captionMarkup}
+</figure>`;
   },
   serialize(data) {
     const parsed = tableBlockDataSchema.parse(data);

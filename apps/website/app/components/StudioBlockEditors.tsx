@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, forwardRef } from 'react';
 import { Trash2, Plus, Upload, Play, Terminal } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
@@ -14,23 +14,25 @@ function Label({ children }: { children: React.ReactNode }) {
   return <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">{children}</label>;
 }
 
-function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function Input(props, ref) {
   return (
     <input
+      ref={ref}
       {...props}
       className={`w-full rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-2 text-sm text-[var(--neutral-700)] outline-none placeholder:text-[var(--neutral-400)] focus:border-[var(--pulse-red)] ${props.className || ''}`}
     />
   );
-}
+});
 
-function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+const TextArea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(function TextArea(props, ref) {
   return (
     <textarea
+      ref={ref}
       {...props}
       className={`w-full rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-2 text-sm text-[var(--neutral-700)] outline-none placeholder:text-[var(--neutral-400)] focus:border-[var(--pulse-red)] ${props.className || ''}`}
     />
   );
-}
+});
 
 function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { options: { value: string; label: string }[] }) {
   const { options, ...rest } = props;
@@ -689,6 +691,7 @@ export function EditableVideo({ block, adapter }: { block: Block<BlockData>; ada
     provider: string;
     title: string;
     caption?: string;
+    captionAlign?: string;
     autoplay: boolean;
     startAtSeconds: number;
     privacyMode?: boolean;
@@ -698,6 +701,7 @@ export function EditableVideo({ block, adapter }: { block: Block<BlockData>; ada
     muted?: boolean;
     controls?: boolean;
   };
+  const captionAlign = data.captionAlign || 'center';
   const [uploading, setUploading] = useState(false);
   const [posterUploading, setPosterUploading] = useState(false);
 
@@ -798,6 +802,24 @@ export function EditableVideo({ block, adapter }: { block: Block<BlockData>; ada
         )}
       </div>
 
+      {/* Caption alignment */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Caption</span>
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, captionAlign: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                captionAlign === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Quality row */}
       <div className="flex flex-wrap items-center gap-2">
         {data.provider === 'html5' && (
@@ -854,16 +876,43 @@ export function EditableVideo({ block, adapter }: { block: Block<BlockData>; ada
 }
 
 export function EditableAudio({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { src: string; title: string; artist?: string; caption?: string; autoplay: boolean; loop: boolean };
+  const data = block.data as {
+    src: string;
+    title: string;
+    artist?: string;
+    caption?: string;
+    autoplay: boolean;
+    loop: boolean;
+    coverUrl?: string;
+    align?: string;
+    captionAlign?: string;
+    mediaAssetId?: string;
+    fileSize?: number;
+    linkUrl?: string;
+  };
+  const align = data.align || 'center';
+  const captionAlign = data.captionAlign || 'center';
   const [uploading, setUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
 
   const handleUpload = async (file: File) => {
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      alert('Audio too large (max 10MB). Please compress or use a URL instead.');
+      return;
+    }
     setUploading(true);
     try {
       const uploaded = await mediaApi.upload(file);
       adapter.updateBlock(block.id, (b) => ({
         ...b,
-        data: { ...data, src: uploaded.url, title: uploaded.name },
+        data: {
+          ...data,
+          src: uploaded.url,
+          title: uploaded.name.replace(/\.[^/.]+$/, '') || uploaded.name,
+          fileSize: uploaded.size,
+          mediaAssetId: uploaded.id,
+        },
       }));
     } catch (err) {
       alert('Upload failed: ' + (err instanceof Error ? err.message : String(err)));
@@ -872,49 +921,228 @@ export function EditableAudio({ block, adapter }: { block: Block<BlockData>; ada
     }
   };
 
+  const handleCoverUpload = async (file: File) => {
+    setCoverUploading(true);
+    try {
+      const uploaded = await mediaApi.upload(file);
+      adapter.updateBlock(block.id, (b) => ({
+        ...b,
+        data: { ...data, coverUrl: uploaded.url },
+      }));
+    } catch (err) {
+      alert('Cover upload failed: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '';
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
   return (
-    <div className="space-y-2">
-      <Input value={data.title} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Audio title" />
-      <div className="flex gap-2">
-        <Input value={data.src} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, src: e.target.value } }))} placeholder="Audio URL (.mp3, etc.)" className="flex-1" />
-        <InlineUploadButton accept="audio/*" uploading={uploading} onUpload={handleUpload} />
+    <div className="space-y-3">
+      {/* Title */}
+      <div>
+        <Label>Track Title</Label>
+        <Input value={data.title} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Enter track title" />
       </div>
-      <div className="flex gap-2">
-        <Input value={data.artist || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, artist: e.target.value } }))} placeholder="Artist (optional)" className="flex-1" />
-        <Input value={data.caption || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, caption: e.target.value } }))} placeholder="Caption (optional)" className="flex-1" />
+
+      {/* Audio source */}
+      <div>
+        <Label>Audio File</Label>
+        <div className="flex gap-2">
+          <Input value={data.src} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, src: e.target.value } }))} placeholder="https://… or /api/media/file/…" className="flex-1" />
+          <InlineUploadButton accept="audio/*" uploading={uploading} onUpload={handleUpload} />
+        </div>
       </div>
-      <div className="flex items-center gap-4">
+
+      {/* Artist & Caption */}
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <Label>Artist</Label>
+          <Input value={data.artist || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, artist: e.target.value } }))} placeholder="Artist name" />
+        </div>
+        <div>
+          <Label>Caption</Label>
+          <Input value={data.caption || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, caption: e.target.value } }))} placeholder="Short caption" />
+        </div>
+      </div>
+
+      {/* Cover art */}
+      <div>
+        <Label>Cover Art</Label>
+        <div className="flex gap-2">
+          <Input value={data.coverUrl || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, coverUrl: e.target.value } }))} placeholder="https://… (optional)" className="flex-1" />
+          <InlineUploadButton accept="image/*" uploading={coverUploading} onUpload={handleCoverUpload} />
+        </div>
+      </div>
+
+      {/* Source link */}
+      <div>
+        <Label>Source Link</Label>
+        <Input value={data.linkUrl || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, linkUrl: e.target.value } }))} placeholder="https://… (optional external link)" />
+      </div>
+
+      {/* Alignment */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Align</span>
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Caption</span>
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, captionAlign: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                captionAlign === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Options */}
+      <div className="flex items-center gap-5 pt-1">
         <Checkbox label="Autoplay" checked={data.autoplay} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, autoplay: e.target.checked } }))} />
         <Checkbox label="Loop" checked={data.loop} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, loop: e.target.checked } }))} />
       </div>
+
+      {/* Live preview */}
+      {data.src && (
+        <div className="mt-2 rounded-xl border border-[var(--neutral-200)] bg-[var(--neutral-50)] p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-400)]">Preview</p>
+            {data.fileSize ? (
+              <span className="text-[10px] text-[var(--neutral-500)]">
+                Size: <span className="font-semibold">{formatFileSize(data.fileSize)}</span>
+              </span>
+            ) : null}
+          </div>
+          <audio controls preload="metadata" src={data.src} className="w-full" style={{ height: 36 }} />
+        </div>
+      )}
     </div>
   );
 }
 
 export function EditableEmbed({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
   const data = block.data as { url: string; title: string; provider: string; aspectRatio: string; allowFullscreen: boolean };
+  const providerIcon = (() => {
+    const p = data.provider.toLowerCase();
+    if (p.includes('youtube')) return '🎬';
+    if (p.includes('vimeo')) return '🎞️';
+    if (p.includes('spotify')) return '🎵';
+    if (p.includes('twitter') || p.includes('x')) return '🐦';
+    if (p.includes('instagram')) return '📷';
+    if (p.includes('tiktok')) return '🎵';
+    if (p.includes('twitch')) return '🎮';
+    if (p.includes('figma')) return '🎨';
+    if (p.includes('codepen')) return '💻';
+    if (p.includes('github')) return '🐙';
+    return '🔲';
+  })();
+
   return (
-    <div className="space-y-2">
-      <Input value={data.title} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Embed title" />
-      <div className="flex gap-2">
-        <Input value={data.url} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, url: e.target.value } }))} placeholder="Embed URL" className="flex-[2]" />
-        <Input value={data.provider} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, provider: e.target.value } }))} placeholder="Provider" className="flex-1" />
+    <div className="space-y-3">
+      {/* Title */}
+      <div>
+        <Label>Title</Label>
+        <Input value={data.title} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Embedded content title" />
       </div>
-      <div className="flex items-center gap-3">
-        <Select
-          value={data.aspectRatio}
-          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, aspectRatio: e.target.value } }))}
-          options={[{ value: '16:9', label: '16:9' }, { value: '4:3', label: '4:3' }, { value: '1:1', label: '1:1' }, { value: '21:9', label: '21:9' }]}
-        />
+
+      {/* URL + Provider */}
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <div>
+          <Label>URL</Label>
+          <Input value={data.url} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, url: e.target.value } }))} placeholder="https://…" />
+        </div>
+        <div>
+          <Label>Provider</Label>
+          <Input value={data.provider} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, provider: e.target.value } }))} placeholder="e.g. YouTube" className="w-32" />
+        </div>
+      </div>
+
+      {/* Options */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Ratio</span>
+          {(['16:9','4:3','1:1','21:9'] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, aspectRatio: r } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                data.aspectRatio === r ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
         <Checkbox label="Allow fullscreen" checked={data.allowFullscreen} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, allowFullscreen: e.target.checked } }))} />
       </div>
+
+      {/* Preview */}
+      {data.url && (
+        <div className="rounded-xl border border-[var(--neutral-200)] overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--neutral-50)] border-b border-[var(--neutral-200)]">
+            <span className="text-base">{providerIcon}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--pulse-red)]">{data.provider}</span>
+              <span className="text-xs font-semibold text-[var(--neutral-700)] truncate">{data.title}</span>
+            </div>
+          </div>
+          <div className="relative bg-black" style={{ paddingTop: data.aspectRatio === '16:9' ? '56.25%' : data.aspectRatio === '4:3' ? '75%' : data.aspectRatio === '1:1' ? '100%' : '42.86%' }}>
+            <div className="absolute inset-0 flex items-center justify-center text-xs text-[var(--neutral-500)]">
+              <div className="text-center">
+                <div className="text-2xl mb-1">{providerIcon}</div>
+                <p>Preview: {data.aspectRatio}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export function EditableFile({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { name: string; url: string; sizeBytes?: number; mimeType?: string; description?: string; openInNewTab: boolean };
+  const data = block.data as {
+    name: string;
+    url: string;
+    sizeBytes?: number;
+    mimeType?: string;
+    description?: string;
+    openInNewTab: boolean;
+    enablePreview?: boolean;
+    descriptionAlign?: string;
+    linkUrl?: string;
+    align?: string;
+  };
+  const descriptionAlign = data.descriptionAlign || 'left';
+  const align = data.align || 'left';
   const [uploading, setUploading] = useState(false);
+
+  // Link / Ref modal state
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [refModalOpen, setRefModalOpen] = useState(false);
+  const descRef = useRef<HTMLTextAreaElement>(null);
 
   const handleUpload = async (file: File) => {
     setUploading(true);
@@ -937,19 +1165,185 @@ export function EditableFile({ block, adapter }: { block: Block<BlockData>; adap
     }
   };
 
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes && bytes !== 0) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const formatMimeFriendly = (mimeType?: string) => {
+    if (!mimeType) return '';
+    const map: Record<string, string> = {
+      'application/pdf': 'PDF Document',
+      'application/msword': 'Word Document',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word Document',
+      'application/vnd.ms-excel': 'Excel Spreadsheet',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel Spreadsheet',
+      'application/vnd.ms-powerpoint': 'PowerPoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'PowerPoint',
+      'application/zip': 'ZIP Archive',
+    };
+    if (map[mimeType]) return map[mimeType];
+    if (mimeType.startsWith('image/')) return 'Image';
+    if (mimeType.startsWith('audio/')) return 'Audio';
+    if (mimeType.startsWith('video/')) return 'Video';
+    if (mimeType.startsWith('text/')) return 'Text File';
+    return mimeType.replace(/^application\//, '');
+  };
+
+  const insertAtCursor = (text: string) => {
+    const el = descRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    const before = data.description || '';
+    const next = before.slice(0, start) + text + before.slice(end);
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, description: next } }));
+    // Restore cursor after insertion
+    requestAnimationFrame(() => {
+      const pos = start + text.length;
+      el.focus();
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
   return (
-    <div className="space-y-2">
-      <div className="flex gap-2">
-        <Input value={data.name} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, name: e.target.value } }))} placeholder="File name" className="flex-1" />
-        <Input value={data.url} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, url: e.target.value } }))} placeholder="File URL" className="flex-[2]" />
-        <InlineUploadButton uploading={uploading} onUpload={handleUpload} />
+    <div className="space-y-3">
+      {/* File name + URL + upload */}
+      <div>
+        <Label>File</Label>
+        <div className="flex gap-2">
+          <Input value={data.name} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, name: e.target.value } }))} placeholder="File name" className="flex-1" />
+          <Input value={data.url} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, url: e.target.value } }))} placeholder="File URL" className="flex-[2]" />
+          <InlineUploadButton uploading={uploading} onUpload={handleUpload} />
+        </div>
       </div>
-      <div className="flex gap-2">
-        <Input value={data.mimeType || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, mimeType: e.target.value } }))} placeholder="MIME type (optional)" className="flex-1" />
-        <Input type="number" value={data.sizeBytes || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, sizeBytes: Number(e.target.value) || undefined } }))} placeholder="Size in bytes" className="w-32" />
+
+      {/* File metadata */}
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-3 py-2">
+        {data.mimeType ? (
+          <span className="rounded-md bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] border border-[var(--neutral-200)]">
+            {formatMimeFriendly(data.mimeType)}
+          </span>
+        ) : null}
+        {typeof data.sizeBytes === 'number' ? (
+          <span className="text-[10px] font-semibold text-[var(--pulse-red)]">
+            {formatFileSize(data.sizeBytes)}
+          </span>
+        ) : null}
+        {!data.mimeType && data.sizeBytes == null ? (
+          <span className="text-[10px] text-[var(--neutral-400)]">Upload a file to see metadata</span>
+        ) : null}
       </div>
-      <Input value={data.description || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, description: e.target.value } }))} placeholder="Description (optional)" />
-      <Checkbox label="Open in new tab" checked={data.openInNewTab} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, openInNewTab: e.target.checked } }))} />
+
+      {/* Description with markdown link/ref support */}
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <Label>Description</Label>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setLinkModalOpen(true)}
+              className="rounded-md bg-[var(--neutral-100)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]"
+              title="Insert link [text](url)"
+            >
+              Link
+            </button>
+            <button
+              onClick={() => setRefModalOpen(true)}
+              className="rounded-md bg-[var(--neutral-100)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]"
+              title="Insert reference [ref](url)"
+            >
+              Ref
+            </button>
+          </div>
+        </div>
+        <TextArea
+          ref={descRef}
+          value={data.description || ''}
+          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, description: e.target.value } }))}
+          placeholder="Short description (optional). Supports [links](https://…) and [ref](https://…){style=&quot;numeric&quot;}"
+          rows={3}
+        />
+        <p className="mt-1 text-[10px] text-[var(--neutral-400)]">
+          Tip: Use [label](url) for links and [ref](url){`{style="numeric"}`} for citations.
+        </p>
+      </div>
+
+      {/* Source link */}
+      <div>
+        <Label>Source Link</Label>
+        <Input value={data.linkUrl || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, linkUrl: e.target.value } }))} placeholder="https://… (optional external link)" />
+      </div>
+
+      {/* Align + Description alignment */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Align</span>
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Desc</span>
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, descriptionAlign: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                descriptionAlign === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Options */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1">
+        <Checkbox label="Open in new tab" checked={data.openInNewTab} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, openInNewTab: e.target.checked } }))} />
+        <Checkbox label="Enable preview" checked={data.enablePreview ?? false} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, enablePreview: e.target.checked } }))} />
+      </div>
+
+      {/* Link Modal */}
+      <LinkModal
+        isOpen={linkModalOpen}
+        onClose={() => setLinkModalOpen(false)}
+        defaultText="link text"
+        onConfirm={(url, rel, target) => {
+          const parts: string[] = [];
+          if (rel) parts.push(`rel="${rel}"`);
+          if (target) parts.push(`target="${target}"`);
+          const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
+          insertAtCursor(`[link text](${url})${attrs}`);
+          setLinkModalOpen(false);
+        }}
+      />
+
+      {/* Ref Modal */}
+      <RefModal
+        isOpen={refModalOpen}
+        onClose={() => setRefModalOpen(false)}
+        onConfirm={(url, text, style, target, rel) => {
+          const parts: string[] = [];
+          if (text) parts.push(`text="${text}"`);
+          if (style && style !== 'numeric') parts.push(`style="${style}"`);
+          if (target) parts.push(`target="${target}"`);
+          if (rel) parts.push(`rel="${rel}"`);
+          const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
+          insertAtCursor(`[ref](${url})${attrs}`);
+          setRefModalOpen(false);
+        }}
+      />
     </div>
   );
 }
@@ -957,80 +1351,381 @@ export function EditableFile({ block, adapter }: { block: Block<BlockData>; adap
 // ─── Structured data blocks ───
 
 export function EditableTable({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { columns: string[]; rows: string[][]; caption?: string };
+  const data = block.data as {
+    columns: string[];
+    rows: string[][];
+    caption?: string;
+    captionAlign?: string;
+    columnAligns?: string[];
+  };
+  const captionAlign = data.captionAlign || 'left';
+  const columnAligns = data.columnAligns || [];
+
+  const [focusedCell, setFocusedCell] = useState<{ ri: number; ci: number } | null>(null);
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [refModalOpen, setRefModalOpen] = useState(false);
+  const cellRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+
+  const setCellRef = (ri: number, ci: number, el: HTMLInputElement | null) => {
+    const key = `${ri}-${ci}`;
+    if (el) cellRefs.current.set(key, el);
+    else cellRefs.current.delete(key);
+  };
+
+  const insertIntoCell = (ri: number, ci: number, text: string) => {
+    const key = `${ri}-${ci}`;
+    const el = cellRefs.current.get(key);
+    const currentValue = data.rows[ri]?.[ci] || '';
+    const start = el ? el.selectionStart ?? currentValue.length : currentValue.length;
+    const end = el ? el.selectionEnd ?? currentValue.length : currentValue.length;
+    const nextValue = currentValue.slice(0, start) + text + currentValue.slice(end);
+
+    const nextRows = data.rows.map((r, rIdx) =>
+      rIdx === ri ? r.map((c, cIdx) => (cIdx === ci ? nextValue : c)) : r,
+    );
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, rows: nextRows } }));
+
+    requestAnimationFrame(() => {
+      const newEl = cellRefs.current.get(key);
+      if (newEl) {
+        newEl.focus();
+        const pos = start + text.length;
+        newEl.setSelectionRange(pos, pos);
+      }
+    });
+  };
+
+  const getFocusedCellValue = (): { ri: number; ci: number } | null => {
+    if (focusedCell) return focusedCell;
+    // Fallback: try to find focused element
+    const active = document.activeElement;
+    if (active && active.tagName === 'INPUT') {
+      for (const [key, el] of cellRefs.current) {
+        if (el === active) {
+          const [ri, ci] = key.split('-').map(Number);
+          return { ri, ci };
+        }
+      }
+    }
+    return null;
+  };
+
+  const handleInsertLink = () => {
+    const cell = getFocusedCellValue();
+    if (cell) {
+      setFocusedCell(cell);
+      setLinkModalOpen(true);
+    } else {
+      setLinkModalOpen(true);
+    }
+  };
+
+  const handleInsertRef = () => {
+    const cell = getFocusedCellValue();
+    if (cell) {
+      setFocusedCell(cell);
+      setRefModalOpen(true);
+    } else {
+      setRefModalOpen(true);
+    }
+  };
+
+  const setColumnAlign = (ci: number, align: 'left' | 'center' | 'right') => {
+    const next = [...columnAligns];
+    while (next.length <= ci) next.push('left');
+    next[ci] = align;
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, columnAligns: next } }));
+  };
+
   return (
-    <div className="space-y-2">
-      <Input value={data.caption || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, caption: e.target.value } }))} placeholder="Table caption (optional)" />
-      <Section title="Columns">
-        <div className="flex flex-wrap gap-2">
+    <div className="space-y-3">
+      {/* Caption with alignment */}
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <Label>Caption</Label>
+          <div className="flex items-center gap-1">
+            {(['left','center','right'] as const).map((a) => (
+              <button
+                key={a}
+                onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, captionAlign: a } }))}
+                className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                  captionAlign === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-500)]'
+                }`}
+              >
+                {a[0]}
+              </button>
+            ))}
+          </div>
+        </div>
+        <Input
+          value={data.caption || ''}
+          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, caption: e.target.value } }))}
+          placeholder="Table caption (optional)"
+        />
+      </div>
+
+      {/* Column headers with alignment */}
+      <Section title={`Columns (${data.columns.length})`}>
+        <div className="space-y-2">
           {data.columns.map((col, i) => (
-            <div key={i} className="flex items-center gap-1">
-              <Input value={col} onChange={(e) => {
-                const next = [...data.columns];
-                next[i] = e.target.value;
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, columns: next } }));
-              }} className="w-28" />
-              <button onClick={() => {
-                const next = data.columns.filter((_, idx) => idx !== i);
-                if (next.length === 0) return;
-                const rows = data.rows.map((r) => r.filter((_, idx) => idx !== i));
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, columns: next, rows } }));
-              }} className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"><Trash2 className="h-3 w-3" /></button>
+            <div key={i} className="flex items-center gap-2">
+              <Input
+                value={col}
+                onChange={(e) => {
+                  const next = [...data.columns];
+                  next[i] = e.target.value;
+                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, columns: next } }));
+                }}
+                placeholder={`Column ${i + 1}`}
+                className="flex-1 text-xs"
+              />
+              <div className="flex items-center gap-0.5">
+                {(['left','center','right'] as const).map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setColumnAlign(i, a)}
+                    className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                      (columnAligns[i] || 'left') === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-500)]'
+                    }`}
+                    title={`Align ${a}`}
+                  >
+                    {a[0]}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  const next = data.columns.filter((_, idx) => idx !== i);
+                  if (next.length === 0) return;
+                  const rows = data.rows.map((r) => r.filter((_, idx) => idx !== i));
+                  const nextAligns = columnAligns.filter((_, idx) => idx !== i);
+                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, columns: next, rows, columnAligns: nextAligns } }));
+                }}
+                className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
             </div>
           ))}
-          <button onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, columns: [...data.columns, 'New'], rows: data.rows.map((r) => [...r, '']) } }))} className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]">
+          <button
+            onClick={() => adapter.updateBlock(block.id, (b) => ({
+              ...b,
+              data: {
+                ...data,
+                columns: [...data.columns, `Column ${data.columns.length + 1}`],
+                rows: data.rows.map((r) => [...r, '']),
+                columnAligns: [...columnAligns, 'left'],
+              },
+            }))}
+            className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
+          >
             <Plus className="h-3 w-3" /> Column
           </button>
         </div>
       </Section>
+
+      {/* Cell toolbar */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Cell tools</span>
+        <button
+          onClick={handleInsertLink}
+          className="rounded-md bg-[var(--neutral-100)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]"
+        >
+          Link
+        </button>
+        <button
+          onClick={handleInsertRef}
+          className="rounded-md bg-[var(--neutral-100)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]"
+        >
+          Ref
+        </button>
+        <span className="text-[10px] text-[var(--neutral-400)]">
+          {focusedCell ? `Editing R${focusedCell.ri + 1}C${focusedCell.ci + 1}` : 'Click a cell to edit'}
+        </span>
+      </div>
+
+      {/* Rows grid */}
       <Section title={`Rows (${data.rows.length})`}>
         <div className="space-y-1">
           {data.rows.map((row, ri) => (
             <div key={ri} className="flex items-center gap-1">
+              <span className="w-5 text-[10px] font-bold text-[var(--neutral-400)]">{ri + 1}</span>
               {row.map((cell, ci) => (
-                <Input key={ci} value={cell} onChange={(e) => {
-                  const next = data.rows.map((r, rIdx) => rIdx === ri ? r.map((c, cIdx) => cIdx === ci ? e.target.value : c) : r);
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, rows: next } }));
-                }} className="min-w-0 flex-1 text-xs py-1" />
+                <Input
+                  key={ci}
+                  ref={(el) => setCellRef(ri, ci, el)}
+                  value={cell}
+                  onChange={(e) => {
+                    const next = data.rows.map((r, rIdx) =>
+                      rIdx === ri ? r.map((c, cIdx) => (cIdx === ci ? e.target.value : c)) : r,
+                    );
+                    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, rows: next } }));
+                  }}
+                  onFocus={() => setFocusedCell({ ri, ci })}
+                  className="min-w-0 flex-1 text-xs py-1"
+                  placeholder={data.columns[ci] || `C${ci + 1}`}
+                />
               ))}
-              <button onClick={() => {
-                const next = data.rows.filter((_, idx) => idx !== ri);
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, rows: next.length ? next : [data.columns.map(() => '')] } }));
-              }} className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"><Trash2 className="h-3 w-3" /></button>
+              <button
+                onClick={() => {
+                  const next = data.rows.filter((_, idx) => idx !== ri);
+                  adapter.updateBlock(block.id, (b) => ({
+                    ...b,
+                    data: { ...data, rows: next.length ? next : [data.columns.map(() => '')] },
+                  }));
+                }}
+                className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
             </div>
           ))}
-          <button onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, rows: [...data.rows, data.columns.map(() => '')] } }))} className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]">
+          <button
+            onClick={() => adapter.updateBlock(block.id, (b) => ({
+              ...b,
+              data: { ...data, rows: [...data.rows, data.columns.map(() => '')] },
+            }))}
+            className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]"
+          >
             <Plus className="h-3 w-3" /> Row
           </button>
         </div>
       </Section>
+
+      {/* Link Modal for cells */}
+      <LinkModal
+        isOpen={linkModalOpen}
+        onClose={() => setLinkModalOpen(false)}
+        defaultText="link"
+        onConfirm={(url, rel, target) => {
+          const cell = getFocusedCellValue();
+          if (cell) {
+            const parts: string[] = [];
+            if (rel) parts.push(`rel="${rel}"`);
+            if (target) parts.push(`target="${target}"`);
+            const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
+            insertIntoCell(cell.ri, cell.ci, `[link](${url})${attrs}`);
+          }
+          setLinkModalOpen(false);
+        }}
+      />
+
+      {/* Ref Modal for cells */}
+      <RefModal
+        isOpen={refModalOpen}
+        onClose={() => setRefModalOpen(false)}
+        onConfirm={(url, text, style, target, rel) => {
+          const cell = getFocusedCellValue();
+          if (cell) {
+            const parts: string[] = [];
+            if (text) parts.push(`text="${text}"`);
+            if (style && style !== 'numeric') parts.push(`style="${style}"`);
+            if (target) parts.push(`target="${target}"`);
+            if (rel) parts.push(`rel="${rel}"`);
+            const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
+            insertIntoCell(cell.ri, cell.ci, `[ref](${url})${attrs}`);
+          }
+          setRefModalOpen(false);
+        }}
+      />
     </div>
   );
 }
 
 export function EditableAlert({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { severity: string; title?: string; message: string; dismissible: boolean; isDismissed: boolean };
+  const data = block.data as { severity: string; title?: string; message: string; dismissible: boolean; isDismissed: boolean; align?: string };
+  const align = data.align || 'left';
   const severityColors: Record<string, string> = {
-    info: 'bg-sky-50 border-sky-200 text-sky-800',
-    success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-    warning: 'bg-amber-50 border-amber-200 text-amber-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
+    info: 'border-t-4 border-sky-400 bg-sky-50/60',
+    success: 'border-t-4 border-emerald-400 bg-emerald-50/60',
+    warning: 'border-t-4 border-amber-400 bg-amber-50/60',
+    error: 'border-t-4 border-red-400 bg-red-50/60',
   };
   return (
-    <div className={`space-y-2 rounded-xl border p-3 ${severityColors[data.severity] || severityColors.info}`}>
+    <div className={`space-y-3 rounded-xl p-4 ${severityColors[data.severity] || severityColors.info}`}>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">
+        Alert banner — shown to readers, can be dismissed
+      </p>
       <div className="flex items-center gap-2">
         {(['info', 'success', 'warning', 'error'] as const).map((s) => (
           <button key={s} onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, severity: s } }))}
-            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${data.severity === s ? 'bg-white/80 text-[var(--pulse-black)]' : 'bg-white/40 text-current'}`}>
+            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${data.severity === s ? 'bg-white/80 text-[var(--pulse-black)]' : 'bg-white/40 text-[var(--neutral-600)]'}`}>
             {s}
           </button>
         ))}
       </div>
-      <Input value={data.title || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Alert title (optional)" className="bg-white/60" />
-      <TextArea value={data.message} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, message: e.target.value } }))} placeholder="Alert message..." rows={2} className="bg-white/60" />
-      <div className="flex gap-4">
-        <Checkbox label="Dismissible" checked={data.dismissible} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, dismissible: e.target.checked } }))} />
-        <Checkbox label="Dismissed by default" checked={data.isDismissed} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, isDismissed: e.target.checked } }))} />
+      <Input value={data.title || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Alert title (optional)" />
+      <TextArea value={data.message} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, message: e.target.value } }))} placeholder="Alert message..." rows={2} />
+      <div className="flex flex-wrap gap-4">
+        <Checkbox label="Allow readers to dismiss" checked={data.dismissible} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, dismissible: e.target.checked } }))} />
+        <Checkbox label="Hidden by default (already dismissed)" checked={data.isDismissed} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, isDismissed: e.target.checked } }))} />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {(['left','center','right','justify'] as const).map((a) => (
+          <button
+            key={a}
+            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+            className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+              align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-white text-[var(--neutral-600)]'
+            }`}
+          >
+            {a}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function EditableCallout({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
+  const data = block.data as { variant: string; title?: string; body: string; align?: string };
+  const align = data.align || 'left';
+  const variantColors: Record<string, string> = {
+    note: 'border-l-4 border-violet-400 bg-violet-50/50',
+    info: 'border-l-4 border-blue-400 bg-blue-50/50',
+    tip: 'border-l-4 border-amber-400 bg-amber-50/50',
+    warning: 'border-l-4 border-orange-400 bg-orange-50/50',
+    success: 'border-l-4 border-emerald-400 bg-emerald-50/50',
+  };
+  return (
+    <div className={`rounded-xl p-4 ${variantColors[data.variant] || variantColors.note}`}>
+      <div className="mb-2 flex items-center gap-2">
+        {(['note', 'info', 'tip', 'warning', 'success'] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, variant: v } }))}
+            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+              data.variant === v ? 'bg-white/80 text-[var(--pulse-black)]' : 'bg-white/40 text-[var(--neutral-600)]'
+            }`}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+      <Input
+        value={data.title || ''}
+        onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))}
+        placeholder="Title (optional)"
+        className="mb-2 text-sm font-bold"
+      />
+      <TextArea
+        value={data.body}
+        onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, body: e.target.value } }))}
+        rows={2}
+        placeholder="Body text..."
+      />
+      <div className="mt-2 flex flex-wrap gap-2">
+        {(['left','center','right','justify'] as const).map((a) => (
+          <button
+            key={a}
+            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+            className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+              align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-white text-[var(--neutral-600)]'
+            }`}
+          >
+            {a}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -1169,38 +1864,85 @@ export function EditableBeforeAfter({ block, adapter }: { block: Block<BlockData
 // ─── List-based blocks ───
 
 export function EditableQuiz({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { question: string; options: { id: string; text: string; isCorrect: boolean; explanation?: string }[]; allowMultiple: boolean; randomizeOptions: boolean; showExplanations: boolean };
+  const data = block.data as { question: string; options: { id: string; text: string; isCorrect: boolean; explanation?: string }[]; allowMultiple: boolean; randomizeOptions: boolean; showExplanations: boolean; align?: string; successMessage?: string; failureMessage?: string };
+  const align = data.align || 'left';
+
+  const safeUpdate = (nextData: typeof data) => {
+    try {
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: nextData }));
+    } catch {
+      // Validation error — state is inconsistent, ignore silently
+    }
+  };
+
   return (
     <div className="space-y-2">
-      <TextArea value={data.question} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, question: e.target.value } }))} placeholder="Quiz question..." rows={2} />
+      <TextArea value={data.question} onChange={(e) => safeUpdate({ ...data, question: e.target.value })} placeholder="Quiz question..." rows={2} />
       <div className="flex gap-4">
-        <Checkbox label="Multiple correct" checked={data.allowMultiple} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, allowMultiple: e.target.checked } }))} />
-        <Checkbox label="Randomize" checked={data.randomizeOptions} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, randomizeOptions: e.target.checked } }))} />
-        <Checkbox label="Show explanations" checked={data.showExplanations} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, showExplanations: e.target.checked } }))} />
+        <Checkbox label="Multiple correct" checked={data.allowMultiple} onChange={(e) => {
+          const allowMultiple = e.target.checked;
+          let options = data.options;
+          if (!allowMultiple) {
+            // Uncheck all but the first correct option
+            let foundCorrect = false;
+            options = options.map((o) => {
+              if (o.isCorrect) {
+                if (foundCorrect) return { ...o, isCorrect: false };
+                foundCorrect = true;
+              }
+              return o;
+            });
+          }
+          safeUpdate({ ...data, allowMultiple, options });
+        }} />
+        <Checkbox label="Randomize order" checked={data.randomizeOptions} onChange={(e) => safeUpdate({ ...data, randomizeOptions: e.target.checked })} />
+        <Checkbox label="Show explanations" checked={data.showExplanations} onChange={(e) => safeUpdate({ ...data, showExplanations: e.target.checked })} />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {(['left','center','right','justify'] as const).map((a) => (
+          <button
+            key={a}
+            onClick={() => safeUpdate({ ...data, align: a })}
+            className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+              align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-white text-[var(--neutral-600)]'
+            }`}
+          >
+            {a}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Input value={data.successMessage || ''} onChange={(e) => safeUpdate({ ...data, successMessage: e.target.value })} placeholder="Success message (default: Correct!)" />
+        <Input value={data.failureMessage || ''} onChange={(e) => safeUpdate({ ...data, failureMessage: e.target.value })} placeholder="Failure message (default: Some answers are incorrect...)" />
       </div>
       <Section title={`Options (${data.options.length})`}>
         <div className="space-y-1">
           {data.options.map((opt, i) => (
             <div key={opt.id} className="flex items-center gap-2 rounded-lg bg-white p-2">
               <Checkbox label="" checked={opt.isCorrect} onChange={(e) => {
-                const next = data.options.map((o, idx) => idx === i ? { ...o, isCorrect: e.target.checked } : o);
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, options: next } }));
+                const checked = e.target.checked;
+                let next = data.options.map((o, idx) => idx === i ? { ...o, isCorrect: checked } : o);
+                if (checked && !data.allowMultiple) {
+                  // Uncheck all others when in single-answer mode
+                  next = next.map((o, idx) => idx === i ? o : { ...o, isCorrect: false });
+                }
+                safeUpdate({ ...data, options: next });
               }} />
               <Input value={opt.text} onChange={(e) => {
                 const next = data.options.map((o, idx) => idx === i ? { ...o, text: e.target.value } : o);
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, options: next } }));
+                safeUpdate({ ...data, options: next });
               }} placeholder="Option text" className="flex-1 text-xs" />
               <Input value={opt.explanation || ''} onChange={(e) => {
                 const next = data.options.map((o, idx) => idx === i ? { ...o, explanation: e.target.value } : o);
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, options: next } }));
+                safeUpdate({ ...data, options: next });
               }} placeholder="Explanation" className="flex-1 text-xs" />
               <button onClick={() => {
                 const next = data.options.filter((_, idx) => idx !== i);
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, options: next.length >= 2 ? next : data.options } }));
+                safeUpdate({ ...data, options: next.length >= 2 ? next : data.options });
               }} className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"><Trash2 className="h-3 w-3" /></button>
             </div>
           ))}
-          <button onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, options: [...data.options, { id: `opt-${Date.now()}`, text: 'New option', isCorrect: false }] } }))}
+          <button onClick={() => safeUpdate({ ...data, options: [...data.options, { id: `opt-${Date.now()}`, text: 'New option', isCorrect: false }] })}
             className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]">
             <Plus className="h-3 w-3" /> Option
           </button>

@@ -720,7 +720,7 @@ describe("VideoBlock", () => {
 });
 
 describe("AudioBlock", () => {
-  it("renders audio player metadata and serializes data", () => {
+  it("renders audio player with separate title/artist and serializes data", () => {
     const data = {
       src: "https://cdn.example.com/audio.mp3",
       title: "Podcast",
@@ -731,8 +731,26 @@ describe("AudioBlock", () => {
 
     const html = AudioBlock.render(data);
     expect(html).toContain("<audio");
-    expect(html).toContain("Podcast - Pulse Team");
+    expect(html).toContain("Podcast");
+    expect(html).toContain("Pulse Team");
+    expect(html).toContain('class="pulse-audio-player"');
     expect(AudioBlock.deserialize(AudioBlock.serialize(data))).toEqual(data);
+  });
+
+  it("renders caption separately when provided", () => {
+    const data = {
+      src: "https://cdn.example.com/audio.mp3",
+      title: "Podcast",
+      artist: "Pulse Team",
+      caption: "Episode 42: The Future",
+      autoplay: false,
+      loop: false,
+    };
+
+    const html = AudioBlock.render(data);
+    expect(html).toContain("Episode 42: The Future");
+    expect(html).toContain("Podcast");
+    expect(html).toContain("Pulse Team");
   });
 });
 
@@ -748,8 +766,10 @@ describe("FileBlock", () => {
 
     const html = FileBlock.render(data);
     expect(html).toContain('data-block-type="file"');
-    expect(html).toContain("application/pdf");
+    expect(html).toContain("PDF");
     expect(html).toContain("MB");
+    expect(html).toContain('class="pulse-file-card"');
+    expect(html).toContain('Download');
   });
 });
 

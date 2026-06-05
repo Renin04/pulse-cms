@@ -47,11 +47,15 @@ export function renderInlineMarkdown(text: string): string {
       const target = targetMatch ? targetMatch[1] : "";
       const rel = relMatch ? relMatch[1] : "";
       const num = formatReferenceNumber(1, style);
-      const titleAttr = refText ? ` title="${escapeHtml(refText)}"` : "";
       const targetAttr = target ? ` target="${escapeHtml(target)}"` : "";
       const relAttr = rel ? ` rel="${escapeHtml(rel)}"` : "";
       if (safeUrl) {
-        result += `<sup class="pulse-reference"><a href="${escapeHtml(safeUrl)}"${titleAttr}${targetAttr}${relAttr}>${num}</a></sup>`;
+        const supRef = `<sup class="pulse-reference"><a href="${escapeHtml(safeUrl)}"${targetAttr}${relAttr}>${num}</a></sup>`;
+        if (refText) {
+          result += `<span class="pulse-reference-group"><a href="${escapeHtml(safeUrl)}" class="pulse-reference-text"${targetAttr}${relAttr}>${escapeHtml(refText)}</a>${supRef}</span>`;
+        } else {
+          result += supRef;
+        }
       } else {
         result += escapeHtml(match[0]);
       }

@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const ctx = await requireAuthAndPermission(req, 'media.manage');
 
     const _maxSize = parseInt(process.env.UPLOAD_MAX_SIZE || '104857600', 10); // 100MB default
-    const allowedTypes = (process.env.UPLOAD_ALLOWED_TYPES || 'image/*,video/*,audio/*,application/pdf')
+    const allowedTypes = (process.env.UPLOAD_ALLOWED_TYPES || 'image/*,video/*,audio/*,application/*')
       .split(',')
       .map((t) => t.trim().toLowerCase());
 

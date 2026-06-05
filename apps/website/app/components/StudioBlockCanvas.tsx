@@ -17,7 +17,7 @@ import type { Block, BlockData } from '@pulse/core';
 import { BUILTIN_BLOCK_DEFINITIONS, formatReferenceNumber } from '@pulse/blocks';
 import {
   EditableHorizontalRule, EditableLink, EditableImage, EditableVideo, EditableAudio,
-  EditableEmbed, EditableFile, EditableTable, EditableAlert, EditableQuiz, EditablePoll,
+  EditableEmbed, EditableFile, EditableTable, EditableCallout, EditableAlert, EditableQuiz, EditablePoll,
   EditableAccordion, EditableTabs, EditableToggle, EditableSpoiler, EditableFlashcard,
   EditableTimeline, EditableComparison, EditableBeforeAfter, EditableChart, EditableMap,
   EditableMath, EditableDiagram, EditableManga, EditableSpeechBubble, EditableCard,
@@ -2129,47 +2129,6 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
         />
       )}
     </>
-  );
-}
-
-function EditableCallout({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { variant: string; title?: string; body: string };
-  const variantColors: Record<string, string> = {
-    note: 'bg-blue-500/10 text-blue-700 border-blue-200',
-    info: 'bg-sky-500/10 text-sky-700 border-sky-200',
-    tip: 'bg-green-500/10 text-green-700 border-green-200',
-    warning: 'bg-amber-500/10 text-amber-700 border-amber-200',
-    success: 'bg-emerald-500/10 text-emerald-700 border-emerald-200',
-  };
-  return (
-    <div className={`rounded-xl border p-4 ${variantColors[data.variant] || variantColors.note}`}>
-      <div className="mb-2 flex items-center gap-2">
-        {(['note', 'info', 'tip', 'warning', 'success'] as const).map((v) => (
-          <button
-            key={v}
-            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, variant: v } }))}
-            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-              data.variant === v ? 'bg-white/80 text-[var(--pulse-black)]' : 'bg-white/40 text-[var(--neutral-600)]'
-            }`}
-          >
-            {v}
-          </button>
-        ))}
-      </div>
-      <input
-        value={data.title || ''}
-        onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))}
-        placeholder="Title"
-        className="mb-2 w-full bg-transparent text-sm font-bold outline-none placeholder:text-current/50"
-      />
-      <textarea
-        value={data.body}
-        onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, body: e.target.value } }))}
-        rows={2}
-        className="w-full bg-transparent text-sm outline-none placeholder:text-current/50"
-        placeholder="Body text..."
-      />
-    </div>
   );
 }
 
