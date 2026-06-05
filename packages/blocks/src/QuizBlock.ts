@@ -194,6 +194,7 @@ export const QuizBlock: BlockTypeDefinition<QuizBlockData> = {
     <span class="pulse-quiz-result-icon" aria-hidden="true"></span>
     <span class="pulse-quiz-result-text"></span>
   </div>
+  <button type="button" class="pulse-quiz-retract" hidden>Reset answer</button>
 </section>`;
   },
   serialize(data) {

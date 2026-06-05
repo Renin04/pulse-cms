@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { BlockTypeDefinition } from "./types";
 import { escapeHtml, parseJson } from "./types";
+import { renderInlineMarkdown } from "./BlockquoteBlock";
 
 export interface PollOption {
   id: string;
@@ -14,6 +15,8 @@ export interface PollBlockData extends Record<string, unknown> {
   options: PollOption[];
   allowMultiple: boolean;
   closesAt?: string;
+  explanation?: string;
+  align?: "left" | "center" | "right" | "justify";
 }
 
 export const pollOptionSchema = z
@@ -21,8 +24,7 @@ export const pollOptionSchema = z
     id: z.string(),
     label: z.string(),
     votes: z.number().int().min(0),
-  })
-  .strict();
+  });
 
 export const pollBlockDataSchema = z
   .object({
@@ -30,8 +32,9 @@ export const pollBlockDataSchema = z
     options: z.array(pollOptionSchema).max(12),
     allowMultiple: z.boolean(),
     closesAt: z.string().datetime().optional(),
-  })
-  .strict();
+    explanation: z.string().optional(),
+    align: z.enum(["left", "center", "right", "justify"]).optional(),
+  });
 
 function createOptionId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -114,21 +117,44 @@ export const PollBlock: BlockTypeDefinition<PollBlockData> = {
     canHaveChildren: false,
   },
   render(data) {
-    const parsed = pollBlockDataSchema.parse(data);
+    let parsed: PollBlockData;
+    try {
+      parsed = pollBlockDataSchema.parse(data);
+    } catch {
+      return `<section class="pulse-poll" data-block-type="poll"><h3 class="pulse-poll-question">Poll</h3><p style="color:var(--neutral-500);">This poll could not be displayed.</p></section>`;
+    }
     const totalVotes = parsed.options.reduce((total, option) => total + option.votes, 0);
-    const pollId = `poll-${Math.random().toString(36).slice(2, 8)}`;
+    const alignAttr = parsed.align ? ` style="text-align:${escapeHtml(parsed.align)};"` : "";
+    const explanationMarkup = parsed.explanation
+      ? `<p class="pulse-poll-explanation">${renderInlineMarkdown(parsed.explanation)}</p>`
+      : "";
+
     const items = parsed.options
       .map((option) => {
         const percentage = totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0;
-        return `<li data-votes="${option.votes}" data-option-id="${escapeHtml(option.id)}" style="margin-bottom:10px;"><button type="button" class="pulse-poll-btn" style="width:100%;text-align:left;padding:10px 14px;border-radius:10px;border:1px solid var(--neutral-200);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;"><span>${escapeHtml(option.label)}</span><span class="pulse-poll-bar-wrap" style="flex:1;height:8px;background:var(--neutral-100);border-radius:4px;overflow:hidden;"><span class="pulse-poll-bar" style="display:block;height:100%;width:${percentage}%;background:var(--pulse-red);border-radius:4px;transition:width 0.3s;"></span></span><strong class="pulse-poll-pct" style="min-width:40px;text-align:right;">${percentage}%</strong></button></li>`;
+        return `<li class="pulse-poll-option" data-votes="${option.votes}" data-original-votes="${option.votes}" data-option-id="${escapeHtml(option.id)}">
+  <button type="button" class="pulse-poll-btn">
+    <span class="pulse-poll-label">${escapeHtml(option.label)}</span>
+    <span class="pulse-poll-bar-wrap">
+      <span class="pulse-poll-bar" style="width:${percentage}%;"></span>
+    </span>
+    <span class="pulse-poll-pct">${percentage}%</span>
+  </button>
+</li>`;
       })
       .join("");
 
     const closeInfo = parsed.closesAt
-      ? `<small>Closes at ${escapeHtml(parsed.closesAt)}</small>`
+      ? `<div class="pulse-poll-closes">Closes at ${escapeHtml(parsed.closesAt)}</div>`
       : "";
 
-    return `<section data-block-type="poll" id="${pollId}" class="pulse-poll"><h3 style="margin-bottom:12px;">${escapeHtml(parsed.question)}</h3><ul style="list-style:none;padding:0;">${items}</ul>${closeInfo}</section>`;
+    return `<section class="pulse-poll" data-block-type="poll" data-allow-multiple="${String(parsed.allowMultiple)}" data-total-votes="${totalVotes}"${alignAttr}>
+  <h3 class="pulse-poll-question"${alignAttr}>${renderInlineMarkdown(parsed.question)}</h3>
+  ${explanationMarkup}
+  <ul class="pulse-poll-options">${items}</ul>
+  <button type="button" class="pulse-poll-retract" hidden>Reset my vote</button>
+  ${closeInfo}
+</section>`;
   },
   serialize(data) {
     const parsed = pollBlockDataSchema.parse(data);

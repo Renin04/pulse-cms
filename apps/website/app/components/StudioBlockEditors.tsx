@@ -1953,10 +1953,20 @@ export function EditableQuiz({ block, adapter }: { block: Block<BlockData>; adap
 }
 
 export function EditablePoll({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { question: string; options: { id: string; label: string; votes: number }[]; allowMultiple: boolean };
+  const data = block.data as { question: string; options: { id: string; label: string; votes: number }[]; allowMultiple: boolean; explanation?: string; align?: string };
+  const align = data.align || 'left';
   return (
     <div className="space-y-2">
       <TextArea value={data.question} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, question: e.target.value } }))} placeholder="Poll question..." rows={2} />
+      <TextArea value={data.explanation || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, explanation: e.target.value } }))} placeholder="Explanation (optional)..." rows={2} />
+      <div className="flex flex-wrap gap-2">
+        {(['left', 'center', 'right', 'justify'] as const).map((a) => (
+          <button key={a} onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+            className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'}`}>
+            {a}
+          </button>
+        ))}
+      </div>
       <Checkbox label="Allow multiple votes" checked={data.allowMultiple} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, allowMultiple: e.target.checked } }))} />
       <Section title={`Options (${data.options.length})`}>
         <div className="space-y-1">

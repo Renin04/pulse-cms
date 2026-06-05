@@ -807,6 +807,113 @@ function PulseBlogStudioInner() {
         evaluateQuiz(quiz as HTMLElement);
         return;
       }
+
+      // Quiz retract / reset
+      const quizRetract = target.closest('.pulse-quiz-retract');
+      if (quizRetract) {
+        const quiz = quizRetract.closest('.pulse-quiz');
+        if (!quiz) return;
+        const opts = quiz.querySelectorAll('.pulse-quiz-option');
+        opts.forEach((o) => {
+          o.removeAttribute('data-evaluated');
+          const input = o.querySelector('input') as HTMLInputElement | null;
+          if (input) input.checked = false;
+          const ex = o.querySelector('.pulse-quiz-explanation') as HTMLElement | null;
+          if (ex) ex.hidden = true;
+        });
+        const res = quiz.querySelector('.pulse-quiz-result') as HTMLElement | null;
+        if (res) res.hidden = true;
+        (quizRetract as HTMLElement).hidden = true;
+        return;
+      }
+
+      // Poll vote
+      const pollBtn = target.closest('.pulse-poll-btn');
+      if (pollBtn) {
+        const poll = pollBtn.closest('.pulse-poll');
+        if (!poll) return;
+        const li = pollBtn.closest('li');
+        if (!li) return;
+        const optionId = li.getAttribute('data-option-id');
+        if (!optionId) return;
+
+        const isMultiple = poll.getAttribute('data-allow-multiple') === 'true';
+        const votedOptions: Set<string> = (poll as any).__votedOptions || new Set();
+
+        if (!isMultiple && votedOptions.size > 0 && !votedOptions.has(optionId)) {
+          // Switch vote in single mode: remove previous
+          const prevId = Array.from(votedOptions)[0] as string;
+          const prevLi = Array.from(poll.querySelectorAll('li')).find((l) => l.getAttribute('data-option-id') === prevId);
+          if (prevLi) {
+            let prevVotes = parseInt(prevLi.getAttribute('data-votes') || '0', 10);
+            prevVotes = Math.max(0, prevVotes - 1);
+            prevLi.setAttribute('data-votes', String(prevVotes));
+            prevLi.classList.remove('voted');
+          }
+          votedOptions.clear();
+        }
+
+        if (votedOptions.has(optionId)) {
+          // Toggle off
+          let votes = parseInt(li.getAttribute('data-votes') || '0', 10);
+          votes = Math.max(0, votes - 1);
+          li.setAttribute('data-votes', String(votes));
+          votedOptions.delete(optionId);
+          li.classList.remove('voted');
+        } else {
+          // Vote on
+          let votes = parseInt(li.getAttribute('data-votes') || '0', 10);
+          votes += 1;
+          li.setAttribute('data-votes', String(votes));
+          votedOptions.add(optionId);
+          li.classList.add('voted');
+        }
+
+        (poll as any).__votedOptions = votedOptions;
+
+        // Recalculate percentages
+        const allLis = Array.from(poll.querySelectorAll('li'));
+        let total = 0;
+        allLis.forEach((l) => { total += parseInt(l.getAttribute('data-votes') || '0', 10); });
+        allLis.forEach((l) => {
+          const v = parseInt(l.getAttribute('data-votes') || '0', 10);
+          const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+          const bar = l.querySelector('.pulse-poll-bar') as HTMLElement | null;
+          const pctLabel = l.querySelector('.pulse-poll-pct') as HTMLElement | null;
+          if (bar) bar.style.width = pct + '%';
+          if (pctLabel) pctLabel.textContent = pct + '%';
+        });
+
+        const retractEl = poll.querySelector('.pulse-poll-retract') as HTMLElement | null;
+        if (retractEl) retractEl.hidden = votedOptions.size === 0;
+        return;
+      }
+
+      // Poll retract
+      const pollRetract = target.closest('.pulse-poll-retract');
+      if (pollRetract) {
+        const poll = pollRetract.closest('.pulse-poll');
+        if (!poll) return;
+        const allLis = Array.from(poll.querySelectorAll('li'));
+        allLis.forEach((l) => {
+          const orig = parseInt(l.getAttribute('data-original-votes') || '0', 10);
+          l.setAttribute('data-votes', String(orig));
+          l.classList.remove('voted');
+        });
+        let total = 0;
+        allLis.forEach((l) => { total += parseInt(l.getAttribute('data-votes') || '0', 10); });
+        allLis.forEach((l) => {
+          const v = parseInt(l.getAttribute('data-votes') || '0', 10);
+          const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+          const bar = l.querySelector('.pulse-poll-bar') as HTMLElement | null;
+          const pctLabel = l.querySelector('.pulse-poll-pct') as HTMLElement | null;
+          if (bar) bar.style.width = pct + '%';
+          if (pctLabel) pctLabel.textContent = pct + '%';
+        });
+        (poll as any).__votedOptions = new Set<string>();
+        (pollRetract as HTMLElement).hidden = true;
+        return;
+      }
     }
 
     function handlePreviewChange(e: Event) {
@@ -880,6 +987,10 @@ function PulseBlogStudioInner() {
         if (textEl) textEl.textContent = isFullyCorrect ? successMsg : failureMsg;
         res.hidden = false;
       }
+
+      // Show retract button after evaluation
+      const retractBtn = quiz.querySelector('.pulse-quiz-retract') as HTMLElement | null;
+      if (retractBtn) retractBtn.hidden = !anySelected;
     }
 
     preview.addEventListener('click', handlePreviewClick);
@@ -889,40 +1000,6 @@ function PulseBlogStudioInner() {
     function hydrateLegacyInteractive() {
       const p = document.querySelector('.studio-rendered.mt-6');
       if (!p) return;
-
-      p.querySelectorAll('.pulse-poll').forEach((poll) => {
-        if ((poll as any).__hydrated) return;
-        (poll as any).__hydrated = true;
-        const btns = poll.querySelectorAll('.pulse-poll-btn');
-        let voted = false;
-        btns.forEach((btn) => {
-          btn.addEventListener('click', () => {
-            if (voted) return;
-            voted = true;
-            const li = btn.closest('li');
-            const clickedId = li?.getAttribute('data-option-id');
-            const lis = Array.from(poll.querySelectorAll('li'));
-            let total = 0;
-            lis.forEach((l) => {
-              let v = parseInt(l.getAttribute('data-votes') || '0', 10);
-              if (l.getAttribute('data-option-id') === clickedId) v += 1;
-              l.setAttribute('data-votes', String(v));
-              total += v;
-            });
-            lis.forEach((l) => {
-              const v = parseInt(l.getAttribute('data-votes') || '0', 10);
-              const pct = total > 0 ? Math.round((v / total) * 100) : 0;
-              const bar = l.querySelector('.pulse-poll-bar') as HTMLElement | null;
-              const pctLabel = l.querySelector('.pulse-poll-pct') as HTMLElement | null;
-              if (bar) bar.style.width = pct + '%';
-              if (pctLabel) pctLabel.textContent = pct + '%';
-              (l.querySelector('button') as HTMLElement).style.cursor = 'default';
-            });
-            (btn as HTMLElement).style.borderColor = 'var(--pulse-red)';
-            (btn as HTMLElement).style.background = '#fff1f2';
-          });
-        });
-      });
 
       p.querySelectorAll('.pulse-tabs').forEach((sec) => {
         if ((sec as any).__hydrated) return;
