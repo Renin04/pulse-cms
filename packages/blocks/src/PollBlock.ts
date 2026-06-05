@@ -36,6 +36,17 @@ export const pollBlockDataSchema = z
     align: z.enum(["left", "center", "right", "justify"]).optional(),
   });
 
+function stablePollId(question: string, options: PollOption[]): string {
+  const raw = question + options.map((o) => o.id + o.label + o.votes).join('');
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    const char = raw.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return 'poll-' + Math.abs(hash).toString(36);
+}
+
 function createOptionId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return `poll-option-${crypto.randomUUID()}`;
@@ -124,6 +135,7 @@ export const PollBlock: BlockTypeDefinition<PollBlockData> = {
       return `<section class="pulse-poll" data-block-type="poll"><h3 class="pulse-poll-question">Poll</h3><p style="color:var(--neutral-500);">This poll could not be displayed.</p></section>`;
     }
     const totalVotes = parsed.options.reduce((total, option) => total + option.votes, 0);
+    const pollId = stablePollId(parsed.question, parsed.options);
     const alignAttr = parsed.align ? ` style="text-align:${escapeHtml(parsed.align)};"` : "";
     const explanationMarkup = parsed.explanation
       ? `<p class="pulse-poll-explanation">${renderInlineMarkdown(parsed.explanation)}</p>`
@@ -148,7 +160,7 @@ export const PollBlock: BlockTypeDefinition<PollBlockData> = {
       ? `<div class="pulse-poll-closes">Closes at ${escapeHtml(parsed.closesAt)}</div>`
       : "";
 
-    return `<section class="pulse-poll" data-block-type="poll" data-allow-multiple="${String(parsed.allowMultiple)}" data-total-votes="${totalVotes}"${alignAttr}>
+    return `<section class="pulse-poll" data-block-type="poll" data-poll-id="${pollId}" data-allow-multiple="${String(parsed.allowMultiple)}" data-total-votes="${totalVotes}"${alignAttr}>
   <h3 class="pulse-poll-question"${alignAttr}>${renderInlineMarkdown(parsed.question)}</h3>
   ${explanationMarkup}
   <ul class="pulse-poll-options">${items}</ul>

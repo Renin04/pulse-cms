@@ -348,6 +348,13 @@ export default function BlogPostContent({
 
         const retractEl = poll.querySelector('.pulse-poll-retract') as HTMLElement | null;
         if (retractEl) retractEl.hidden = votedOptions.size === 0;
+
+        const pollId = poll.getAttribute('data-poll-id');
+        if (pollId) {
+          try {
+            localStorage.setItem(`pulse-poll-votes:${pollId}`, JSON.stringify({ votedOptions: Array.from(votedOptions) }));
+          } catch { /* ignore */ }
+        }
         return;
       }
 
@@ -374,6 +381,13 @@ export default function BlogPostContent({
         });
         (poll as any).__votedOptions = new Set<string>();
         (pollRetract as HTMLElement).hidden = true;
+
+        const pollId2 = poll.getAttribute('data-poll-id');
+        if (pollId2) {
+          try {
+            localStorage.removeItem(`pulse-poll-votes:${pollId2}`);
+          } catch { /* ignore */ }
+        }
         return;
       }
     }
@@ -399,6 +413,51 @@ export default function BlogPostContent({
       figure.style.setProperty('--tooltip-x', `${x}px`);
       figure.style.setProperty('--tooltip-y', `${y}px`);
     }
+    // Restore persisted poll votes
+    function restorePollVotes(container: Element) {
+      container.querySelectorAll('.pulse-poll').forEach((poll) => {
+        const pollId = poll.getAttribute('data-poll-id');
+        if (!pollId) return;
+        try {
+          const raw = localStorage.getItem(`pulse-poll-votes:${pollId}`);
+          if (!raw) return;
+          const stored = JSON.parse(raw) as { votedOptions: string[] };
+          const votedOptions = new Set(stored.votedOptions);
+          (poll as any).__votedOptions = votedOptions;
+
+          const lis = Array.from(poll.querySelectorAll('li'));
+          lis.forEach((li) => {
+            const optionId = li.getAttribute('data-option-id');
+            if (!optionId) return;
+            if (votedOptions.has(optionId)) {
+              li.classList.add('voted');
+              let votes = parseInt(li.getAttribute('data-votes') || '0', 10);
+              votes += 1;
+              li.setAttribute('data-votes', String(votes));
+            }
+          });
+
+          let total = 0;
+          lis.forEach((li) => { total += parseInt(li.getAttribute('data-votes') || '0', 10); });
+          lis.forEach((li) => {
+            const v = parseInt(li.getAttribute('data-votes') || '0', 10);
+            const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+            const bar = li.querySelector('.pulse-poll-bar') as HTMLElement | null;
+            const pctLabel = li.querySelector('.pulse-poll-pct') as HTMLElement | null;
+            if (bar) bar.style.width = pct + '%';
+            if (pctLabel) pctLabel.textContent = pct + '%';
+          });
+
+          const retractEl = poll.querySelector('.pulse-poll-retract') as HTMLElement | null;
+          if (retractEl) retractEl.hidden = votedOptions.size === 0;
+        } catch {
+          // ignore
+        }
+      });
+    }
+
+    restorePollVotes(article);
+
     article.addEventListener('mousemove', handleMouseMove);
 
     article.addEventListener('click', handleClick);
