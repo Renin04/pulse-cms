@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Trash2, Plus, Upload } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Trash2, Plus, Upload, Play, Terminal } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
-import { type ReferenceStyle, formatReferenceNumber } from '@pulse/blocks';
+import { type ReferenceStyle, formatReferenceNumber, buildPyodideSrcdoc } from '@pulse/blocks';
 import { media as mediaApi } from '@/lib/api-client';
+import { createSandboxHtml } from './CodeSandbox';
 
 // ─── Reusable UI helpers ───
 
@@ -326,22 +327,72 @@ export function EditableLink({ block, adapter }: { block: Block<BlockData>; adap
 }
 
 export function EditableImage({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { src: string | null; alt: string; caption?: string; width: number; height: number; fit: string; align?: string };
+  const data = block.data as {
+    src: string | null;
+    alt: string;
+    caption?: string;
+    width: number;
+    height: number;
+    fit: string;
+    align?: string;
+    captionAlign?: string;
+    displaySize?: string;
+    format?: string;
+    compression?: number;
+    fileSize?: number;
+    mediaAssetId?: string;
+    originalWidth?: number;
+    originalHeight?: number;
+  };
   const align = data.align || 'left';
+  const captionAlign = data.captionAlign || 'center';
+  const displaySize = data.displaySize || 'large';
+  const format = data.format || 'original';
+  const compression = data.compression ?? 100;
   const [uploading, setUploading] = useState(false);
+  const [processing, setProcessing] = useState(false);
+
+  // Initialize original dimensions if missing (legacy blocks or newly added field)
+  useEffect(() => {
+    if (data.src && (data.originalWidth == null || data.originalHeight == null) && data.width && data.height) {
+      adapter.updateBlock(block.id, (b) => ({
+        ...b,
+        data: { ...data, originalWidth: data.width, originalHeight: data.height },
+      }));
+    }
+  }, [data.src, data.width, data.height, data.originalWidth, data.originalHeight, block.id, adapter]);
 
   const handleUpload = async (file: File) => {
     setUploading(true);
     try {
       const uploaded = await mediaApi.upload(file);
+      const metadata: Record<string, unknown> = {};
+      if (format !== 'original') {
+        metadata.desiredFormat = format;
+      }
+      if (compression < 100 && uploaded.width && uploaded.height) {
+        metadata.desiredWidth = uploaded.width;
+        metadata.desiredHeight = uploaded.height;
+      }
+      let finalUrl = uploaded.url;
+      if (Object.keys(metadata).length > 0) {
+        const updated = await mediaApi.update(uploaded.id, { metadata });
+        finalUrl = updated.url || uploaded.url;
+      }
+      // Strip file extension from name for cleaner alt text
+      const cleanName = uploaded.name.replace(/\.[^/.]+$/, '') || uploaded.name;
       adapter.updateBlock(block.id, (b) => ({
         ...b,
         data: {
           ...data,
-          src: uploaded.url,
-          alt: uploaded.name,
+          src: finalUrl,
+          alt: cleanName,
           width: uploaded.width || data.width,
           height: uploaded.height || data.height,
+          originalWidth: uploaded.width || data.width,
+          originalHeight: uploaded.height || data.height,
+          fileSize: uploaded.size,
+          mediaAssetId: uploaded.id,
         },
       }));
     } catch (err) {
@@ -351,25 +402,174 @@ export function EditableImage({ block, adapter }: { block: Block<BlockData>; ada
     }
   };
 
+  const handleResetSizes = () => {
+    const ow = data.originalWidth || data.width;
+    const oh = data.originalHeight || data.height;
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, width: ow, height: oh } }));
+  };
+
+  const handleApplyFormat = async () => {
+    const assetId = data.mediaAssetId;
+    if (!assetId) {
+      alert('Please re-upload the image to apply format changes.');
+      return;
+    }
+    setProcessing(true);
+    try {
+      const metadata: Record<string, unknown> = {};
+      if (format !== 'original') {
+        metadata.desiredFormat = format;
+      } else {
+        metadata.desiredFormat = null;
+      }
+      if (typeof compression === 'number') {
+        metadata.desiredQuality = compression;
+      }
+      const updated = await mediaApi.update(assetId, { metadata });
+      const processedSize = (updated.metadata?.processedFileSize as number | undefined) ?? data.fileSize;
+      // Cache-bust by appending a query param to the src
+      const srcBase = (data.src || '').split('?')[0];
+      adapter.updateBlock(block.id, (b) => ({
+        ...b,
+        data: {
+          ...data,
+          src: srcBase ? `${srcBase}?v=${Date.now()}` : data.src,
+          fileSize: processedSize,
+        },
+      }));
+    } catch (err) {
+      alert('Processing failed: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleApplyCompression = async () => {
+    const assetId = data.mediaAssetId;
+    if (!assetId) {
+      alert('Please re-upload the image to apply compression.');
+      return;
+    }
+    setProcessing(true);
+    try {
+      const metadata: Record<string, unknown> = {};
+      metadata.desiredQuality = compression;
+      if (format !== 'original') {
+        metadata.desiredFormat = format;
+      }
+      const updated = await mediaApi.update(assetId, { metadata });
+      const processedSize = (updated.metadata?.processedFileSize as number | undefined) ?? data.fileSize;
+      const srcBase = (data.src || '').split('?')[0];
+      adapter.updateBlock(block.id, (b) => ({
+        ...b,
+        data: {
+          ...data,
+          src: srcBase ? `${srcBase}?v=${Date.now()}` : data.src,
+          fileSize: processedSize,
+        },
+      }));
+    } catch (err) {
+      alert('Processing failed: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleWidthChange = (val: number) => {
+    const newWidth = val;
+    let newHeight = data.height;
+    if (data.height > 0 && data.width > 0) {
+      const ratio = data.height / data.width;
+      newHeight = Math.max(1, Math.round(newWidth * ratio));
+    }
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, width: newWidth, height: newHeight } }));
+  };
+
+  const handleHeightChange = (val: number) => {
+    const newHeight = val;
+    let newWidth = data.width;
+    if (data.width > 0 && data.height > 0) {
+      const ratio = data.width / data.height;
+      newWidth = Math.max(1, Math.round(newHeight * ratio));
+    }
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, width: newWidth, height: newHeight } }));
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '';
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const estimatedFileSize = (() => {
+    if (!data.fileSize) return null;
+    // Rough heuristic: lower quality = smaller file (JPEG/WebP). PNG is lossless so quality has less effect.
+    const formatMultiplier = format === 'png' ? 0.6 + (compression / 100) * 0.4 : 0.25 + (compression / 100) * 0.75;
+    return Math.round(data.fileSize * formatMultiplier);
+  })();
+
   return (
     <div className="space-y-2">
+      {/* Source */}
       <div className="flex gap-2">
         <Input value={data.src || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, src: e.target.value || null } }))} placeholder="Image URL" className="flex-1" />
         <InlineUploadButton accept="image/*" uploading={uploading} onUpload={handleUpload} />
       </div>
+
+      {/* Meta */}
       <div className="flex gap-2">
         <Input value={data.alt} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, alt: e.target.value } }))} placeholder="Alt text" className="flex-1" />
-        <Input value={data.caption || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, caption: e.target.value } }))} placeholder="Caption" className="flex-1" />
+        <div className="flex-1">
+          <TextArea
+            value={data.caption || ''}
+            onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, caption: e.target.value } }))}
+            placeholder="Caption"
+            rows={2}
+          />
+          <div className="mt-0.5 text-right text-[10px] text-[var(--neutral-400)]">
+            {(data.caption || '').length} chars
+          </div>
+        </div>
       </div>
+
+      {/* Preview */}
+      {data.src && (
+        <div className="rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] p-2">
+          <img src={data.src} alt={data.alt} className="h-28 w-full rounded-md" style={{ objectFit: data.fit as any }} />
+          <div className="mt-1 flex items-center justify-between text-[10px] text-[var(--neutral-500)]">
+            <span>{data.width} × {data.height}</span>
+            <span className="flex items-center gap-1.5">
+              {data.fileSize ? (
+                <>
+                  <span className="text-[var(--neutral-400)]">Original: {formatFileSize(data.fileSize)}</span>
+                  {estimatedFileSize && estimatedFileSize !== data.fileSize ? (
+                    <span className="font-semibold text-[var(--pulse-red)]">→ {formatFileSize(estimatedFileSize)}</span>
+                  ) : null}
+                </>
+              ) : null}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Dimensions + Fit */}
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1">
           <Label>W</Label>
-          <Input type="number" value={data.width} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, width: Number(e.target.value) || 800 } }))} className="w-20" />
+          <Input type="number" value={data.width} onChange={(e) => handleWidthChange(Number(e.target.value) || 1)} className="w-20" />
         </div>
         <div className="flex items-center gap-1">
           <Label>H</Label>
-          <Input type="number" value={data.height} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, height: Number(e.target.value) || 450 } }))} className="w-20" />
+          <Input type="number" value={data.height} onChange={(e) => handleHeightChange(Number(e.target.value) || 1)} className="w-20" />
         </div>
+        <button
+          type="button"
+          onClick={handleResetSizes}
+          title="Reset to original dimensions"
+          className="flex h-8 items-center justify-center rounded-md border border-[var(--neutral-200)] bg-white px-2 text-[10px] font-semibold text-[var(--neutral-500)] hover:bg-[var(--neutral-50)]"
+        >
+          Reset
+        </button>
         <Select
           value={data.fit}
           onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, fit: e.target.value } }))}
@@ -377,31 +577,136 @@ export function EditableImage({ block, adapter }: { block: Block<BlockData>; ada
           className="ml-2"
         />
       </div>
-      <div className="flex flex-wrap gap-2">
-        {(['left','center','right','justify'] as const).map((a) => (
-          <button
-            key={a}
-            onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
-            className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
-              align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
-            }`}
-          >
-            {a}
-          </button>
-        ))}
+
+      {/* Display controls: Size + Align + Caption align */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Size</span>
+          {(['small','medium','large','full'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, displaySize: s } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                displaySize === s ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Align</span>
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                align === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Caption</span>
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, captionAlign: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                captionAlign === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
       </div>
-      {data.src && (
-        <img src={data.src} alt={data.alt} className="mt-2 h-32 w-full rounded-lg border border-[var(--neutral-200)]" style={{ objectFit: data.fit as any }} />
-      )}
+
+      {/* Format + Quality */}
+      <div className="rounded-lg border border-[var(--neutral-200)] bg-[var(--neutral-50)] p-2 space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Format</span>
+            <Select
+              value={format}
+              onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, format: e.target.value } }))}
+              options={[
+                { value: 'original', label: 'Original' },
+                { value: 'webp', label: 'WebP' },
+                { value: 'jpeg', label: 'JPEG' },
+                { value: 'png', label: 'PNG' },
+              ]}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleApplyFormat}
+            disabled={processing || !data.mediaAssetId}
+            className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[var(--pulse-red)] text-white disabled:bg-[var(--neutral-200)] disabled:text-[var(--neutral-400)] disabled:cursor-not-allowed"
+          >
+            {processing ? 'Processing…' : 'Apply'}
+          </button>
+          <div className="flex flex-1 items-center gap-2">
+            <span className="whitespace-nowrap text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Quality</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={compression}
+              onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, compression: Number(e.target.value) } }))}
+              className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--neutral-200)] accent-[var(--pulse-red)]"
+            />
+            <span className="w-8 text-right text-[10px] font-semibold text-[var(--neutral-600)]">{compression}</span>
+            <button
+              type="button"
+              onClick={handleApplyCompression}
+              disabled={processing || !data.mediaAssetId}
+              className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[var(--pulse-red)] text-white disabled:bg-[var(--neutral-200)] disabled:text-[var(--neutral-400)] disabled:cursor-not-allowed"
+            >
+              {processing ? '…' : 'Apply'}
+            </button>
+          </div>
+        </div>
+        {data.fileSize ? (
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="text-[var(--neutral-500)]">
+              Estimated: <span className="font-semibold text-[var(--pulse-red)]">{formatFileSize(estimatedFileSize || data.fileSize)}</span>
+              {format !== 'original' ? ` (${format.toUpperCase()})` : null}
+            </span>
+            <span className="text-[var(--neutral-400)]">{compression < 50 ? 'High compression' : compression < 85 ? 'Balanced' : 'High quality'}</span>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
 
 export function EditableVideo({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { url: string; provider: string; title: string; caption?: string; autoplay: boolean; startAtSeconds: number };
+  const data = block.data as {
+    url: string;
+    provider: string;
+    title: string;
+    caption?: string;
+    autoplay: boolean;
+    startAtSeconds: number;
+    privacyMode?: boolean;
+    quality?: string;
+    poster?: string;
+    loop?: boolean;
+    muted?: boolean;
+    controls?: boolean;
+  };
   const [uploading, setUploading] = useState(false);
+  const [posterUploading, setPosterUploading] = useState(false);
 
   const handleUpload = async (file: File) => {
+    const MAX_SIZE = 100 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      alert('Video too large (max 100MB). Please compress or use a URL instead.');
+      return;
+    }
     setUploading(true);
     try {
       const uploaded = await mediaApi.upload(file);
@@ -416,9 +721,52 @@ export function EditableVideo({ block, adapter }: { block: Block<BlockData>; ada
     }
   };
 
+  const handlePosterUpload = async (file: File) => {
+    setPosterUploading(true);
+    try {
+      const uploaded = await mediaApi.upload(file);
+      adapter.updateBlock(block.id, (b) => ({
+        ...b,
+        data: { ...data, poster: uploaded.url },
+      }));
+    } catch (err) {
+      alert('Poster upload failed: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setPosterUploading(false);
+    }
+  };
+
+  const parseTimeToSeconds = (value: string): number => {
+    const parts = value.split(':').map((p) => parseInt(p.trim(), 10));
+    if (parts.some((p) => Number.isNaN(p) || p < 0)) return 0;
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 1) return parts[0];
+    return 0;
+  };
+
+  const formatSecondsToTime = (totalSeconds: number): string => {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    if (hrs > 0) {
+      return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const timeValue = formatSecondsToTime(data.startAtSeconds || 0);
+
+  const getYouTubeThumbnail = (url: string): string | null => {
+    const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : null;
+  };
+
+  const thumbnailUrl = data.provider === 'youtube' ? getYouTubeThumbnail(data.url) : null;
+
   return (
     <div className="space-y-2">
-      <Input value={data.title} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Video title" />
+      {/* Source */}
       <div className="flex gap-2">
         <Input value={data.url} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, url: e.target.value } }))} placeholder="Video URL" className="flex-[2]" />
         <Select
@@ -428,15 +776,79 @@ export function EditableVideo({ block, adapter }: { block: Block<BlockData>; ada
         />
         <InlineUploadButton accept="video/*" uploading={uploading} onUpload={handleUpload} />
       </div>
-      <Input value={data.caption || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, caption: e.target.value } }))} placeholder="Caption (optional)" />
-      <div className="flex items-center gap-4">
+
+      {/* Meta */}
+      <div className="flex gap-2">
+        <Input value={data.title} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Video title" className="flex-1" />
+        <Input value={data.caption || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, caption: e.target.value } }))} placeholder="Caption (optional)" className="flex-1" />
+      </div>
+
+      {/* Options */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <Checkbox label="Autoplay" checked={data.autoplay} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, autoplay: e.target.checked } }))} />
+        {data.provider === 'youtube' && (
+          <Checkbox label="Privacy mode" checked={data.privacyMode ?? true} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, privacyMode: e.target.checked } }))} />
+        )}
+        {data.provider === 'html5' && (
+          <>
+            <Checkbox label="Loop" checked={data.loop ?? false} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, loop: e.target.checked } }))} />
+            <Checkbox label="Muted" checked={data.muted ?? false} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, muted: e.target.checked } }))} />
+            <Checkbox label="Controls" checked={data.controls ?? true} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, controls: e.target.checked } }))} />
+          </>
+        )}
+      </div>
+
+      {/* Quality row */}
+      <div className="flex flex-wrap items-center gap-2">
+        {data.provider === 'html5' && (
+          <Select
+            value={data.quality || 'auto'}
+            onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, quality: e.target.value } }))}
+            options={[{ value: 'auto', label: 'Quality: Auto' }, { value: '720p', label: '720p' }, { value: '1080p', label: '1080p' }, { value: '4k', label: '4K' }]}
+          />
+        )}
         <div className="flex items-center gap-1">
           <Label>Start at</Label>
-          <Input type="number" min={0} value={data.startAtSeconds} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, startAtSeconds: Number(e.target.value) || 0 } }))} className="w-20" />
-          <span className="text-xs text-[var(--neutral-500)]">sec</span>
+          <Input
+            type="text"
+            placeholder="00:00"
+            value={timeValue}
+            onChange={(e) => {
+              const seconds = parseTimeToSeconds(e.target.value);
+              adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, startAtSeconds: seconds } }));
+            }}
+            className="w-24"
+          />
         </div>
+        {data.provider === 'html5' && (
+          <div className="flex flex-1 items-center gap-2">
+            <Input value={data.poster || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, poster: e.target.value } }))} placeholder="Poster URL" className="flex-1" />
+            <InlineUploadButton accept="image/*" uploading={posterUploading} onUpload={handlePosterUpload} />
+          </div>
+        )}
       </div>
+
+      {/* Preview */}
+      {data.url && (
+        <div className="relative mt-2 overflow-hidden rounded-lg border border-[var(--neutral-200)] bg-black">
+          <div className="aspect-video w-full">
+            {data.provider === 'html5' ? (
+              <video src={data.url} className="h-full w-full object-contain" preload="metadata" />
+            ) : thumbnailUrl ? (
+              <img src={thumbnailUrl} alt={data.title} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xs text-[var(--neutral-500)]">
+                Preview unavailable
+              </div>
+            )}
+          </div>
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--pulse-red)]/90 text-white shadow-lg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1302,6 +1714,115 @@ export function EditableAnnotatedImage({ block, adapter }: { block: Block<BlockD
   );
 }
 
+
+const CODE_SANDBOX_LANGUAGES = [
+  'typescript', 'tsx', 'javascript', 'jsx', 'json', 'html', 'css',
+  'markdown', 'bash', 'http', 'python', 'go', 'rust',
+];
+
+export function EditableCodeSandbox({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
+  const data = block.data as { code: string; language: string; showLineNumbers?: boolean; readOnly?: boolean };
+  const [hasRun, setHasRun] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const isRunnable = ['javascript', 'typescript', 'tsx', 'jsx', 'html', 'css', 'json', 'python'].includes(data.language);
+  const isPython = data.language === 'python';
+
+  const runCode = useCallback(() => {
+    setHasRun(true);
+    let html: string;
+    if (isPython) {
+      html = buildPyodideSrcdoc(data.code);
+    } else {
+      html = createSandboxHtml(data.code, data.language);
+    }
+    if (iframeRef.current) {
+      iframeRef.current.srcdoc = html;
+    }
+  }, [data.code, data.language, isPython]);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={data.language}
+          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, language: e.target.value } }))}
+          className="rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] outline-none"
+        >
+          {CODE_SANDBOX_LANGUAGES.map((l) => (
+            <option key={l} value={l}>{l}</option>
+          ))}
+        </select>
+
+        <label className="flex items-center gap-1.5 text-xs text-[var(--neutral-600)]">
+          <input
+            type="checkbox"
+            checked={data.showLineNumbers ?? true}
+            onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, showLineNumbers: e.target.checked } }))}
+            className="h-4 w-4 accent-[var(--pulse-red)]"
+          />
+          Line numbers
+        </label>
+
+        <label className="flex items-center gap-1.5 text-xs text-[var(--neutral-600)]">
+          <input
+            type="checkbox"
+            checked={data.readOnly ?? false}
+            onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, readOnly: e.target.checked } }))}
+            className="h-4 w-4 accent-[var(--pulse-red)]"
+          />
+          Read-only
+        </label>
+      </div>
+
+      <div className="pulse-editor-code-block">
+        <div className="pulse-editor-code-header">
+          <Terminal className="h-3.5 w-3.5 text-[var(--pulse-red)]" />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">
+            {data.language}
+          </span>
+        </div>
+        <textarea
+          value={data.code}
+          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, code: e.target.value } }))}
+          rows={Math.max(4, data.code.split('\n').length)}
+          className="pulse-editor-code-textarea"
+          placeholder="Type your code here..."
+          spellCheck={false}
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={runCode}
+          disabled={!isRunnable}
+          className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold ${
+            isRunnable
+              ? 'bg-[var(--pulse-red)] text-white hover:bg-[var(--pulse-red-dark)]'
+              : 'bg-[var(--neutral-200)] text-[var(--neutral-400)] cursor-not-allowed'
+          }`}
+        >
+          <Play className="h-3 w-3" />
+          Test Run
+        </button>
+        {!isRunnable && (
+          <span className="text-xs text-[var(--neutral-500)]">
+            Execution not available for {data.language} in browser sandbox
+          </span>
+        )}
+      </div>
+
+      {hasRun && isRunnable && (
+        <iframe
+          ref={iframeRef}
+          title="Code sandbox output"
+          sandbox="allow-scripts allow-same-origin"
+          style={{ width: '100%', minHeight: '160px', border: 'none', display: 'block', background: '#1e1e2e' }}
+        />
+      )}
+    </div>
+  );
+}
 
 // ─── Link Modal ───
 

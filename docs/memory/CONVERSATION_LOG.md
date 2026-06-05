@@ -3155,3 +3155,67 @@ pm run build in pps/website)
 - `C:\Users\z0512\Desktop\pulse bug list.md` — Marked #30, #31, #32, #33 as complete.
 
 **Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files, 1071 tests passed)
+
+---
+
+## Session 95 — 2026-05-27
+**Bugs Fixed:** #35 (Code syntax highlighting), #36 (Sandbox runtime), #37 (Demo mode), #38 (Preview rendering), #39 (Line numbers), #40 (Run in editor)
+
+**Summary:**
+- Integrated Shiki v4 for syntax highlighting across 13 languages with github-light/github-dark themes. Created async `shiki-highlighter.ts` module that initializes on server before rendering and fire-and-forget on client.
+- Built `CodeSandbox` component with safe iframe execution (`sandbox="allow-scripts"`), console capture, and styled output panel.
+- Added `mode` field to code block schema: `show` (default), `run` (code + run button + output), `demo` (hidden code, auto-runs on load). Rewrote `EditableCode` in both `StudioBlockCanvas.tsx` and `PulseDemoEditor.tsx` with mode toggle and Run button.
+- Redesigned preview/blog code block rendering with `.pulse-code-block` wrapper: macOS window chrome header (red/yellow/green dots), language badge, dark blue-gray background, clean border matching editor design.
+- Fixed line numbers using CSS counters on Shiki's native `<span class="line">` wrappers — removed broken post-processing that was double-wrapping lines.
+- Fixed critical browser hang: demo mode `useEffect` was calling `runCode()` on every keystroke due to `code` dependency. Added `demoRanRef` to ensure demo only auto-runs once on mount, preventing constant iframe reloads and pointer flicker.
+
+**Files Changed:**
+- `packages/blocks/src/CodeBlock.ts` — Added `mode` field, `wrapCodeBlock` helper, removed broken Shiki line-wrapping post-processing.
+- `packages/blocks/tests/blocks.test.ts` — Updated for new `mode` default.
+- `apps/website/lib/shiki-highlighter.ts` — New async Shiki v4 initializer.
+- `apps/website/lib/blog-studio.ts` — Wires up Shiki in `ensureRendererReady`.
+- `apps/website/lib/entry-adapter.ts` — Server-side renderer setup.
+- `apps/website/lib/blog-data.ts` — Awaits Shiki before entry rendering.
+- `apps/website/app/blog/[slug]/page.tsx` — Awaits Shiki before entry rendering.
+- `apps/website/app/components/CodeSandbox.tsx` — New safe iframe sandbox component.
+- `apps/website/app/components/StudioBlockCanvas.tsx` — Rewrote `EditableCode` with mode toggle, run button, sandbox.
+- `apps/website/app/demo/PulseDemoEditor.tsx` — Same `EditableCode` updates.
+- `apps/website/app/components/PulseBlogStudio.tsx` — Updated preview hydration for new `.pulse-code-block` wrapper structure.
+- `apps/website/app/globals.css` — Complete code block CSS redesign.
+- `C:\Users\z0512\Desktop\pulse bug list.md` — Marked #35-#40 as complete.
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files, 1071 tests passed)
+**Commit:** `39b715f`
+
+## Session 96 � 2026-06-03
+
+**Focus:** Bugs 40-51 (Code sandbox block, Image block improvements, Video block improvements)
+
+**Completed:**
+- Bug #40: Created new `code-sandbox` block type with interactive code execution. JS/TS/HTML/CSS/JSON via iframe sandbox, Python via Pyodide WASM, graceful fallback for unsupported languages.
+- Bug #41: Fixed image width/height ratio clamping, added aspect ratio lock in editor.
+- Bug #42: Added separate `captionAlign` field independent of image alignment.
+- Bug #43: Added `displaySize` option (small/medium/large/full), reduced margins, hover zoom effect.
+- Bug #44: Added image `format` field (original/webp/jpeg/png).
+- Bug #45: Redesigned caption UI with styled wrapper, attribution badge, textarea with counter.
+- Bug #46: Fixed YouTube localhost blocking via privacyMode (youtube-nocookie.com), credentialless iframe, fallback placeholder.
+- Bug #47: Added video optimization: quality, poster, loop, muted, controls.
+- Bug #48: Video start-at uses HH:MM:SS format with proper parsing for YouTube/Vimeo/HTML5.
+- Bug #49: Creative video card UI with dark theme, play button overlay, gradient caption badge.
+- Bug #50: Fixed video loading stability with stable wrapper, lazy loading, preload metadata.
+- Bug #51: Added video preview in editor (actual video for HTML5, thumbnail for YouTube/Vimeo).
+- Updated tests: blocks.test.ts (9 basic blocks), block-parity.test.ts (new figcaption markup).
+- Quality gates: lint, typecheck, build, test (51 files, 1071 tests) all green.
+
+**Files changed:**
+- packages/blocks/src/CodeSandboxBlock.ts (new)
+- packages/blocks/src/ImageBlock.ts
+- packages/blocks/src/VideoBlock.ts
+- packages/blocks/src/index.ts
+- apps/website/app/components/StudioBlockEditors.tsx
+- apps/website/app/components/StudioBlockCanvas.tsx
+- apps/website/app/globals.css
+- apps/website/lib/entry-adapter.ts
+- packages/blocks/tests/blocks.test.ts
+- packages/renderer/tests/block-parity.test.ts
+- pulse bug list.md

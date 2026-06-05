@@ -24,7 +24,7 @@ function escapeAndBreaks(text: string): string {
   return escapeHtml(text).replace(/\n/g, "<br />");
 }
 
-function renderInlineMarkdown(text: string): string {
+export function renderInlineMarkdown(text: string): string {
   const regex = /\[([^\]]+)\]\(([^)]+)\)(?:\{([^}]*)\})?/g;
   let result = "";
   let lastIndex = 0;

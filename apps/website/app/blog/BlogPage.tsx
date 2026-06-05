@@ -275,7 +275,7 @@ export default function BlogPage({ initialEntries, initialFeaturedTags }: BlogPa
               className="group grid overflow-hidden rounded-2xl border border-[var(--neutral-200)] bg-white transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.01] hover:border-[var(--pulse-red)] lg:grid-cols-2"
             >
               {/* Visual */}
-              <div className="relative min-h-[260px] overflow-hidden bg-gradient-to-br from-[var(--pulse-red)] to-[var(--pulse-jasmine)] sm:min-h-[320px]">
+              <div className="relative min-h-[200px] overflow-hidden bg-gradient-to-br from-[var(--pulse-red)] to-[var(--pulse-jasmine)] sm:min-h-[260px]">
                 {featuredPostMedia ? (
                   <img
                     src={featuredPostMedia.src}

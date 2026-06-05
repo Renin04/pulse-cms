@@ -70,8 +70,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const desiredFormat = mergedMetadata.desiredFormat as string | undefined;
     const desiredWidth = mergedMetadata.desiredWidth as number | undefined;
     const desiredHeight = mergedMetadata.desiredHeight as number | undefined;
+    const desiredQuality = mergedMetadata.desiredQuality as number | undefined;
 
-    if (existing.type === 'image' && (desiredFormat || desiredWidth || desiredHeight)) {
+    if (existing.type === 'image' && (desiredFormat || desiredQuality || desiredWidth || desiredHeight)) {
       const adapter = createStorageAdapter();
       const meta = safeJsonParse<Record<string, unknown>>(existing.metadata, {});
       const filePath = meta.filePath as string;
@@ -90,7 +91,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           });
         }
 
-        // Format conversion
+        // Format conversion / compression
         const formatMap: Record<string, keyof sharp.FormatEnum> = {
           webp: 'webp',
           jpeg: 'jpeg',
@@ -98,29 +99,39 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           png: 'png',
         };
 
-        const targetFormat = formatMap[desiredFormat || ''];
+        const originalExt = path.extname(filePath).slice(1).toLowerCase();
+        let targetFormat = formatMap[desiredFormat || ''];
+        if (!targetFormat && desiredQuality != null) {
+          // Compress in original format
+          targetFormat = formatMap[originalExt];
+        }
+
         if (targetFormat) {
-          pipeline = pipeline.toFormat(targetFormat, { quality: 90 });
+          const quality = typeof desiredQuality === 'number' ? Math.max(1, Math.min(100, desiredQuality)) : 90;
+          if (targetFormat === 'png') {
+            // PNG: use palette-based quantization with quality for meaningful size reduction.
+            // compressionLevel 9 for max zlib compression; effort 10 for best palette search.
+            pipeline = pipeline.png({
+              quality,
+              compressionLevel: 9,
+              effort: 10,
+              palette: true,
+            });
+          } else {
+            pipeline = pipeline.toFormat(targetFormat, { quality });
+          }
           newMimeType = `image/${targetFormat}`;
         }
 
         const transformedBuffer = await pipeline.toBuffer();
-        const ext = targetFormat || path.extname(filePath).slice(1) || 'bin';
+        const ext = targetFormat || originalExt || 'bin';
         const baseName = (name || existing.name).replace(/\.[^/.]+$/, '');
         const newName = `${baseName}.${ext}`;
 
-        // Save transformed file next to original
+        // Save transformed file with a unique name to avoid race conditions
         const dir = path.dirname(filePath);
-        const newFilePath = path.join(dir, `${path.basename(filePath, path.extname(filePath))}_processed.${ext}`);
+        const newFilePath = path.join(dir, `${path.basename(filePath, path.extname(filePath))}_processed_${Date.now()}.${ext}`);
         await writeFile(newFilePath, transformedBuffer);
-
-        // Delete old processed file if exists (not original, keep it safe)
-        // Actually, let's just update to point to new file and clean up old one
-        const oldMeta = safeJsonParse<Record<string, unknown>>(existing.metadata, {});
-        const oldProcessedPath = oldMeta.processedFilePath as string;
-        if (oldProcessedPath && oldProcessedPath !== filePath && existsSync(oldProcessedPath)) {
-          await unlink(oldProcessedPath).catch(() => {});
-        }
 
         mergedMetadata.processedFilePath = newFilePath;
         mergedMetadata.processedMimeType = newMimeType;
@@ -128,6 +139,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         newFilename = newName;
       }
     }
+
+    // Capture old processed path before update so we can clean it up after
+    const oldProcessedPath = safeJsonParse<Record<string, unknown>>(existing.metadata, {}).processedFilePath as string | undefined;
 
     const updated = await prisma.mediaAsset.update({
       where: { id },
@@ -141,6 +155,30 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         uploader: { select: { id: true, displayName: true, email: true } },
       },
     });
+
+    // Clean up old processed file now that metadata points to the new one
+    if (oldProcessedPath && oldProcessedPath !== mergedMetadata.processedFilePath && existsSync(oldProcessedPath)) {
+      await unlink(oldProcessedPath).catch(() => {});
+    }
+
+    // Also remove any other orphaned processed files in the same directory
+    const currentProcessedPath = mergedMetadata.processedFilePath as string | undefined;
+    if (currentProcessedPath) {
+      const procDir = path.dirname(currentProcessedPath);
+      const procExt = path.extname(currentProcessedPath);
+      try {
+        const { readdir } = await import('fs/promises');
+        const siblings = await readdir(procDir);
+        for (const f of siblings) {
+          if (f.includes('_processed_') && f.endsWith(procExt)) {
+            const siblingPath = path.join(procDir, f);
+            if (siblingPath !== currentProcessedPath && existsSync(siblingPath)) {
+              await unlink(siblingPath).catch(() => {});
+            }
+          }
+        }
+      } catch { /* ignore cleanup errors */ }
+    }
 
     await logAudit('update', 'media', { userId: ctx.userId, resourceId: id, req });
 

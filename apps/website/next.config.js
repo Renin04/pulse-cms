@@ -12,13 +12,13 @@ module.exports = (phase) => {
 
     // Keep dev builds in `.next` so local hot-reload does not clash with
     // production/export artifacts that live in `dist`.
-    distDir: isDevServer ? '.next' : 'dist',
+    distDir: isDevServer ? '.next2' : 'dist',
 
     images: {
       unoptimized: true,
     },
 
-    transpilePackages: ['@pulse/blocks', '@pulse/renderer', '@pulse/core', '@pulse/editor'],
+    transpilePackages: ['@pulse/blocks', '@pulse/renderer', '@pulse/core', '@pulse/editor', 'shiki'],
 
     experimental: {
       optimizePackageImports: ['lucide-react'],

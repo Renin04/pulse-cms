@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 // import type { ChangeEvent } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -41,6 +41,8 @@ import type { TaxonomyItem, TaxonomyTermItem } from '../../lib/api-client'
 import StudioBlockCanvas from './StudioBlockCanvas'
 import StudioCommentsPanel from './StudioCommentsPanel'
 import StudioNotebookPanel from './StudioNotebookPanel'
+import { buildSandboxSrcdoc, base64ToUtf8 } from '@pulse/blocks'
+import { initShikiHighlighter } from '../../lib/shiki-highlighter'
 
 /* ─── Types ─── */
 type DraftFormState = {
@@ -534,7 +536,12 @@ function PulseBlogStudioInner() {
 
   const selectedEntry = useMemo(() => {
     if (!workspace || !selectedSlug) return null
-    try { return workspace.getEntry(selectedSlug) } catch { return null }
+    try {
+      return workspace.getEntry(selectedSlug)
+    } catch (err) {
+      console.error('[PulseBlogStudio] getEntry failed for slug:', selectedSlug, err)
+      return null
+    }
   }, [selectedSlug, workspace])
 
   /* Comment system */
@@ -600,16 +607,184 @@ function PulseBlogStudioInner() {
     return () => { unsub() }
   }, [selectedEntry?.slug, selectedEntry?.updatedAt])
 
-  const previewHtml = useMemo(() => renderStudioBlocksHtml(editorBlocks), [editorBlocks])
+  // Eagerly initialize Shiki so preview renders with syntax highlighting + iframes
+  useMemo(() => {
+    initShikiHighlighter().catch(() => {})
+  }, [])
+
+  const previewHtml = useMemo(() => {
+    try {
+      const html = renderStudioBlocksHtml(editorBlocks)
+      console.log('[PulseBlogStudio] previewHtml length:', html.length, 'contains iframe:', html.includes('<iframe'))
+      return html
+    } catch (err) {
+      console.error('[PulseBlogStudio] preview render failed:', err)
+      return ''
+    }
+  }, [editorBlocks])
 
   // Hydrate interactive blocks after preview renders (React strips inline scripts from dangerouslySetInnerHTML)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const preview = document.querySelector('[class*="prose prose-sm"]') || document.querySelector('[class*="mt-6"]');
-      if (!preview) return;
+  useLayoutEffect(() => {
+    const preview = document.querySelector('.studio-rendered.mt-6') as HTMLElement | null;
+    if (!preview) {
+      console.warn('[Pulse] Preview pane not found: .studio-rendered.mt-6');
+      return;
+    }
 
-      // --- Quiz ---
-      preview.querySelectorAll('.pulse-quiz').forEach((quiz) => {
+    function hydrateDemoIframes(container: Element) {
+      const iframes = container.querySelectorAll('iframe[title="Code demo"]');
+      iframes.forEach((iframe) => {
+        const el = iframe as HTMLIFrameElement;
+        if (el.srcdoc) return;
+        const codeB64 = el.getAttribute('data-code');
+        const language = el.getAttribute('data-language');
+        if (codeB64 && language) {
+          try {
+            const code = base64ToUtf8(codeB64);
+            el.srcdoc = buildSandboxSrcdoc(code, language);
+          } catch (e) {
+            console.error('[Pulse] Failed to hydrate demo iframe:', e)
+          }
+        }
+      });
+
+      // Fallback: create missing demo iframes
+      container.querySelectorAll('.pulse-code-block[data-mode="demo"]').forEach((block) => {
+        const nextEl = block.nextElementSibling;
+        if (nextEl && nextEl.tagName === 'IFRAME' && nextEl.getAttribute('title') === 'Code demo') {
+          return;
+        }
+        const codeB64 = block.getAttribute('data-code');
+        const language = block.getAttribute('data-language');
+        if (!codeB64 || !language) return;
+        try {
+          const code = base64ToUtf8(codeB64);
+          const iframe = document.createElement('iframe');
+          iframe.sandbox = 'allow-scripts';
+          iframe.title = 'Code demo';
+          iframe.srcdoc = buildSandboxSrcdoc(code, language);
+          iframe.style.cssText = 'width:100%;min-height:200px;border:none;display:block;background:transparent;';
+          iframe.setAttribute('data-language', language);
+          iframe.setAttribute('data-code', codeB64);
+          block.parentNode?.insertBefore(iframe, block.nextSibling);
+        } catch (e) {
+          console.error('[Pulse] Failed to create demo iframe fallback:', e)
+        }
+      });
+    }
+
+    hydrateDemoIframes(preview);
+
+    // Hydrate video blocks in preview (click-to-load for embeds + play button for HTML5)
+    function hydrateVideoBlocks(container: Element) {
+      container.querySelectorAll('.pulse-video-clickload').forEach((el) => {
+        const div = el as HTMLElement;
+        if (div.dataset.hydrated) return;
+        div.dataset.hydrated = 'true';
+        div.addEventListener('click', (e) => {
+          if ((e.target as HTMLElement).closest('.pulse-video-external-link')) return;
+          const src = div.getAttribute('data-src');
+          const title = div.getAttribute('data-title') || 'Video';
+          if (!src) return;
+          const iframe = document.createElement('iframe');
+          iframe.src = src;
+          iframe.title = title;
+          iframe.loading = 'lazy';
+          iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
+          iframe.allowFullscreen = true;
+          iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;display:block;';
+          div.parentNode?.replaceChild(iframe, div);
+        });
+      });
+    }
+    hydrateVideoBlocks(preview);
+
+    // Use MutationObserver to catch iframes added by React after initial hydration
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof HTMLElement) {
+            if (node.tagName === 'IFRAME' && node.getAttribute('title') === 'Code demo') {
+              hydrateDemoIframes(preview);
+              return;
+            }
+            if (node.querySelector('iframe[title="Code demo"]')) {
+              hydrateDemoIframes(preview);
+              return;
+            }
+            if (node.querySelector('.pulse-video-clickload')) {
+              hydrateVideoBlocks(preview);
+              return;
+            }
+          }
+        }
+      }
+    });
+    observer.observe(preview, { childList: true, subtree: true });
+
+    // --- Event delegation for code blocks (tabs + run button) and video play buttons ---
+    function handleCodeBlockClick(e: Event) {
+      const target = e.target as HTMLElement;
+
+      // Video play button (HTML5)
+      const playBtn = target.closest('.pulse-video-play-btn');
+      if (playBtn) {
+        const card = playBtn.closest('.pulse-video-card');
+        if (!card) return;
+        const video = card.querySelector('video');
+        if (video) {
+          e.preventDefault();
+          e.stopPropagation();
+          video.play();
+        }
+        return;
+      }
+
+      const tab = target.closest('.pulse-code-tab');
+      if (tab) {
+        const block = tab.closest('.pulse-code-block');
+        if (!block) return;
+        const tabName = tab.getAttribute('data-tab');
+        block.setAttribute('data-active-tab', tabName || '');
+        block.querySelectorAll('.pulse-code-tab').forEach((t) => {
+          t.classList.toggle('active', t === tab);
+        });
+        return;
+      }
+
+      const runBtn = target.closest('[data-run]');
+      if (runBtn) {
+        const block = runBtn.closest('.pulse-code-block');
+        if (!block) return;
+        const iframe = block.querySelector('.pulse-code-panel[data-panel="output"] iframe') as HTMLIFrameElement | null;
+        if (iframe) {
+          const codeB64 = iframe.getAttribute('data-code');
+          const language = iframe.getAttribute('data-language');
+          if (codeB64 && language) {
+            try {
+              const code = base64ToUtf8(codeB64);
+              iframe.srcdoc = buildSandboxSrcdoc(code, language);
+            } catch {
+              // ignore
+            }
+          }
+        }
+        block.setAttribute('data-active-tab', 'output');
+        block.querySelectorAll('.pulse-code-tab').forEach((t) => {
+          t.classList.toggle('active', t.getAttribute('data-tab') === 'output');
+        });
+        return;
+      }
+    }
+
+    preview.addEventListener('click', handleCodeBlockClick);
+
+    // --- Legacy hydration for quiz/poll/tabs/spoiler/survey (DOM mutation, may need re-hydration on re-render) ---
+    function hydrateLegacyInteractive() {
+      const p = document.querySelector('.studio-rendered.mt-6');
+      if (!p) return;
+
+      p.querySelectorAll('.pulse-quiz').forEach((quiz) => {
         if ((quiz as any).__hydrated) return;
         (quiz as any).__hydrated = true;
         const opts = quiz.querySelectorAll('.pulse-quiz-option');
@@ -658,8 +833,7 @@ function PulseBlogStudioInner() {
         });
       });
 
-      // --- Poll ---
-      preview.querySelectorAll('.pulse-poll').forEach((poll) => {
+      p.querySelectorAll('.pulse-poll').forEach((poll) => {
         if ((poll as any).__hydrated) return;
         (poll as any).__hydrated = true;
         const btns = poll.querySelectorAll('.pulse-poll-btn');
@@ -693,8 +867,7 @@ function PulseBlogStudioInner() {
         });
       });
 
-      // --- Tabs ---
-      preview.querySelectorAll('.pulse-tabs').forEach((sec) => {
+      p.querySelectorAll('.pulse-tabs').forEach((sec) => {
         if ((sec as any).__hydrated) return;
         (sec as any).__hydrated = true;
         const btns = sec.querySelectorAll('.pulse-tab-btn');
@@ -710,15 +883,14 @@ function PulseBlogStudioInner() {
             (btn as HTMLElement).style.background = '#fff';
             (btn as HTMLElement).style.fontWeight = '600';
             (btn as HTMLElement).style.color = 'var(--pulse-black)';
-            panels.forEach((p) => {
-              (p as HTMLElement).style.display = p.getAttribute('data-tab-panel') === tid ? 'block' : 'none';
+            panels.forEach((panel) => {
+              (panel as HTMLElement).style.display = panel.getAttribute('data-tab-panel') === tid ? 'block' : 'none';
             });
           });
         });
       });
 
-      // --- Spoiler ---
-      preview.querySelectorAll('.pulse-spoiler').forEach((sec) => {
+      p.querySelectorAll('.pulse-spoiler').forEach((sec) => {
         if ((sec as any).__hydrated) return;
         (sec as any).__hydrated = true;
         const btn = sec.querySelector('.pulse-spoiler-btn') as HTMLElement | null;
@@ -734,8 +906,7 @@ function PulseBlogStudioInner() {
         });
       });
 
-      // --- Survey ---
-      preview.querySelectorAll('.pulse-survey form').forEach((form) => {
+      p.querySelectorAll('.pulse-survey form').forEach((form) => {
         if ((form as any).__hydrated) return;
         (form as any).__hydrated = true;
         form.addEventListener('submit', (e) => {
@@ -749,49 +920,30 @@ function PulseBlogStudioInner() {
           }
         });
       });
+    }
 
-      // --- Code blocks (run / demo mode) ---
-      preview.querySelectorAll('.pulse-code-block[data-mode="run"], .pulse-code-block[data-mode="demo"]').forEach((block) => {
-        if ((block as any).__codeHydrated) return;
-        (block as any).__codeHydrated = true;
+    hydrateLegacyInteractive();
+    const deferred = setTimeout(hydrateLegacyInteractive, 50);
 
-        const pre = block.querySelector('pre[data-block-type="code"]');
-        const mode = block.getAttribute('data-mode');
-        const code = pre?.querySelector('code')?.textContent || '';
-        const lang = block.getAttribute('data-language') || 'javascript';
+    // Tooltip positioning for image figures in preview
+    function handlePreviewMouseMove(e: MouseEvent) {
+      const figure = (e.target as HTMLElement).closest('.pulse-image-figure[data-tooltip]') as HTMLElement | null;
+      if (!figure) return;
+      const rect = figure.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      figure.style.setProperty('--tooltip-x', `${x}px`);
+      figure.style.setProperty('--tooltip-y', `${y}px`);
+    }
+    preview.addEventListener('mousemove', handlePreviewMouseMove);
 
-        // Create sandbox iframe after the code block
-        const wrapper = document.createElement('div');
-        wrapper.className = 'pulse-code-sandbox';
-        wrapper.innerHTML = `
-          <div class="pulse-code-sandbox-header">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-            <span>${mode === 'demo' ? 'Live Demo' : 'Output'}</span>
-            ${mode === 'run' ? `<button class="pulse-editor-code-run-btn" style="margin-left:auto;padding:0.25rem 0.625rem;font-size:0.65rem" onclick="this.closest('.pulse-code-sandbox').querySelector('iframe').contentWindow.location.reload()">Run</button>` : ''}
-          </div>
-          <iframe sandbox="allow-scripts" style="width:100%;min-height:${mode === 'demo' ? '200px' : '120px'};border:none;display:block;background:#fff"></iframe>
-        `;
-        const iframe = wrapper.querySelector('iframe') as HTMLIFrameElement;
-
-        const isJson = lang === 'json';
-        const isHtml = lang === 'html' || lang === 'markdown';
-        const isCss = lang === 'css';
-
-        let srcdoc: string;
-        if (isHtml) {
-          srcdoc = code;
-        } else if (isCss) {
-          srcdoc = `<style>${code}</style><div style="padding:1rem;font-family:sans-serif">CSS applied to this page</div>`;
-        } else {
-          srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:1rem;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.6;background:#fff;color:#24292e}.entry{margin-bottom:0.25rem;white-space:pre-wrap;word-break:break-word}.entry.error{color:#cf222e}.entry.warn{color:#9a6700}.entry.info{color:#0969da}.entry.log{color:#24292e}</style></head><body><div id="output"></div><script>(function(){const output=document.getElementById('output');function addEntry(type,args){const msg=Array.from(args).map(a=>typeof a==='object'?JSON.stringify(a,null,2):String(a)).join(' ');const div=document.createElement('div');div.className='entry '+type;div.textContent=msg;output.appendChild(div);}${isJson ? `try{const data=JSON.parse(\`${code.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`);addEntry('log',[JSON.stringify(data,null,2)]);}catch(e){addEntry('error',[e.message]);}` : `try{${code}}catch(e){addEntry('error',[e.name+': '+e.message]);}`}})();</script></body></html>`;
-        }
-
-        iframe.srcdoc = srcdoc;
-        block.parentNode?.insertBefore(wrapper, block.nextSibling);
-      });
-    }, 300);
-    return () => clearTimeout(t);
-  }, [previewHtml]);
+    return () => {
+      preview.removeEventListener('click', handleCodeBlockClick);
+      preview.removeEventListener('mousemove', handlePreviewMouseMove);
+      clearTimeout(deferred);
+      observer.disconnect();
+    };
+  }, [previewHtml, previewOpen, previewMode]);
 
   const currentStatus = selectedEntry?.status ?? 'draft'
 
@@ -809,6 +961,7 @@ function PulseBlogStudioInner() {
     opts: { persistDraft?: boolean } = { persistDraft: true }
   ) {
     if (!snapshot || !selectedSlug || !draft) return
+    console.log('[runMutation] start, selectedSlug:', selectedSlug, 'draft.slug:', draft.slug, 'editorBlocks count:', editorBlocks.length)
     const w = new BlogStudioWorkspace(snapshot)
     let active = selectedSlug
     if (opts.persistDraft !== false) {
@@ -822,13 +975,18 @@ function PulseBlogStudioInner() {
         featuredImageAlt: draft.featuredImageAlt || undefined,
       })
       active = saved.slug
+      console.log('[runMutation] updateEntry returned slug:', active)
     }
     const res = action(w, active)
+    console.log('[runMutation] action returned:', res)
     const next = w.toSnapshot()
-    const updated = next.entries.find(e => e.slug === (res.nextSlug ?? active))
+    console.log('[runMutation] toSnapshot entries count:', next.entries.length, 'slugs:', next.entries.map(e => e.slug))
+    const targetSlug = res.nextSlug ?? active
+    const updated = next.entries.find(e => e.slug === targetSlug)
+    console.log('[runMutation] looking for slug:', targetSlug, 'found:', !!updated)
     if (updated) updated.taxonomyIds = draft.taxonomyIds
     setSnapshot(next)
-    setSelectedSlug(res.nextSlug ?? active)
+    setSelectedSlug(targetSlug)
 
     // Sync to backend immediately
     if (updated && !res.error) {
@@ -1428,7 +1586,7 @@ return (
                           <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--pulse-red)]">{draft.eyebrow}</p>
                           <h1 className="mt-1 text-2xl font-bold text-[var(--pulse-black)]">{draft.title}</h1>
                           <p className="mt-3 text-sm leading-relaxed text-[var(--neutral-600)]">{draft.excerpt}</p>
-                          <div className="studio-rendered mt-6" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                          <div className="studio-rendered mt-6" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: previewHtml }} />
                         </div>
                       ) : (
                         <div className="rounded-xl border border-[var(--neutral-200)] bg-white shadow-sm overflow-hidden">

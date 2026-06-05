@@ -12,6 +12,7 @@ import { CalloutBlock } from "./CalloutBlock";
 import { CarouselBlock } from "./CarouselBlock";
 import { ChartBlock } from "./ChartBlock";
 import { CodeBlock } from "./CodeBlock";
+import { CodeSandboxBlock } from "./CodeSandboxBlock";
 import { ComparisonBlock } from "./ComparisonBlock";
 import { DiagramBlock } from "./DiagramBlock";
 import { EmbedBlock } from "./EmbedBlock";
@@ -58,7 +59,7 @@ export {
   setBeforeAfterPosition,
 } from "./BeforeAfterBlock";
 export type { BeforeAfterBlockData } from "./BeforeAfterBlock";
-export { BlockquoteBlock, blockquoteBlockDataSchema } from "./BlockquoteBlock";
+export { BlockquoteBlock, blockquoteBlockDataSchema, renderInlineMarkdown } from "./BlockquoteBlock";
 export { CardBlock, cardBlockDataSchema } from "./CardBlock";
 export type { CardBlockData } from "./CardBlock";
 export { CalloutBlock, calloutBlockDataSchema, updateCallout } from "./CalloutBlock";
@@ -73,7 +74,16 @@ export {
   setCodeBlockHighlighter,
   supportsCodeLanguage,
   SUPPORTED_CODE_LANGUAGES,
+  buildSandboxSrcdoc,
+  utf8ToBase64,
+  base64ToUtf8,
 } from "./CodeBlock";
+export {
+  CodeSandboxBlock,
+  codeSandboxBlockDataSchema,
+  buildPyodideSrcdoc,
+} from "./CodeSandboxBlock";
+export type { CodeSandboxBlockData } from "./CodeSandboxBlock";
 export {
   ComparisonBlock,
   comparisonBlockDataSchema,
@@ -180,6 +190,7 @@ export const BASIC_BLOCK_DEFINITIONS = [
   HorizontalRuleBlock,
   LinkBlock,
   CodeBlock,
+  CodeSandboxBlock,
   ImageBlock,
 ] as const;
 

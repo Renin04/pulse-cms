@@ -1500,9 +1500,41 @@ img {
   font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', monospace;
 }
 
+/* Custom scrollbar for code blocks */
+.pulse-code-body::-webkit-scrollbar,
+.pulse-code-sandbox::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.pulse-code-body::-webkit-scrollbar-track,
+.pulse-code-sandbox::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.03);
+  border-radius: 3px;
+}
+
+.pulse-code-body::-webkit-scrollbar-thumb,
+.pulse-code-sandbox::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.pulse-code-body::-webkit-scrollbar-thumb:hover,
+.pulse-code-sandbox::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.pulse-code-body,
+.pulse-code-sandbox {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) rgba(255,255,255,0.03);
+}
+
 /* Header bar with macOS dots */
 .pulse-code-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
   padding: 0.625rem 1rem;
@@ -1538,6 +1570,104 @@ img {
   margin-left: 0.25rem;
 }
 
+/* ── Tabs (run mode) ── */
+.pulse-code-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+  align-items: center;
+}
+
+.pulse-code-tab {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.4);
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-sans);
+}
+
+.pulse-code-tab:hover {
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.05);
+}
+
+.pulse-code-tab.active {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
+
+/* ── Tab panels ── */
+.pulse-code-panel {
+  display: none;
+}
+
+.pulse-code-panel[data-panel="code"] {
+  display: block;
+}
+
+.pulse-code-block[data-active-tab="output"] .pulse-code-panel[data-panel="code"] {
+  display: none;
+}
+
+.pulse-code-block[data-active-tab="output"] .pulse-code-panel[data-panel="output"] {
+  display: block;
+}
+
+/* ── Output panel internals ── */
+.pulse-code-output-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(180deg, rgba(255,40,0,0.06) 0%, rgba(255,40,0,0.02) 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.pulse-code-output-bar span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--pulse-red);
+}
+
+.pulse-code-run-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: var(--pulse-red);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: auto;
+  font-family: var(--font-sans);
+}
+
+.pulse-code-run-btn:hover {
+  background: #e02400;
+}
+
+/* Run button in code block header (always visible for run mode) */
+.pulse-code-header .pulse-code-run-btn {
+  margin-left: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.65rem;
+}
+
 /* Code body */
 .pulse-code-body {
   position: relative;
@@ -1547,7 +1677,7 @@ img {
 .pulse-code-body pre {
   margin: 0;
   padding: 1.25rem 1.5rem;
-  background: transparent;
+  background: transparent !important;
   border: none;
   border-radius: 0;
   overflow-x: auto;
@@ -1557,7 +1687,7 @@ img {
 .pulse-code-body pre code {
   font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.8125rem;
-  line-height: 1.85;
+  line-height: 1.35;
   background: transparent !important;
   padding: 0;
   border: none;
@@ -1567,7 +1697,7 @@ img {
 /* Shiki line spans */
 .pulse-code-body pre .line {
   display: block;
-  min-height: 1.85em;
+  min-height: 1.35em;
 }
 
 /* ── Line numbers ── */
@@ -1591,7 +1721,7 @@ img {
   left: -2.75rem;
   width: 2rem;
   text-align: right;
-  color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.35);
   font-size: 0.75rem;
   line-height: inherit;
   font-family: var(--font-mono);
@@ -1629,10 +1759,22 @@ img {
   color: inherit;
 }
 
-/* ── Code sandbox / output panel ── */
-.pulse-code-block + .pulse-code-sandbox,
+/* ── Demo iframe (no wrapper, seamless) ── */
+.pulse-code-block[data-mode="demo"] + iframe[title="Code demo"] {
+  width: 100%;
+  min-height: 200px;
+  border: none;
+  display: block;
+  background: transparent;
+}
+
+/* Hide code block chrome in demo mode when hideChrome is true */
+.pulse-code-block[data-mode="demo"][data-hide-chrome="true"] {
+  display: none;
+}
+
+/* ── Sandbox chrome (used by CodeSandbox.tsx component only) ── */
 .pulse-code-sandbox {
-  margin: -0.5rem 0 2rem;
   border-radius: 0 0 0.875rem 0.875rem;
   border: 1px solid var(--neutral-200);
   border-top: none;
@@ -1669,14 +1811,14 @@ img {
   min-height: 120px;
   border: none;
   display: block;
-  background: #fff;
+  background: #1e1e2e;
 }
 
 .pulse-code-sandbox-output {
   padding: 1rem;
   font-family: var(--font-mono);
   font-size: 0.8125rem;
-  line-height: 1.6;
+  line-height: 1.5;
   color: #e5e7eb;
   min-height: 60px;
   white-space: pre-wrap;
@@ -1700,26 +1842,6 @@ img {
   color: #a5d6ff;
 }
 
-/* Demo mode - hidden code, visible result */
-.pulse-code-demo-wrapper {
-  margin: 2rem 0;
-  border-radius: 0.875rem;
-  overflow: hidden;
-  border: 1px solid var(--neutral-200);
-  box-shadow: 0 2px 8px -2px rgba(0,0,0,0.15);
-}
-
-.pulse-code-demo-wrapper .pulse-code-sandbox {
-  border-radius: 0;
-  border: none;
-  margin: 0;
-  box-shadow: none;
-}
-
-.pulse-code-demo-wrapper .pulse-code-sandbox iframe {
-  border-radius: 0;
-}
-
 /* ── Editor code block styles ── */
 .pulse-editor-code-block {
   border-radius: 0.875rem;
@@ -1736,6 +1858,7 @@ img {
   padding: 0.625rem 0.875rem;
   background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
   border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-wrap: wrap;
 }
 
 .pulse-editor-code-header .pulse-code-dots {
@@ -1869,12 +1992,15 @@ img {
   max-width: 100%;
   height: auto;
   border-radius: 0.75rem;
-  margin: 2.5rem 0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Only add vertical margin to standalone images, not images inside figures (figures already have margin) */
+.studio-rendered img:not(figure img) {
+  margin: 1.5rem 0;
 }
 
 .studio-rendered figure {
-  margin: 2.5rem 0;
+  margin: 1.5rem 0;
 }
 
 .studio-rendered figcaption {
@@ -1882,9 +2008,13 @@ img {
   font-size: 0.9rem;
   line-height: 1.5;
   color: var(--neutral-600);
-  text-align: center;
   font-style: italic;
 }
+
+.studio-rendered figcaption.image-caption {
+  margin-top: 0;
+}
+
 
 /* Horizontal rules */
 .studio-rendered hr {
@@ -2017,7 +2147,7 @@ img {
   }
   
   .pulse-code-block {
-    margin: 1.5rem -1rem;
+    margin: 1.5rem 0;
     border-radius: 0.5rem;
     border-left: none;
     border-right: none;
@@ -2174,7 +2304,7 @@ img {
 }
 
 [data-device-mode="tablet"] .pulse-code-block {
-  margin: 1.75rem -0.5rem;
+  margin: 1.75rem 0;
   border-left: none;
   border-right: none;
 }
@@ -2705,3 +2835,486 @@ img {
   outline: 2px solid rgba(255, 40, 0, 0.45);
   outline-offset: 3px;
 }
+/* Pulse Video Block Styles */
+
+.pulse-video-card {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  background: #0a0a0a;
+  margin: 1.5rem 0;
+}
+
+.pulse-video-aspect {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+.pulse-video-aspect video,
+.pulse-video-aspect iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.pulse-video-aspect::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.pulse-video-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #111;
+  border-bottom: 1px solid #222;
+}
+
+.pulse-video-header-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--provider-color, var(--pulse-red));
+  opacity: 0.7;
+}
+
+.pulse-video-header-label {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #888;
+}
+
+.pulse-video-caption {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.pulse-video-caption span {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.pulse-video-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.pulse-video-card.is-playing .pulse-video-play-overlay {
+  opacity: 0;
+}
+
+.pulse-video-play-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--pulse-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(255, 40, 0, 0.4);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.pulse-video-play-btn::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 12px 0 12px 20px;
+  border-color: transparent transparent transparent #fff;
+  margin-left: 4px;
+}
+
+.pulse-video-play-btn:hover {
+  transform: scale(1.08);
+}
+
+.pulse-video-quality {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+.pulse-video-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #111;
+  z-index: 1;
+  text-align: center;
+  padding: 20px;
+}
+
+.pulse-video-fallback-title {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pulse-video-fallback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--pulse-red);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.pulse-video-fallback-btn:hover {
+  background: var(--pulse-red-dark);
+}
+
+@media (max-width: 640px) {
+  .pulse-video-card {
+    border-radius: 0.75rem;
+    margin: 1rem 0;
+  }
+}
+
+/* Dark mode video overrides */
+.blog-dark-mode .pulse-video-card {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+.blog-dark-mode .pulse-video-header {
+  background: #0a0a0a;
+  border-bottom-color: #222;
+}
+.blog-dark-mode .pulse-video-external-link {
+  background: rgba(30, 30, 30, 0.95);
+  color: var(--pulse-red);
+}
+.blog-dark-mode .pulse-video-external-link:hover {
+  background: rgba(50, 50, 50, 0.95);
+}
+
+/* Pulse Image Block Styles */
+
+.pulse-image-figure {
+  position: relative;
+  display: table; /* shrink to fit content for margin-based alignment */
+}
+
+.pulse-image-figure[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: var(--tooltip-y, 0px);
+  left: var(--tooltip-x, 50%);
+  transform: translate(-50%, -130%);
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--pulse-black);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pulse-image-figure[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  top: var(--tooltip-y, 0px);
+  left: var(--tooltip-x, 50%);
+  transform: translate(-50%, -110%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: var(--pulse-black) transparent transparent transparent;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.pulse-image-figure[data-tooltip]:hover::after,
+.pulse-image-figure[data-tooltip]:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+.image-attribution {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--neutral-500);
+  background: var(--neutral-100);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  margin-top: 0.5rem;
+}
+
+.blog-dark-mode .image-attribution {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--blog-text-secondary);
+}
+
+.blog-dark-mode .pulse-image-figure[data-tooltip]::after {
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.blog-dark-mode .pulse-image-figure[data-tooltip]::before {
+  border-color: #1a1a1a transparent transparent transparent;
+}
+
+/* Pulse Code Sandbox Block Styles */
+
+.pulse-sandbox-block {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #1e1e2e;
+  border: 1px solid #2d2d3d;
+  margin: 1rem 0;
+}
+
+.pulse-sandbox-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  background: #252536;
+  border-bottom: 1px solid #2d2d3d;
+}
+
+.pulse-sandbox-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.pulse-sandbox-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: block;
+}
+
+.pulse-sandbox-dot.red {
+  background: #ff5f56;
+}
+
+.pulse-sandbox-dot.yellow {
+  background: #ffbd2e;
+}
+
+.pulse-sandbox-dot.green {
+  background: #27c93f;
+}
+
+.pulse-sandbox-lang {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.pulse-sandbox-run-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  background: #3b82f6;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pulse-sandbox-run-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.pulse-sandbox-run-btn:disabled {
+  background: #4b5563;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.pulse-sandbox-body {
+  position: relative;
+}
+
+.pulse-sandbox-body pre {
+  margin: 0;
+  padding: 1rem;
+  overflow-x: auto;
+  background: #1e1e2e;
+}
+
+.pulse-sandbox-output {
+  border-top: 1px solid #2d2d3d;
+}
+
+.pulse-sandbox-no-run {
+  padding: 1rem;
+  background: #1e1e2e;
+  color: #9ca3af;
+  font-size: 13px;
+  text-align: center;
+}
+
+.pulse-sandbox-block [data-tooltip] {
+  position: relative;
+}
+
+.pulse-sandbox-block [data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  background: #374151;
+  color: #e5e7eb;
+  font-size: 11px;
+  white-space: nowrap;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+
+
+
+.pulse-sandbox-editor {
+  width: 100%;
+  min-height: 120px;
+  padding: 1rem;
+  background: #1e1e2e;
+  color: #e5e7eb;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  border: none;
+  border-bottom: 1px solid #2d2d3d;
+  resize: vertical;
+  outline: none;
+}
+
+.pulse-sandbox-editor::placeholder {
+  color: #6b7280;
+}
+
+.pulse-sandbox-editor:focus {
+  background: #252536;
+}
+.pulse-video-clickload {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.pulse-video-clickload img {
+  transition: transform 0.3s ease;
+}
+
+.pulse-video-clickload:hover img {
+  transform: scale(1.05);
+}
+
+.pulse-video-clickload-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 3;
+}
+
+.pulse-video-clickload-text {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.pulse-video-clickload .pulse-video-play-btn {
+  pointer-events: none;
+}
+
+.pulse-video-external-link {
+  color: var(--pulse-red);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  background: rgba(255,255,255,0.95);
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.pulse-video-external-link:hover {
+  background: #fff;
+}
+

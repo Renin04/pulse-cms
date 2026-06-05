@@ -30,6 +30,7 @@ export interface AdaptedBlogEntry {
   origin?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let rendererReady = false;
 
 function escapeHtml(value: string): string {
@@ -146,7 +147,7 @@ function toSlug(text: string): string {
 }
 
 function ensureRenderer(): void {
-  if (rendererReady) return;
+  // Always re-register to pick up HMR updates (dev server caches old renderers)
   registerBuiltinRenderers(RendererRegistry.getInstance());
   RendererRegistry.getInstance().override("branch", renderBranch);
   RendererRegistry.getInstance().override("conditional", renderConditional);
@@ -272,7 +273,19 @@ function renderHtml(blocks: Block<BlockData>[]): string {
     });
 
     const renderer = new PulseRenderer();
-    const html = renderer.renderDocument(blocks).html;
+
+    // Render blocks individually so one bad block doesn't kill the whole document
+    const blockHtmls: string[] = [];
+    for (const block of blocks) {
+      try {
+        blockHtmls.push(renderer.renderDocument([block]).html);
+      } catch (blockErr) {
+        console.error(`[renderHtml] Block ${block.type} (id=${block.id}) failed to render:`, blockErr);
+        console.error(`[renderHtml] Block data:`, JSON.stringify(block, null, 2));
+        blockHtmls.push(`<!-- Failed to render ${block.type} block -->`);
+      }
+    }
+    const html = blockHtmls.join("\n");
 
     // Add footnotes section for references that have text or url
     const footnotes = allRefs.filter((r) => r.text || r.url);
@@ -291,7 +304,9 @@ function renderHtml(blocks: Block<BlockData>[]): string {
     }
 
     return `<div class="studio-rendered">${html}</div>`;
-  } catch {
+  } catch (err) {
+    console.error('[renderHtml] Failed to render blocks:', err);
+    console.error('[renderHtml] Blocks data:', JSON.stringify(blocks, null, 2));
     return "";
   }
 }
@@ -315,6 +330,7 @@ export function adaptEntryDetail(entry: EntryDetail | null): AdaptedBlogEntry | 
   const fieldValues = Array.isArray(entry.fieldValues) ? entry.fieldValues : [];
   const metadata = (entry.metadata as Record<string, unknown> | undefined) || {};
   const blocks = Array.isArray(entry.blocks) ? (entry.blocks as Block<BlockData>[]) : [];
+
 
   const excerpt = String(getFieldValue(fieldValues, "excerpt") || "");
   const eyebrow = String(getFieldValue(fieldValues, "eyebrow") || "Pulse Story");
@@ -348,6 +364,7 @@ export function adaptEntryDetail(entry: EntryDetail | null): AdaptedBlogEntry | 
   const wordCount = countWords(blocks);
   const readTime = formatReadTime(wordCount);
   const html = renderHtml(blocks);
+
 
   const adapted: AdaptedBlogEntry = {
     id: entry.id,

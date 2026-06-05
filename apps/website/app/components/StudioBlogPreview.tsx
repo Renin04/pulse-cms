@@ -1,12 +1,57 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, Clock3, Tag } from 'lucide-react'
 import { useEntry } from '../../lib/use-api'
 import { adaptEntryDetail } from '../../lib/entry-adapter'
 import { formatDisplayDate } from '../../lib/site-content'
+import { buildSandboxSrcdoc, base64ToUtf8 } from '@pulse/blocks'
+import { initShikiHighlighter } from '../../lib/shiki-highlighter'
+
+// Eagerly initialize Shiki so code blocks render with syntax highlighting + iframes
+initShikiHighlighter().catch(() => {})
+
+function hydrateDemoIframes(container: HTMLElement) {
+  container.querySelectorAll('iframe[title="Code demo"]').forEach((iframe) => {
+    const el = iframe as HTMLIFrameElement;
+    if (el.srcdoc) return;
+    const codeB64 = el.getAttribute('data-code');
+    const language = el.getAttribute('data-language');
+    if (codeB64 && language) {
+      try {
+        const code = base64ToUtf8(codeB64);
+        el.srcdoc = buildSandboxSrcdoc(code, language);
+      } catch {
+        // ignore
+      }
+    }
+  });
+
+  container.querySelectorAll('.pulse-code-block[data-mode="demo"]').forEach((block) => {
+    const nextEl = block.nextElementSibling;
+    if (nextEl && nextEl.tagName === 'IFRAME' && nextEl.getAttribute('title') === 'Code demo') {
+      return;
+    }
+    const codeB64 = block.getAttribute('data-code');
+    const language = block.getAttribute('data-language');
+    if (!codeB64 || !language) return;
+    try {
+      const code = base64ToUtf8(codeB64);
+      const iframe = document.createElement('iframe');
+      iframe.sandbox = 'allow-scripts';
+      iframe.title = 'Code demo';
+      iframe.srcdoc = buildSandboxSrcdoc(code, language);
+      iframe.style.cssText = 'width:100%;min-height:200px;border:none;display:block;background:transparent;';
+      iframe.setAttribute('data-language', language);
+      iframe.setAttribute('data-code', codeB64);
+      block.parentNode?.insertBefore(iframe, block.nextSibling);
+    } catch {
+      // ignore
+    }
+  });
+}
 
 export default function StudioBlogPreview() {
   const searchParams = useSearchParams()
@@ -17,6 +62,12 @@ export default function StudioBlogPreview() {
     if (!apiEntry) return null
     return adaptEntryDetail(apiEntry)
   }, [apiEntry])
+
+  useEffect(() => {
+    if (!entry?.html) return
+    const article = document.querySelector('article.studio-rendered')
+    if (article) hydrateDemoIframes(article as HTMLElement)
+  }, [entry?.html])
 
   if (loading) {
     return (

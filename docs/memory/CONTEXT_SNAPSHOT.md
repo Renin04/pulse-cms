@@ -3,13 +3,43 @@
 > Quick reference for the next agent session.
 > Update this at the end of every session.
 
-**Last Updated:** 2026-05-27
-**Current Session:** Session 94 — Bugs 30/31/32/33 (Link block options, tooltip UI, link options parity, creative link card)
+**Last Updated:** 2026-06-03
+**Current Session:** Session 96 — Bugs 35/36/37/38/39/40 (Code block syntax highlighting, sandbox runtime, demo mode, preview rendering, line numbers, run option)
 **Current Phase:** Phase 4 — AI Builder & Automation Runtime (bug-fixing branch)
 
 ---
 
 ## Current Focus
+
+**What we just completed (Session 96):**
+- Bug #40: New "code-sandbox" block type with interactive code execution. Supports JS/TS/HTML/CSS/JSON via iframe sandbox, Python via Pyodide (WASM), graceful fallback for Go/Rust/Bash/HTTP/Markdown. Editor has dark IDE-style textarea, language selector, line numbers toggle, inline Test Run.
+- Bug #41: Image width/height ratio fixed. Render clamping changed from zeroing to capping. Editor added aspect ratio lock toggle.
+- Bug #42: Separate captionAlign field independent of image align.
+- Bug #43: Image displaySize option (small/medium/large/full) with max constraints. Reduced margins, added hover zoom.
+- Bug #44: Image format field (original/webp/jpeg/png) with server-side conversion.
+- Bug #45: Better caption UI with styled wrapper, attribution badge, textarea with counter.
+- Bug #46: YouTube localhost blocking fixed via privacyMode (youtube-nocookie.com), credentialless iframe, fallback placeholder.
+- Bug #47: Video optimization options: quality, poster, loop, muted, controls.
+- Bug #48: Video start-at uses HH:MM:SS format with parseTimeToSeconds helper.
+- Bug #49: Creative video card UI with dark theme, play button overlay, gradient caption badge, 16:9 aspect ratio.
+- Bug #50: Video loading stability with stable wrapper, lazy loading, preload metadata.
+- Bug #51: Video preview in editor: actual video for HTML5, thumbnail for YouTube/Vimeo.
+- Quality gates: lint, typecheck, build, test (51 files, 1071 tests) green.
+- Session 96b fixes: Code sandbox now reader-editable (textarea + Run in blog post). Image align fixed (margin auto). Format conversion works via mediaApi.update. Compression quality slider added. File size display. Aspect lock defaults OFF. Removed card shadow/hover zoom; alt text as tooltip. Video fallback styling fixed (white bg, red text). Fallback only shows on iframe error. Upload size limit type-aware (100MB video, 10MB image). Clean editor UI for both image and video blocks.
+- Session 96c fixes: Code sandbox redesigned to match code block UI exactly � .pulse-code-block with Code/Output tabs, Run button, dark textarea editor. Event delegation handles Run for both code blocks and sandbox blocks. Image align fixed by applying margin styles directly on <img>. Video YouTube/Vimeo uses click-to-load pattern (thumbnail + play button + "Click to load video" + "Watch on YouTube/Vimeo" link) avoiding all localhost blocking issues. Video fallback button styling fixed to red background with white text.
+
+**What we just completed (Session 95):**
+- Bug #35: Code syntax highlighting with Shiki v4. Integrated `createHighlighter` for 13 languages (typescript, tsx, javascript, jsx, json, html, css, markdown, bash, http, python, go, rust) with github-light/github-dark themes. Server-side rendering awaits Shiki before generating HTML; client-side initializes fire-and-forget with fallback. Renderer wraps output in `.pulse-code-block` with macOS window chrome header.
+- Bug #36: Code sandbox runtime. Built `CodeSandbox` component with iframe-based safe execution (`sandbox="allow-scripts"`). Console output captured and displayed in styled output panel with red-accent header. Supports JS/TS/JSX/TSX/HTML/CSS/JSON.
+- Bug #37: Demo mode (hidden code). Added `mode` field to code block: `show` (default), `run` (code + run button + output), `demo` (hides code, auto-runs on page load like Josh Comeau's blog). Mode toggle in editor toolbar with Eye/Play/Sparkles icons.
+- Bug #38: Preview panel rendering. Fixed CSS for code blocks in preview: `.pulse-code-block` wrapper with header bar (red/yellow/green dots, language badge), dark blue-gray background (#1e1e2e), clean border matching editor design. Preview hydration mounts sandbox iframes for run/demo modes.
+- Bug #39: Line numbers. Fixed with CSS counter approach (`counter-reset: pulse-line` on `code`, `counter-increment` on `.line::before`). Shiki already wraps lines in `<span class="line">`, so no post-processing needed. Proper left gutter with hover highlight.
+- Bug #40: Run option in editor. Editor `EditableCode` has Run button in header for run/demo modes. Output panel shows directly below code. Writer can verify code works before publishing.
+- Browser hang fix: Demo mode `useEffect` was re-running `runCode()` on every keystroke due to `code` dependency. Added `demoRanRef` to ensure demo only auto-runs once on mount.
+- Design alignment: Preview/blog code blocks now match editor panel exactly (`var(--neutral-200)` border + subtle `0 2px 8px -2px` shadow).
+- Files changed: `packages/blocks/src/CodeBlock.ts`, `packages/blocks/tests/blocks.test.ts`, `apps/website/lib/shiki-highlighter.ts` (new), `apps/website/lib/blog-studio.ts`, `apps/website/lib/entry-adapter.ts`, `apps/website/lib/blog-data.ts`, `apps/website/app/blog/[slug]/page.tsx`, `apps/website/app/components/CodeSandbox.tsx` (new), `apps/website/app/components/StudioBlockCanvas.tsx`, `apps/website/app/demo/PulseDemoEditor.tsx`, `apps/website/app/components/PulseBlogStudio.tsx`, `apps/website/app/globals.css`, `pulse bug list.md`.
+- Quality gates passed: `lint`, `typecheck`, `build`, `test` (51 test files, 1071 tests passed) green.
+- Commit: `39b715f` feat: code block syntax highlighting, sandbox runtime, demo mode
 
 **What we just completed (Session 94):**
 - Bug #30: Link block editor now has all rel options. `EditableLink` in `StudioBlockEditors.tsx` added nofollow, noopener, noreferrer, external checkboxes matching `LinkModal` parity. noopener auto-enforced when "Open in new tab" is checked.

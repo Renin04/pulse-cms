@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const ctx = await requireAuthAndPermission(req, 'media.manage');
 
-    const maxSize = parseInt(process.env.UPLOAD_MAX_SIZE || '10485760', 10); // 10MB
+    const _maxSize = parseInt(process.env.UPLOAD_MAX_SIZE || '104857600', 10); // 100MB default
     const allowedTypes = (process.env.UPLOAD_ALLOWED_TYPES || 'image/*,video/*,audio/*,application/pdf')
       .split(',')
       .map((t) => t.trim().toLowerCase());
@@ -17,11 +17,6 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       throw new ApiError('INVALID_INPUT', 'No file provided', 400);
-    }
-
-    // Validate size
-    if (file.size > maxSize) {
-      throw new ApiError('FILE_TOO_LARGE', `File exceeds maximum size of ${maxSize} bytes`, 413);
     }
 
     // Validate MIME type
@@ -34,6 +29,13 @@ export async function POST(req: NextRequest) {
 
     if (!isAllowed) {
       throw new ApiError('INVALID_FILE_TYPE', `File type "${file.type}" is not allowed`, 415);
+    }
+
+    // Type-aware size limits
+    const typeMaxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > typeMaxSize) {
+      const mb = Math.round(typeMaxSize / 1024 / 1024);
+      throw new ApiError('FILE_TOO_LARGE', `File exceeds maximum size of ${mb}MB for this type`, 413);
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());

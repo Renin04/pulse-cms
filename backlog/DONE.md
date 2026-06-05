@@ -1446,3 +1446,47 @@
 - `apps/website/app/components/StudioBlockCanvas.tsx`
 
 **Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files, 1071 tests passed)
+
+
+---
+
+## Session 95 — 2026-05-27
+**Bugs Fixed:** #35, #36, #37, #38, #39, #40
+
+- ✅ Bug #35: Code syntax highlighting
+  - Integrated Shiki v4 with `createHighlighter` for 13 languages
+  - github-light/github-dark themes, server-side async init, client fire-and-forget
+- ✅ Bug #36: Code sandbox runtime
+  - Built `CodeSandbox` component with safe iframe execution (`sandbox="allow-scripts"`)
+  - Console capture, styled output panel with red-accent header
+- ✅ Bug #37: Demo mode (hidden code)
+  - Added `mode` field: show / run / demo
+  - Demo hides code, auto-runs on page load (like Josh Comeau's blog)
+- ✅ Bug #38: Preview panel rendering
+  - Redesigned with `.pulse-code-block` wrapper: macOS window chrome header, dark blue-gray bg
+  - Clean border matching editor design, proper Shiki token compatibility
+- ✅ Bug #39: Line numbers
+  - CSS counter approach on Shiki's native `<span class="line">` wrappers
+  - Proper left gutter, hover highlight, `user-select: none`
+- ✅ Bug #40: Run option in editor
+  - Run button in editor header for run/demo modes
+  - Output panel shows below code for writer verification
+- 🔧 Critical fix: Browser hang caused by demo mode `useEffect` re-running on every keystroke
+  - Added `demoRanRef` to ensure demo only auto-runs once on mount
+
+**Files Changed:**
+- `packages/blocks/src/CodeBlock.ts`
+- `packages/blocks/tests/blocks.test.ts`
+- `apps/website/lib/shiki-highlighter.ts` (new)
+- `apps/website/lib/blog-studio.ts`
+- `apps/website/lib/entry-adapter.ts`
+- `apps/website/lib/blog-data.ts`
+- `apps/website/app/blog/[slug]/page.tsx`
+- `apps/website/app/components/CodeSandbox.tsx` (new)
+- `apps/website/app/components/StudioBlockCanvas.tsx`
+- `apps/website/app/demo/PulseDemoEditor.tsx`
+- `apps/website/app/components/PulseBlogStudio.tsx`
+- `apps/website/app/globals.css`
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (51 test files, 1071 tests passed)
+**Commit:** `39b715f`

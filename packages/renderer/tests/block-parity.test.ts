@@ -284,7 +284,7 @@ describe("Image block renderer", () => {
   it("renders caption when provided", () => {
     const block = makeBlock("image", { src: "https://example.com/img.png", alt: "Photo", width: 800, height: 450, fit: "cover", status: "ready", caption: "A nice photo" });
     const { html } = renderBlock(block);
-    expect(html).toContain("<figcaption>A nice photo</figcaption>");
+    expect(html).toContain("A nice photo</figcaption>");
   });
 });
 

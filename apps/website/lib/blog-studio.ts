@@ -464,55 +464,71 @@ function ensureRendererReady(): void {
 }
 
 export function renderStudioBlocksHtml(blocks: StudioBlock[]): string {
-  ensureRendererReady()
-  const renderer = new PulseRenderer()
+  try {
+    ensureRendererReady()
+    const renderer = new PulseRenderer()
 
-  // First pass: collect all inline refs from text/heading/blockquote blocks
-  const allRefs: InlineRef[] = []
-  for (const block of blocks) {
-    if (block.type === 'text' || block.type === 'heading' || block.type === 'blockquote' || block.type === 'list') {
-      const data = block.data as Record<string, unknown>
-      if (block.type === 'list' && Array.isArray(data.items)) {
-        for (const item of data.items) {
-          if (typeof item === 'string') {
-            allRefs.push(...extractRefs(item))
+    // First pass: collect all inline refs from text/heading/blockquote blocks
+    const allRefs: InlineRef[] = []
+    for (const block of blocks) {
+      if (block.type === 'text' || block.type === 'heading' || block.type === 'blockquote' || block.type === 'list') {
+        const data = block.data as Record<string, unknown>
+        if (block.type === 'list' && Array.isArray(data.items)) {
+          for (const item of data.items) {
+            if (typeof item === 'string') {
+              allRefs.push(...extractRefs(item))
+            }
           }
+        } else {
+          const text =
+            typeof data.text === 'string'
+              ? data.text
+              : typeof data.quote === 'string'
+                ? data.quote
+                : ''
+          allRefs.push(...extractRefs(text))
         }
-      } else {
-        const text =
-          typeof data.text === 'string'
-            ? data.text
-            : typeof data.quote === 'string'
-              ? data.quote
-              : ''
-        allRefs.push(...extractRefs(text))
       }
     }
+
+    // Override renderers with shared ref counter for global numbering
+    const refCounter = { value: 0 }
+    registerCustomRenderers(RendererRegistry.getInstance(), refCounter)
+
+    // Render blocks individually so one bad block doesn't kill the whole document
+    const blockHtmls: string[] = []
+    for (const block of blocks) {
+      try {
+        blockHtmls.push(renderer.renderDocument([block]).html)
+      } catch (blockErr) {
+        console.error(`[renderStudioBlocksHtml] Block ${block.type} (id=${block.id}) failed to render:`, blockErr)
+        console.error(`[renderStudioBlocksHtml] Block data:`, JSON.stringify(block, null, 2))
+        blockHtmls.push(`<!-- Failed to render ${block.type} block -->`)
+      }
+    }
+    const html = blockHtmls.join('\n')
+
+    // Add footnotes section for references that have text or url
+    const footnotes = allRefs.filter((r) => r.text || r.url)
+    if (footnotes.length > 0) {
+      const footnotesHtml = footnotes
+        .map((ref, index) => {
+          const num = formatReferenceNumber(index + 1, ref.style)
+          const content = ref.text || ref.url || ''
+          const link = ref.url
+            ? `<a href="${escapeHtml(ref.url)}">${escapeHtml(ref.text || ref.url)}</a>`
+            : escapeHtml(content)
+          return `<li id="ref-${index + 1}"><span class="pulse-ref-marker">${num}.</span> ${link}</li>`
+        })
+        .join('')
+      return `${html}\n<section class="pulse-references"><h3>References</h3><ol>${footnotesHtml}</ol></section>`
+    }
+
+    return html
+  } catch (err) {
+    console.error('[renderStudioBlocksHtml] Failed to render blocks:', err)
+    throw err
   }
-
-  // Override renderers with shared ref counter for global numbering
-  const refCounter = { value: 0 }
-  registerCustomRenderers(RendererRegistry.getInstance(), refCounter)
-
-  const html = renderer.renderDocument(blocks).html
-
-  // Add footnotes section for references that have text or url
-  const footnotes = allRefs.filter((r) => r.text || r.url)
-  if (footnotes.length > 0) {
-    const footnotesHtml = footnotes
-      .map((ref, index) => {
-        const num = formatReferenceNumber(index + 1, ref.style)
-        const content = ref.text || ref.url || ''
-        const link = ref.url
-          ? `<a href="${escapeHtml(ref.url)}">${escapeHtml(ref.text || ref.url)}</a>`
-          : escapeHtml(content)
-        return `<li id="ref-${index + 1}"><span class="pulse-ref-marker">${num}.</span> ${link}</li>`
-      })
-      .join('')
-    return `${html}\n<section class="pulse-references"><h3>References</h3><ol>${footnotesHtml}</ol></section>`
-  }
-
-  return html
 }
 
 export function createStudioHeadingBlock(text: string, level: StudioHeadingBlockData['level'] = 2): StudioBlock {
@@ -1241,6 +1257,14 @@ export class BlogStudioWorkspace {
     const wordCount = countWords(blocks)
     const seoScore = entry.metadata?.seoScore ?? this.workflowEngine.checkSEOGaps(entry).score
 
+    let html: string
+    try {
+      html = renderStudioBlocksHtml(blocks)
+    } catch (err) {
+      console.error('[BlogStudioWorkspace.getEntry] renderStudioBlocksHtml failed for slug:', slug, err)
+      throw err
+    }
+
     return {
       id: entry.id,
       slug: entry.slug,
@@ -1262,7 +1286,7 @@ export class BlogStudioWorkspace {
       wordCount,
       readTime: formatReadTime(wordCount),
       blocks,
-      html: renderStudioBlocksHtml(blocks),
+      html,
       publishedAt: entry.publishedAt ?? null,
       scheduledAt: entry.scheduledAt ?? null,
       createdAt: entry.createdAt,

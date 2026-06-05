@@ -96,6 +96,7 @@ describe("basic block definitions", () => {
       "horizontal-rule",
       "link",
       "code",
+      "code-sandbox",
       "image",
     ]);
   });
@@ -106,7 +107,7 @@ describe("basic block definitions", () => {
     const firstBatch = registerBasicBlocks(registry);
     const secondBatch = registerBasicBlocks(registry);
 
-    expect(firstBatch).toHaveLength(8);
+    expect(firstBatch).toHaveLength(9);
     expect(secondBatch).toHaveLength(0);
     expect(registry.has("text")).toBe(true);
     expect(registry.has("heading")).toBe(true);
@@ -493,7 +494,7 @@ describe("CodeBlock", () => {
     const html = CodeBlock.render({
       code: "const value = 1;",
       language: "typescript",
-      theme: "github-light",
+      theme: "github-dark",
       showLineNumbers: true,
       mode: "show",
     });
@@ -533,9 +534,11 @@ describe("CodeBlock", () => {
     expect(parsed).toEqual({
       code: "GET /blog HTTP/1.1",
       language: "http",
-      theme: "github-light",
+      theme: "github-dark",
       showLineNumbers: true,
       mode: "show",
+      hideChrome: true,
+      demoTitle: "Live Demo",
     });
   });
 });
@@ -643,7 +646,8 @@ describe("ImageBlock", () => {
     const html = ImageBlock.render(data);
     expect(html).toContain('class="image-attribution"');
     expect(html).toContain("Credit: Jane Smith");
-    expect(html).toContain("Source: https://unsplash.com");
+    expect(html).toContain('href="https://unsplash.com"');
+    expect(html).toContain("unsplash.com");
     expect(html).toContain("License: CC0");
   });
 

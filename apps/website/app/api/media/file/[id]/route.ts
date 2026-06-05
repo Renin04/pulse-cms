@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { ApiError, handleApiError } from '@/lib/api-utils';
+import { existsSync } from 'fs';
 import { readFile } from 'fs/promises';
 import path from 'path';
 
@@ -9,12 +10,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const { id } = params;
 
     // The URL id may be the storage UUID (in the URL path) or the DB UUID.
-    // Try matching by DB id, URL suffix, or filename prefix for robustness.
+    // Try matching by DB id, URL suffix (without query params), or filename prefix for robustness.
     const asset = await prisma.mediaAsset.findFirst({
       where: {
         OR: [
           { id },
-          { url: { endsWith: `/${id}/` } },
+          { url: { startsWith: `/api/media/file/${id}/` } },
           { filename: { startsWith: id } },
         ],
       },
@@ -40,9 +41,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     let filePath: string;
 
     const meta = JSON.parse(asset.metadata || '{}');
-    if (meta.processedFilePath && typeof meta.processedFilePath === 'string') {
+    if (meta.processedFilePath && typeof meta.processedFilePath === 'string' && existsSync(meta.processedFilePath)) {
       filePath = meta.processedFilePath;
-    } else if (meta.filePath && typeof meta.filePath === 'string') {
+    } else if (meta.filePath && typeof meta.filePath === 'string' && existsSync(meta.filePath)) {
       filePath = meta.filePath;
     } else {
       // Fallback: scan directory for file starting with id
@@ -72,7 +73,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const headers: Record<string, string> = {
       'Content-Type': mimeType,
       'Content-Length': String(buffer.length),
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cache-Control': 'public, max-age=300, must-revalidate',
+      'ETag': `"${id}-${buffer.length}"`,
     };
     if (isDownload) {
       headers['Content-Disposition'] = `attachment; filename="${asset.filename || asset.name}"`;

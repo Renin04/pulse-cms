@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock3, Tag, User } from 'lucide-react';
 import { getBlogFeaturedMedia } from '../../lib/blog-feature-media';
 import { formatDisplayDate } from '../../lib/site-content';
 import { useBackendBlogEntry } from '../../lib/use-backend-entries';
 import type { AdaptedBlogEntry } from '../../lib/entry-adapter';
+import { buildSandboxSrcdoc, buildPyodideSrcdoc, base64ToUtf8 } from '@pulse/blocks';
 
 import SpotlightCard from '../components/SpotlightCard';
 import ReadingProgress from '../components/ReadingProgress';
@@ -14,7 +15,6 @@ import TableOfContents from '../components/TableOfContents';
 import ShareButtons from '../components/ShareButtons';
 import ReadingModeControls from '../components/ReadingModeControls';
 import RelatedPosts from '../components/RelatedPosts';
-
 export default function BlogPostContent({
   slug,
   entry: serverEntry,
@@ -25,6 +25,186 @@ export default function BlogPostContent({
   const { entry: clientEntry, loading } = useBackendBlogEntry(slug ?? null);
 
   const entry = serverEntry ?? clientEntry;
+
+  // Event delegation for code block tabs and run buttons
+  useEffect(() => {
+    if (!entry?.html) return;
+
+    const article = document.getElementById('blog-article-body');
+    if (!article) return;
+
+    function hydrateDemoIframes(container: Element) {
+      container.querySelectorAll('iframe[title="Code demo"]').forEach((iframe) => {
+        const el = iframe as HTMLIFrameElement;
+        if (el.srcdoc) return;
+        const codeB64 = el.getAttribute('data-code');
+        const language = el.getAttribute('data-language');
+        if (codeB64 && language) {
+          try {
+            const code = base64ToUtf8(codeB64);
+            el.srcdoc = buildSandboxSrcdoc(code, language);
+          } catch (e) {
+            console.error('[BlogPost] Failed to hydrate demo iframe:', e)
+          }
+        }
+      });
+
+      // Fallback: create missing demo iframes for blocks that don't have one
+      container.querySelectorAll('.pulse-code-block[data-mode="demo"]').forEach((block) => {
+        const nextEl = block.nextElementSibling;
+        if (nextEl && nextEl.tagName === 'IFRAME' && nextEl.getAttribute('title') === 'Code demo') {
+          return;
+        }
+        const codeB64 = block.getAttribute('data-code');
+        const language = block.getAttribute('data-language');
+        if (!codeB64 || !language) return;
+        try {
+          const code = base64ToUtf8(codeB64);
+          const iframe = document.createElement('iframe');
+          iframe.sandbox = 'allow-scripts';
+          iframe.title = 'Code demo';
+          iframe.srcdoc = buildSandboxSrcdoc(code, language);
+          iframe.style.cssText = 'width:100%;min-height:200px;border:none;display:block;background:transparent;';
+          iframe.setAttribute('data-language', language);
+          iframe.setAttribute('data-code', codeB64);
+          block.parentNode?.insertBefore(iframe, block.nextSibling);
+        } catch (e) {
+          console.error('[BlogPost] Failed to create demo iframe fallback:', e)
+        }
+      });
+    }
+
+    hydrateDemoIframes(article);
+
+    // Hydrate video blocks: click-to-load for embeds and play button for HTML5
+    function hydrateVideoBlocks(container: Element) {
+      container.querySelectorAll('.pulse-video-clickload').forEach((el) => {
+        const div = el as HTMLElement;
+        if (div.dataset.hydrated) return;
+        div.dataset.hydrated = 'true';
+        div.addEventListener('click', (e) => {
+          // Don't intercept clicks on the external link
+          if ((e.target as HTMLElement).closest('.pulse-video-external-link')) return;
+          const src = div.getAttribute('data-src');
+          const title = div.getAttribute('data-title') || 'Video';
+          if (!src) return;
+          const iframe = document.createElement('iframe');
+          iframe.src = src;
+          iframe.title = title;
+          iframe.loading = 'lazy';
+          iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
+          iframe.allowFullscreen = true;
+          iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;display:block;';
+          div.parentNode?.replaceChild(iframe, div);
+        });
+      });
+    }
+    hydrateVideoBlocks(article);
+
+    // Use MutationObserver to catch iframes added by React after initial hydration
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof HTMLElement) {
+            if (node.tagName === 'IFRAME' && node.getAttribute('title') === 'Code demo') {
+              hydrateDemoIframes(article);
+              return;
+            }
+            if (node.querySelector('iframe[title="Code demo"]')) {
+              hydrateDemoIframes(article);
+              return;
+            }
+            if (node.querySelector('.pulse-video-clickload')) {
+              hydrateVideoBlocks(article);
+              return;
+            }
+          }
+        }
+      }
+    });
+    observer.observe(article, { childList: true, subtree: true });
+
+    function handleClick(e: Event) {
+      const target = e.target as HTMLElement;
+
+      // Video play button (HTML5) — the overlay play btn has pointer-events:auto
+      const playBtn = target.closest('.pulse-video-play-btn');
+      if (playBtn) {
+        const card = playBtn.closest('.pulse-video-card');
+        if (!card) return;
+        const video = card.querySelector('video');
+        if (video) {
+          e.preventDefault();
+          e.stopPropagation();
+          video.play();
+        }
+        return;
+      }
+
+      const tab = target.closest('.pulse-code-tab');
+      if (tab) {
+        const block = tab.closest('.pulse-code-block');
+        if (!block) return;
+        const tabName = tab.getAttribute('data-tab');
+        block.setAttribute('data-active-tab', tabName || '');
+        block.querySelectorAll('.pulse-code-tab').forEach((t) => {
+          t.classList.toggle('active', t === tab);
+        });
+        return;
+      }
+
+      const runBtn = target.closest('[data-run]');
+      if (runBtn) {
+        const block = runBtn.closest('.pulse-code-block');
+        if (!block) return;
+        const iframe = block.querySelector('.pulse-code-panel[data-panel="output"] iframe') as HTMLIFrameElement | null;
+        if (iframe) {
+          const mode = block.getAttribute('data-mode');
+          const language = block.getAttribute('data-language') || 'javascript';
+          if (mode === 'sandbox') {
+            const editor = block.querySelector('[data-sandbox-editor]') as HTMLTextAreaElement | null;
+            const code = editor?.value || '';
+            const isPython = language === 'python';
+            iframe.srcdoc = isPython ? buildPyodideSrcdoc(code) : buildSandboxSrcdoc(code, language);
+          } else {
+            const codeB64 = iframe.getAttribute('data-code');
+            if (codeB64) {
+              try {
+                const code = base64ToUtf8(codeB64);
+                iframe.srcdoc = buildSandboxSrcdoc(code, language);
+              } catch {
+                // ignore
+              }
+            }
+          }
+        }
+        block.setAttribute('data-active-tab', 'output');
+        block.querySelectorAll('.pulse-code-tab').forEach((t) => {
+          t.classList.toggle('active', t.getAttribute('data-tab') === 'output');
+        });
+        return;
+      }
+    }
+
+    // Tooltip positioning for image figures (pseudo-elements can't follow mouse without CSS vars)
+    function handleMouseMove(e: MouseEvent) {
+      const figure = (e.target as HTMLElement).closest('.pulse-image-figure[data-tooltip]') as HTMLElement | null;
+      if (!figure) return;
+      const rect = figure.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      figure.style.setProperty('--tooltip-x', `${x}px`);
+      figure.style.setProperty('--tooltip-y', `${y}px`);
+    }
+    article.addEventListener('mousemove', handleMouseMove);
+
+    article.addEventListener('click', handleClick);
+    return () => {
+      article.removeEventListener('click', handleClick);
+      article.removeEventListener('mousemove', handleMouseMove);
+      observer.disconnect();
+    };
+  }, [entry?.html]);
 
   const featuredMedia = useMemo(() => (entry ? getBlogFeaturedMedia(entry as unknown as any) : null), [entry]);
 
@@ -117,17 +297,17 @@ export default function BlogPostContent({
 
       <section className="pb-4 sm:pb-6">
         <div className="container">
-          <div className="mx-auto max-w-[92rem]">
+          <div className="mx-auto max-w-[80rem]">
             {featuredMedia ? (
               <figure id="blog-feature-media" className="overflow-hidden rounded-[2rem]">
                 <img
                   src={featuredMedia.src}
                   alt={featuredMedia.alt}
                   width={1200}
-                  height={496}
+                  height={352}
                   loading="eager"
                   decoding="async"
-                  className="h-[18rem] w-full object-cover sm:h-[24rem] lg:h-[31rem]"
+                  className="h-[14rem] w-full object-cover sm:h-[18rem] lg:h-[22rem]"
                 />
               </figure>
             ) : (
@@ -180,8 +360,8 @@ export default function BlogPostContent({
               <div id="blog-article-column" className="min-w-0 flex-1">
                 <div id="blog-content-card" className="py-0">
                   <div id="blog-article-body">
-                    <article className="studio-rendered prose prose-lg max-w-none">
-                      <div dangerouslySetInnerHTML={{ __html: entry.html }} />
+                    <article className="studio-rendered prose prose-lg max-w-none" suppressHydrationWarning>
+                      <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: entry.html }} />
                     </article>
                   </div>
                 </div>

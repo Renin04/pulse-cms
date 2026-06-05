@@ -22,18 +22,20 @@ import {
   EditableTimeline, EditableComparison, EditableBeforeAfter, EditableChart, EditableMap,
   EditableMath, EditableDiagram, EditableManga, EditableSpeechBubble, EditableCard,
   EditableGallery, EditableCarousel, EditableHeroSection, EditableAnnotatedImage,
+  EditableCodeSandbox,
   LinkModal, LinkContextMenu, RefModal, RefContextMenu,
   markdownToHtml, htmlToMarkdown,
   getLinkAtCursor, getLinkFromEvent, getRefAtCursor, getRefFromEvent, getRefElementAtCursor, getRefElementFromEvent,
 } from './StudioBlockEditors';
 import { StudioTooltip } from './StudioTooltip';
-import CodeSandbox from './CodeSandbox';
+import { createSandboxHtml } from './CodeSandbox';
 
 const blockTypeToIcon: Record<string, React.ElementType> = {
   text: Type,
   heading: Heading,
   list: List,
   code: Code,
+  'code-sandbox': Terminal,
   blockquote: Quote,
   callout: MessageSquare,
   image: ImageIcon,
@@ -73,6 +75,7 @@ const blockTypeToLabel: Record<string, string> = {
   heading: 'Heading',
   list: 'List',
   code: 'Code',
+  'code-sandbox': 'Code Sandbox',
   blockquote: 'Quote',
   callout: 'Callout',
   image: 'Image',
@@ -112,6 +115,7 @@ const blockTypeToDescription: Record<string, string> = {
   heading: 'Section heading in 6 levels',
   list: 'Bulleted, numbered, or custom lists',
   code: 'Syntax-highlighted code block',
+  'code-sandbox': 'Interactive code execution playground',
   blockquote: 'Styled quotation with citation',
   callout: 'Info box with icon and color',
   image: 'Upload or link an image',
@@ -1408,13 +1412,29 @@ const CODE_MODES: { value: 'show' | 'run' | 'demo'; label: string; icon: React.E
 ];
 
 function EditableCode({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { code: string; language: string; showLineNumbers?: boolean; mode?: 'show' | 'run' | 'demo' };
+  const data = block.data as { code: string; language: string; showLineNumbers?: boolean; mode?: 'show' | 'run' | 'demo'; hideChrome?: boolean; demoTitle?: string };
   const mode = data.mode ?? 'show';
+  const hideChrome = data.hideChrome ?? true;
+  const demoTitle = data.demoTitle ?? 'Live Demo';
+  const [activeTab, setActiveTab] = useState<'code' | 'output'>('code');
   const [runKey, setRunKey] = useState(0);
+  const outputIframeRef = useRef<HTMLIFrameElement>(null);
+
+  const isRunnable = ['javascript', 'typescript', 'tsx', 'jsx', 'html', 'css', 'json'].includes(data.language);
+
+  // Set iframe srcdoc whenever output tab becomes active or run is triggered
+  useEffect(() => {
+    if (activeTab === 'output' && outputIframeRef.current && isRunnable) {
+      outputIframeRef.current.srcdoc = createSandboxHtml(data.code, data.language);
+    }
+  }, [activeTab, runKey, data.code, data.language, isRunnable]);
 
   const handleRun = useCallback(() => {
-    setRunKey((k) => k + 1);
-  }, []);
+    if (mode === 'run') {
+      setActiveTab('output');
+      setRunKey(k => k + 1);
+    }
+  }, [mode]);
 
   return (
     <div className="space-y-2">
@@ -1462,44 +1482,119 @@ function EditableCode({ block, adapter }: { block: Block<BlockData>; adapter: Ed
           />
           Line numbers
         </label>
+
+        {mode === 'demo' && (
+          <>
+            <label className="flex items-center gap-1.5 text-xs text-[var(--neutral-600)]">
+              <input
+                type="checkbox"
+                checked={hideChrome}
+                onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, hideChrome: e.target.checked } }))}
+                className="h-4 w-4 accent-[var(--pulse-red)]"
+              />
+              Clean result
+            </label>
+            {!hideChrome && (
+              <input
+                type="text"
+                value={demoTitle}
+                onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, demoTitle: e.target.value } }))}
+                placeholder="Demo title"
+                className="rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] outline-none w-28"
+              />
+            )}
+          </>
+        )}
       </div>
 
       {/* Code editor */}
-      <div className="pulse-editor-code-block">
-        <div className="pulse-editor-code-header">
-          <Terminal className="h-3.5 w-3.5 text-[var(--pulse-red)]" />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">
-            {data.language}
-          </span>
-          {mode !== 'show' && (
-            <>
-              <div style={{ flex: 1 }} />
-              <button onClick={handleRun} className="pulse-editor-code-run-btn">
-                <Play className="h-3 w-3" />
-                Run
-              </button>
-            </>
-          )}
+      {mode === 'show' && (
+        <div className="pulse-editor-code-block">
+          <div className="pulse-editor-code-header">
+            <Terminal className="h-3.5 w-3.5 text-[var(--pulse-red)]" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">
+              {data.language}
+            </span>
+          </div>
+          <textarea
+            value={data.code}
+            onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, code: e.target.value } }))}
+            rows={Math.max(4, data.code.split('\n').length)}
+            className="pulse-editor-code-textarea"
+            placeholder="Type your code here..."
+            spellCheck={false}
+          />
         </div>
-        <textarea
-          value={data.code}
-          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, code: e.target.value } }))}
-          rows={Math.max(4, data.code.split('\n').length)}
-          className="pulse-editor-code-textarea"
-          placeholder="Type your code here..."
-          spellCheck={false}
-        />
-      </div>
+      )}
 
-      {/* Run output (only in run/demo mode) */}
-      {mode !== 'show' && (
-        <CodeSandbox
-          key={runKey}
-          code={data.code}
-          language={data.language}
-          mode={mode}
-          onRun={handleRun}
-        />
+      {mode === 'run' && (
+        <div className="pulse-editor-code-block" data-active-tab={activeTab}>
+          <div className="pulse-editor-code-header">
+            <Terminal className="h-3.5 w-3.5 text-[var(--pulse-red)]" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">
+              {data.language}
+            </span>
+            <div className="pulse-code-tabs" style={{ marginLeft: 'auto' }}>
+              <button
+                className={`pulse-code-tab ${activeTab === 'code' ? 'active' : ''}`}
+                onClick={() => setActiveTab('code')}
+              >
+                Code
+              </button>
+              <button
+                className={`pulse-code-tab ${activeTab === 'output' ? 'active' : ''}`}
+                onClick={() => setActiveTab('output')}
+              >
+                Output
+              </button>
+            </div>
+            <button onClick={handleRun} className="pulse-code-run-btn" style={{ marginLeft: '0.5rem' }}>
+              <Play className="h-3 w-3" />
+              Run
+            </button>
+          </div>
+          <div className="pulse-code-body" style={{ overflowX: 'visible' }}>
+            <div className="pulse-code-panel" data-panel="code" style={{ display: activeTab === 'code' ? 'block' : 'none' }}>
+              <textarea
+                value={data.code}
+                onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, code: e.target.value } }))}
+                rows={Math.max(4, data.code.split('\n').length)}
+                className="pulse-editor-code-textarea"
+                placeholder="Type your code here..."
+                spellCheck={false}
+              />
+            </div>
+            <div className="pulse-code-panel" data-panel="output" style={{ display: activeTab === 'output' ? 'block' : 'none' }}>
+              {isRunnable && (
+                <iframe
+                  ref={outputIframeRef}
+                  title="Code output"
+                  sandbox="allow-scripts"
+                  style={{ width: '100%', minHeight: '120px', border: 'none', display: 'block', background: '#1e1e2e' }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mode === 'demo' && (
+        <div className="pulse-editor-code-block">
+          <div className="pulse-editor-code-header">
+            <Terminal className="h-3.5 w-3.5 text-[var(--pulse-red)]" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">
+              {data.language}
+            </span>
+          </div>
+          <textarea
+            value={data.code}
+            onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, code: e.target.value } }))}
+            rows={Math.max(4, data.code.split('\n').length)}
+            className="pulse-editor-code-textarea"
+            placeholder="Type your code here..."
+            spellCheck={false}
+          />
+        </div>
       )}
     </div>
   );
@@ -2130,6 +2225,7 @@ function EditableBlock({
       case 'text': return <EditableText block={block} adapter={adapter} />;
       case 'blockquote': return <EditableBlockquote block={block} adapter={adapter} />;
       case 'code': return <EditableCode block={block} adapter={adapter} />;
+      case 'code-sandbox': return <EditableCodeSandbox block={block} adapter={adapter} />;
       case 'list': return <EditableList block={block} adapter={adapter} />;
       case 'callout': return <EditableCallout block={block} adapter={adapter} />;
       case 'horizontal-rule': return <EditableHorizontalRule />;
