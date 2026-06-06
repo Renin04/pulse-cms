@@ -615,7 +615,7 @@ function PulseBlogStudioInner() {
   const previewHtml = useMemo(() => {
     try {
       const html = renderStudioBlocksHtml(editorBlocks)
-      console.log('[PulseBlogStudio] previewHtml length:', html.length, 'contains iframe:', html.includes('<iframe'))
+      // previewHtml updated
       return html
     } catch (err) {
       console.error('[PulseBlogStudio] preview render failed:', err)
@@ -1158,7 +1158,7 @@ function PulseBlogStudioInner() {
     opts: { persistDraft?: boolean } = { persistDraft: true }
   ) {
     if (!snapshot || !selectedSlug || !draft) return
-    console.log('[runMutation] start, selectedSlug:', selectedSlug, 'draft.slug:', draft.slug, 'editorBlocks count:', editorBlocks.length)
+    // runMutation start
     const w = new BlogStudioWorkspace(snapshot)
     let active = selectedSlug
     if (opts.persistDraft !== false) {
@@ -1172,15 +1172,15 @@ function PulseBlogStudioInner() {
         featuredImageAlt: draft.featuredImageAlt || undefined,
       })
       active = saved.slug
-      console.log('[runMutation] updateEntry returned slug:', active)
+      // updateEntry returned
     }
     const res = action(w, active)
-    console.log('[runMutation] action returned:', res)
+    // action returned
     const next = w.toSnapshot()
-    console.log('[runMutation] toSnapshot entries count:', next.entries.length, 'slugs:', next.entries.map(e => e.slug))
+    // toSnapshot updated
     const targetSlug = res.nextSlug ?? active
     const updated = next.entries.find(e => e.slug === targetSlug)
-    console.log('[runMutation] looking for slug:', targetSlug, 'found:', !!updated)
+    // looking for updated entry
     if (updated) updated.taxonomyIds = draft.taxonomyIds
     setSnapshot(next)
     setSelectedSlug(targetSlug)
@@ -1706,6 +1706,7 @@ return (
                   blockCommentCounts={blockCommentCounts}
                   blockActiveCommentCounts={blockActiveCommentCounts}
                   pulseBlockId={pulseBlockId}
+                  entrySlug={selectedEntry?.id || selectedEntry?.slug || null}
                   onBlockCommentClick={(blockId) => {
                     setActiveBlockId(blockId)
                     setCommentsOpen(true)

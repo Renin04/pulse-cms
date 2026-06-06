@@ -3,13 +3,21 @@
 > Quick reference for the next agent session.
 > Update this at the end of every session.
 
-**Last Updated:** 2026-06-03
-**Current Session:** Session 96 — Bugs 35/36/37/38/39/40 (Code block syntax highlighting, sandbox runtime, demo mode, preview rendering, line numbers, run option)
+**Last Updated:** 2026-06-06
+**Current Session:** Session 97 — Bugs 91/92/93/94/95 (Survey block: editor, renderer redesign, results storage, multiple choice, text input)
 **Current Phase:** Phase 4 — AI Builder & Automation Runtime (bug-fixing branch)
 
 ---
 
 ## Current Focus
+
+**What we just completed (Session 97):**
+- Bug #91: Survey block is now fully editable in the studio. `EditableSurvey` component with title, description, question CRUD (add/remove/reorder), type selector, required toggle, options management for single/multi, and scale config for rating.
+- Bug #92: Complete renderer redesign. Warm off-white card with red gradient accent bar, numbered red badge questions, circular rating buttons with pop animation, card-style option selections with custom radio/checkbox indicators, clean textarea, animated success state with checkmark. Responsive and dark mode support.
+- Bug #93: Survey results storage and admin visibility. Added `SurveyResponse` Prisma model with migration. `POST /api/surveys/submit` stores responses per-question. `GET /api/surveys/results` aggregates by question (frequency bars for choice/rating, text samples for open-ended). "View Results" button in editor shows inline results panel.
+- Bug #94: Multiple choice supported via `single` (radio) and `multi` (checkbox) question types.
+- Bug #95: Four input types supported: `text` (textarea), `single`, `multi`, `rating` (1-N scale). Type dropdown in editor with auto-config defaults.
+- Client-side hydration in `BlogPostContent.tsx` intercepts survey form submissions, POSTs to API, shows success state, and restores submitted state on reload via localStorage backup.
 
 **What we just completed (Session 96):**
 - Bug #40: New "code-sandbox" block type with interactive code execution. Supports JS/TS/HTML/CSS/JSON via iframe sandbox, Python via Pyodide (WASM), graceful fallback for Go/Rust/Bash/HTTP/Markdown. Editor has dark IDE-style textarea, language selector, line numbers toggle, inline Test Run.

@@ -335,3 +335,41 @@ model AuditLog {
 
   @@map("audit_logs")
 }
+
+// ============================================================================
+// Poll Votes
+// ============================================================================
+
+model PollVote {
+  id        String   @id @default(uuid())
+  entryId   String   @map("entry_id")
+  pollHash  String   @map("poll_hash")
+  optionId  String   @map("option_id")
+  userId    String?  @map("user_id")
+  voterHash String   @map("voter_hash")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([entryId, pollHash, optionId, voterHash])
+  @@index([entryId, pollHash])
+  @@map("poll_votes")
+}
+
+// ============================================================================
+// Survey Responses
+// ============================================================================
+
+model SurveyResponse {
+  id          String   @id @default(uuid())
+  entryId     String   @map("entry_id")
+  surveyHash  String   @map("survey_hash")
+  questionId  String   @map("question_id")
+  answer      String   @map("answer")
+  voterHash   String   @map("voter_hash")
+  userId      String?  @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([entryId, surveyHash])
+  @@index([entryId, surveyHash, questionId])
+  @@map("survey_responses")
+}
+

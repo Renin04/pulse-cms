@@ -293,7 +293,7 @@ export default function BlogPostContent({
         return;
       }
 
-      // Poll vote
+      // Poll vote — with optimistic UI update
       const pollBtn = target.closest('.pulse-poll-btn');
       if (pollBtn) {
         const poll = pollBtn.closest('.pulse-poll');
@@ -303,58 +303,88 @@ export default function BlogPostContent({
         const optionId = li.getAttribute('data-option-id');
         if (!optionId) return;
 
+        // Prevent double-clicks while a request is in flight
+        if ((poll as any).__voting) return;
+        (poll as any).__voting = true;
+        poll.setAttribute('data-voting', 'true');
+
         const isMultiple = poll.getAttribute('data-allow-multiple') === 'true';
-        const votedOptions: Set<string> = (poll as any).__votedOptions || new Set();
-
-        if (!isMultiple && votedOptions.size > 0 && !votedOptions.has(optionId)) {
-          const prevId = Array.from(votedOptions)[0] as string;
-          const prevLi = Array.from(poll.querySelectorAll('li')).find((l) => l.getAttribute('data-option-id') === prevId);
-          if (prevLi) {
-            let prevVotes = parseInt(prevLi.getAttribute('data-votes') || '0', 10);
-            prevVotes = Math.max(0, prevVotes - 1);
-            prevLi.setAttribute('data-votes', String(prevVotes));
-            prevLi.classList.remove('voted');
-          }
-          votedOptions.clear();
+        const pollHash = poll.getAttribute('data-poll-id');
+        if (!pollHash || !entry?.id) {
+          (poll as any).__voting = false;
+          poll.removeAttribute('data-voting');
+          return;
         }
 
-        if (votedOptions.has(optionId)) {
-          let votes = parseInt(li.getAttribute('data-votes') || '0', 10);
-          votes = Math.max(0, votes - 1);
-          li.setAttribute('data-votes', String(votes));
-          votedOptions.delete(optionId);
-          li.classList.remove('voted');
-        } else {
-          let votes = parseInt(li.getAttribute('data-votes') || '0', 10);
-          votes += 1;
-          li.setAttribute('data-votes', String(votes));
-          votedOptions.add(optionId);
-          li.classList.add('voted');
-        }
-
-        (poll as any).__votedOptions = votedOptions;
-
-        const allLis = Array.from(poll.querySelectorAll('li'));
-        let total = 0;
-        allLis.forEach((l) => { total += parseInt(l.getAttribute('data-votes') || '0', 10); });
-        allLis.forEach((l) => {
-          const v = parseInt(l.getAttribute('data-votes') || '0', 10);
-          const pct = total > 0 ? Math.round((v / total) * 100) : 0;
-          const bar = l.querySelector('.pulse-poll-bar') as HTMLElement | null;
-          const pctLabel = l.querySelector('.pulse-poll-pct') as HTMLElement | null;
-          if (bar) bar.style.width = pct + '%';
-          if (pctLabel) pctLabel.textContent = pct + '%';
+        // Capture pre-click state for potential revert
+        const preClickVotes: Record<string, number> = {};
+        const preClickVoted = new Set<string>();
+        poll.querySelectorAll('li').forEach((item) => {
+          const oid = item.getAttribute('data-option-id');
+          if (!oid) return;
+          preClickVotes[oid] = parseInt(item.getAttribute('data-votes') || '0', 10);
+          if (item.classList.contains('voted')) preClickVoted.add(oid);
         });
 
-        const retractEl = poll.querySelector('.pulse-poll-retract') as HTMLElement | null;
-        if (retractEl) retractEl.hidden = votedOptions.size === 0;
-
-        const pollId = poll.getAttribute('data-poll-id');
-        if (pollId) {
-          try {
-            localStorage.setItem(`pulse-poll-votes:${pollId}`, JSON.stringify({ votedOptions: Array.from(votedOptions) }));
-          } catch { /* ignore */ }
+        // Optimistically compute new state
+        const optimisticMyVotes = new Set(preClickVoted);
+        if (isMultiple) {
+          if (optimisticMyVotes.has(optionId)) {
+            optimisticMyVotes.delete(optionId);
+            preClickVotes[optionId] = Math.max(0, preClickVotes[optionId] - 1);
+          } else {
+            optimisticMyVotes.add(optionId);
+            preClickVotes[optionId] = (preClickVotes[optionId] || 0) + 1;
+          }
+        } else {
+          // Single choice: deselect all, select clicked
+          optimisticMyVotes.forEach((oid) => {
+            preClickVotes[oid] = Math.max(0, preClickVotes[oid] - 1);
+          });
+          optimisticMyVotes.clear();
+          optimisticMyVotes.add(optionId);
+          preClickVotes[optionId] = (preClickVotes[optionId] || 0) + 1;
         }
+
+        // Apply optimistic update immediately
+        updatePollBars(poll, {}, Array.from(optimisticMyVotes));
+
+        const voteVoterId = getVoterId();
+        fetch('/api/polls/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entryId: entry.id,
+            pollHash,
+            optionId,
+            allowMultiple: isMultiple,
+            voterId: voteVoterId,
+          }),
+        })
+          .then(async (res) => {
+            const payload = await res.json();
+            if (!res.ok) {
+              console.error('[Poll vote] API error:', res.status, payload);
+              // Revert on API error
+              updatePollBars(poll, {}, Array.from(preClickVoted));
+              return;
+            }
+            const { counts, myVotes } = payload.data || {};
+            // vote saved successfully
+            if (entry?.id && pollHash) {
+              savePollVoteBackup(entry.id, pollHash, myVotes || []);
+            }
+            updatePollBars(poll, counts || {}, myVotes || []);
+          })
+          .catch((err) => {
+            console.error('[Poll vote] Network error:', err);
+            // Revert on network error
+            updatePollBars(poll, {}, Array.from(preClickVoted));
+          })
+          .finally(() => {
+            (poll as any).__voting = false;
+            poll.removeAttribute('data-voting');
+          });
         return;
       }
 
@@ -363,31 +393,57 @@ export default function BlogPostContent({
       if (pollRetract) {
         const poll = pollRetract.closest('.pulse-poll');
         if (!poll) return;
-        const allLis = Array.from(poll.querySelectorAll('li'));
-        allLis.forEach((l) => {
-          const orig = parseInt(l.getAttribute('data-original-votes') || '0', 10);
-          l.setAttribute('data-votes', String(orig));
-          l.classList.remove('voted');
-        });
-        let total = 0;
-        allLis.forEach((l) => { total += parseInt(l.getAttribute('data-votes') || '0', 10); });
-        allLis.forEach((l) => {
-          const v = parseInt(l.getAttribute('data-votes') || '0', 10);
-          const pct = total > 0 ? Math.round((v / total) * 100) : 0;
-          const bar = l.querySelector('.pulse-poll-bar') as HTMLElement | null;
-          const pctLabel = l.querySelector('.pulse-poll-pct') as HTMLElement | null;
-          if (bar) bar.style.width = pct + '%';
-          if (pctLabel) pctLabel.textContent = pct + '%';
-        });
-        (poll as any).__votedOptions = new Set<string>();
-        (pollRetract as HTMLElement).hidden = true;
+        const pollHash = poll.getAttribute('data-poll-id');
+        if (!pollHash || !entry?.id) return;
 
-        const pollId2 = poll.getAttribute('data-poll-id');
-        if (pollId2) {
-          try {
-            localStorage.removeItem(`pulse-poll-votes:${pollId2}`);
-          } catch { /* ignore */ }
-        }
+        // Prevent double-clicks while a request is in flight
+        if ((poll as any).__voting) return;
+        (poll as any).__voting = true;
+        poll.setAttribute('data-voting', 'true');
+
+        // Capture pre-click state for potential revert
+        const preClickVoted = new Set<string>();
+        poll.querySelectorAll('li').forEach((item) => {
+          const oid = item.getAttribute('data-option-id');
+          if (oid && item.classList.contains('voted')) preClickVoted.add(oid);
+        });
+
+        // Optimistically clear all votes
+        updatePollBars(poll, {}, []);
+
+        const retractVoterId = getVoterId();
+        fetch('/api/polls/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entryId: entry.id,
+            pollHash,
+            retractAll: true,
+            voterId: retractVoterId,
+          }),
+        })
+          .then(async (res) => {
+            const payload = await res.json();
+            if (!res.ok) {
+              console.error('[Poll retract] API error:', res.status, payload);
+              updatePollBars(poll, {}, Array.from(preClickVoted));
+              return;
+            }
+            const { counts, myVotes } = payload.data || {};
+            // vote retracted successfully
+            if (entry?.id && pollHash) {
+              savePollVoteBackup(entry.id, pollHash, myVotes || []);
+            }
+            updatePollBars(poll, counts || {}, myVotes || []);
+          })
+          .catch((err) => {
+            console.error('[Poll retract] Network error:', err);
+            updatePollBars(poll, {}, Array.from(preClickVoted));
+          })
+          .finally(() => {
+            (poll as any).__voting = false;
+            poll.removeAttribute('data-voting');
+          });
         return;
       }
     }
@@ -403,6 +459,113 @@ export default function BlogPostContent({
       }
     }
 
+    function handleSubmit(e: Event) {
+      const form = e.target as HTMLFormElement;
+      const survey = form.closest('.pulse-survey');
+      if (!survey || !entry?.id) return;
+      e.preventDefault();
+
+      const surveyHash = survey.getAttribute('data-survey-id');
+      if (!surveyHash) return;
+
+      const submitBtn = form.querySelector('.pulse-survey-submit') as HTMLButtonElement | null;
+      const btnText = form.querySelector('.pulse-survey-submit-text') as HTMLElement | null;
+      const spinner = form.querySelector('.pulse-survey-submit-spinner') as HTMLElement | null;
+      if (submitBtn) submitBtn.disabled = true;
+      if (btnText) btnText.hidden = true;
+      if (spinner) spinner.hidden = false;
+
+      const answers: { questionId: string; answer: string }[] = [];
+      const questions = survey.querySelectorAll('.pulse-survey-question');
+      questions.forEach((q) => {
+        const questionId = q.getAttribute('data-question-id');
+        if (!questionId) return;
+        const type = q.getAttribute('data-question-type');
+        if (type === 'multi') {
+          const checked = Array.from(q.querySelectorAll('input[type="checkbox"]:checked')).map((cb) => (cb as HTMLInputElement).value);
+          if (checked.length > 0) answers.push({ questionId, answer: JSON.stringify(checked) });
+        } else if (type === 'text') {
+          const textarea = q.querySelector('textarea') as HTMLTextAreaElement | null;
+          if (textarea && textarea.value.trim()) answers.push({ questionId, answer: textarea.value.trim() });
+        } else {
+          const checked = q.querySelector('input[type="radio"]:checked') as HTMLInputElement | null;
+          if (checked) answers.push({ questionId, answer: checked.value });
+        }
+      });
+
+      if (answers.length === 0) {
+        if (submitBtn) submitBtn.disabled = false;
+        if (btnText) btnText.hidden = false;
+        if (spinner) spinner.hidden = true;
+        return;
+      }
+
+      const surveyVoterId = getVoterId();
+      const errorEl = form.querySelector('.pulse-survey-error') as HTMLElement | null;
+      if (errorEl) errorEl.hidden = true;
+
+      fetch('/api/surveys/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entryId: entry.id, surveyHash, answers, voterId: surveyVoterId }),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const payload = await res.json().catch(() => ({}));
+            console.error('[Survey submit] API error:', res.status, payload);
+            if (submitBtn) submitBtn.disabled = false;
+            if (btnText) btnText.hidden = false;
+            if (spinner) spinner.hidden = true;
+            if (errorEl) errorEl.removeAttribute('hidden');
+            return;
+          }
+          // Show success state
+          const questionsWrap = form.querySelector('.pulse-survey-questions');
+          const actions = form.querySelector('.pulse-survey-actions');
+          const success = form.querySelector('.pulse-survey-success');
+          if (questionsWrap) questionsWrap.setAttribute('hidden', '');
+          if (actions) actions.setAttribute('hidden', '');
+          if (success) success.removeAttribute('hidden');
+          // Mark as submitted in backup
+          try {
+            const raw = localStorage.getItem('pulse-survey-submitted');
+            const submitted = raw ? JSON.parse(raw) as Record<string, string[]> : {};
+            if (!submitted[entry.id]) submitted[entry.id] = [];
+            if (!submitted[entry.id].includes(surveyHash)) submitted[entry.id].push(surveyHash);
+            localStorage.setItem('pulse-survey-submitted', JSON.stringify(submitted));
+          } catch { /* ignore */ }
+        })
+        .catch((err) => {
+          console.error('[Survey submit] Network error:', err);
+          if (submitBtn) submitBtn.disabled = false;
+          if (btnText) btnText.hidden = false;
+          if (spinner) spinner.hidden = true;
+          if (errorEl) errorEl.removeAttribute('hidden');
+        });
+    }
+
+    function restoreSurveyStates(container: Element) {
+      if (!entry?.id) return;
+      try {
+        const raw = localStorage.getItem('pulse-survey-submitted');
+        if (!raw) return;
+        const submitted = JSON.parse(raw) as Record<string, string[]>;
+        const hashes = submitted[entry.id] || [];
+        container.querySelectorAll('.pulse-survey').forEach((survey) => {
+          const surveyHash = survey.getAttribute('data-survey-id');
+          if (!surveyHash || !hashes.includes(surveyHash)) return;
+          const form = survey.querySelector('form');
+          if (!form) return;
+          const questionsWrap = form.querySelector('.pulse-survey-questions');
+          const actions = form.querySelector('.pulse-survey-actions');
+          const success = form.querySelector('.pulse-survey-success');
+          if (questionsWrap) questionsWrap.setAttribute('hidden', '');
+          if (actions) actions.setAttribute('hidden', '');
+          if (success) success.removeAttribute('hidden');
+        });
+      } catch { /* ignore */ }
+    }
+
     // Tooltip positioning for image figures (pseudo-elements can't follow mouse without CSS vars)
     function handleMouseMove(e: MouseEvent) {
       const figure = (e.target as HTMLElement).closest('.pulse-image-figure[data-tooltip]') as HTMLElement | null;
@@ -413,58 +576,135 @@ export default function BlogPostContent({
       figure.style.setProperty('--tooltip-x', `${x}px`);
       figure.style.setProperty('--tooltip-y', `${y}px`);
     }
-    // Restore persisted poll votes
-    function restorePollVotes(container: Element) {
-      container.querySelectorAll('.pulse-poll').forEach((poll) => {
-        const pollId = poll.getAttribute('data-poll-id');
-        if (!pollId) return;
-        try {
-          const raw = localStorage.getItem(`pulse-poll-votes:${pollId}`);
-          if (!raw) return;
-          const stored = JSON.parse(raw) as { votedOptions: string[] };
-          const votedOptions = new Set(stored.votedOptions);
-          (poll as any).__votedOptions = votedOptions;
-
-          const lis = Array.from(poll.querySelectorAll('li'));
-          lis.forEach((li) => {
-            const optionId = li.getAttribute('data-option-id');
-            if (!optionId) return;
-            if (votedOptions.has(optionId)) {
-              li.classList.add('voted');
-              let votes = parseInt(li.getAttribute('data-votes') || '0', 10);
-              votes += 1;
-              li.setAttribute('data-votes', String(votes));
-            }
-          });
-
-          let total = 0;
-          lis.forEach((li) => { total += parseInt(li.getAttribute('data-votes') || '0', 10); });
-          lis.forEach((li) => {
-            const v = parseInt(li.getAttribute('data-votes') || '0', 10);
-            const pct = total > 0 ? Math.round((v / total) * 100) : 0;
-            const bar = li.querySelector('.pulse-poll-bar') as HTMLElement | null;
-            const pctLabel = li.querySelector('.pulse-poll-pct') as HTMLElement | null;
-            if (bar) bar.style.width = pct + '%';
-            if (pctLabel) pctLabel.textContent = pct + '%';
-          });
-
-          const retractEl = poll.querySelector('.pulse-poll-retract') as HTMLElement | null;
-          if (retractEl) retractEl.hidden = votedOptions.size === 0;
-        } catch {
-          // ignore
+    function updatePollBars(poll: Element, counts: Record<string, number>, myVotes: string[]) {
+      // React StrictMode or re-renders can detach the captured element.
+      // If detached, look it up fresh in the DOM by data-poll-id.
+      if (!(poll as any).isConnected) {
+        const pollHash = poll.getAttribute('data-poll-id');
+        if (pollHash) {
+          const fresh = document.querySelector(`.pulse-poll[data-poll-id="${CSS.escape(pollHash)}"]`);
+          if (fresh) poll = fresh;
         }
+      }
+      const lis = Array.from(poll.querySelectorAll('li'));
+      let total = 0;
+      lis.forEach((li) => {
+        const optionId = li.getAttribute('data-option-id');
+        const originalVotes = parseInt(li.getAttribute('data-original-votes') || '0', 10);
+        const dbCount = optionId ? (counts[optionId] ?? 0) : 0;
+        const displayVotes = originalVotes + dbCount;
+        li.setAttribute('data-votes', String(displayVotes));
+        if (optionId && myVotes.includes(optionId)) {
+          li.classList.add('voted');
+        } else {
+          li.classList.remove('voted');
+        }
+        total += displayVotes;
       });
+      lis.forEach((li) => {
+        const v = parseInt(li.getAttribute('data-votes') || '0', 10);
+        const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+        const bar = li.querySelector('.pulse-poll-bar') as HTMLElement | null;
+        const pctLabel = li.querySelector('.pulse-poll-pct') as HTMLElement | null;
+        if (bar) bar.style.width = pct + '%';
+        if (pctLabel) pctLabel.textContent = pct + '%';
+      });
+      (poll as any).__votedOptions = new Set(myVotes);
+      const retractEl = poll.querySelector('.pulse-poll-retract') as HTMLElement | null;
+      if (retractEl) retractEl.hidden = myVotes.length === 0;
     }
 
-    restorePollVotes(article);
+    function savePollVoteBackup(entryId: string, pollHash: string, votedOptions: string[]) {
+      try {
+        const raw = localStorage.getItem('pulse-poll-voted-backup');
+        const data = raw ? (JSON.parse(raw) as Record<string, Record<string, string[]>>) : {};
+        if (!data[entryId]) data[entryId] = {};
+        data[entryId][pollHash] = votedOptions;
+        localStorage.setItem('pulse-poll-voted-backup', JSON.stringify(data));
+      } catch { /* ignore */ }
+    }
+
+    function loadPollVoteBackup(entryId: string, pollHash: string): string[] {
+      try {
+        const raw = localStorage.getItem('pulse-poll-voted-backup');
+        if (!raw) return [];
+        const data = JSON.parse(raw) as Record<string, Record<string, string[]>>;
+        return data[entryId]?.[pollHash] || [];
+      } catch {
+        return [];
+      }
+    }
+
+    let __voterIdMemo: string | null = null;
+    function getVoterId(): string {
+      if (__voterIdMemo) return __voterIdMemo;
+      try {
+        let id = localStorage.getItem('pulse-voter-id');
+        // localStorage read OK
+        if (!id) {
+          id = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+          localStorage.setItem('pulse-voter-id', id);
+          // generated new voterId
+        }
+        __voterIdMemo = id;
+        return id;
+      } catch (e) {
+        const fallback = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+        // localStorage failed, using fallback
+        __voterIdMemo = fallback;
+        return fallback;
+      }
+    }
+
+    async function loadPollVotes(container: Element) {
+      if (!entry?.id) return;
+      const voterId = getVoterId();
+      // loadPollVotes starting
+      const polls = container.querySelectorAll('.pulse-poll');
+      for (const poll of polls) {
+        const pollHash = poll.getAttribute('data-poll-id');
+        if (!pollHash) continue;
+        try {
+          const url = `/api/polls/votes?entryId=${encodeURIComponent(entry.id)}&pollHash=${encodeURIComponent(pollHash)}&voterId=${encodeURIComponent(voterId)}`;
+          // fetching poll votes
+          const res = await fetch(url);
+          const payload = await res.json();
+          if (!res.ok) {
+            console.error('[Poll load] API error:', res.status, payload);
+            continue;
+          }
+          const { counts, myVotes } = payload.data || {};
+          // poll load response received
+          let mergedMyVotes = myVotes || [];
+          if (entry?.id && pollHash && mergedMyVotes.length === 0) {
+            const backup = loadPollVoteBackup(entry.id, pollHash);
+            // using backup myVotes
+            mergedMyVotes = backup;
+          }
+          updatePollBars(poll, counts || {}, mergedMyVotes);
+          // poll votes applied to DOM
+        } catch (err) {
+          console.error('[Poll load] Network error:', err);
+        }
+      }
+    }
+
+    loadPollVotes(article);
+    restoreSurveyStates(article);
 
     article.addEventListener('mousemove', handleMouseMove);
 
     article.addEventListener('click', handleClick);
     article.addEventListener('change', handleChange);
+    article.addEventListener('submit', handleSubmit);
     return () => {
       article.removeEventListener('click', handleClick);
       article.removeEventListener('change', handleChange);
+      article.removeEventListener('submit', handleSubmit);
       article.removeEventListener('mousemove', handleMouseMove);
       observer.disconnect();
     };

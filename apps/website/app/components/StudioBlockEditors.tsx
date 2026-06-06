@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, forwardRef } from 'react';
-import { Trash2, Plus, Upload, Play, Terminal } from 'lucide-react';
+import { Trash2, Plus, Upload, Play, Terminal, GripVertical, ChevronUp, ChevronDown, Type, ListChecks, Star, AlignLeft, BarChart3 } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
 import { type ReferenceStyle, formatReferenceNumber, buildPyodideSrcdoc } from '@pulse/blocks';
@@ -1995,6 +1995,225 @@ export function EditablePoll({ block, adapter }: { block: Block<BlockData>; adap
           </button>
         </div>
       </Section>
+    </div>
+  );
+}
+
+export function EditableSurvey({ block, adapter, entrySlug }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>>; entrySlug?: string | null }) {
+  const data = block.data as {
+    title: string;
+    description?: string;
+    questions: { id: string; prompt: string; type: 'text' | 'single' | 'multi' | 'rating'; required: boolean; options?: string[]; scaleMax?: number }[];
+  };
+
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const [resultsLoading, setResultsLoading] = useState(false);
+  const [resultsData, setResultsData] = useState<any>(null);
+
+  const safeUpdate = (nextData: typeof data) => {
+    try { adapter.updateBlock(block.id, (b) => ({ ...b, data: nextData })); } catch { /* ignore validation errors during typing */ }
+  };
+
+  const loadResults = async () => {
+    if (!entrySlug) return;
+    const surveyHash = stableSurveyHash(data.title, data.questions);
+    setResultsLoading(true);
+    try {
+      const res = await fetch(`/api/surveys/results?entryId=${encodeURIComponent(entrySlug)}&surveyHash=${encodeURIComponent(surveyHash)}`);
+      const payload = await res.json();
+      if (res.ok) setResultsData(payload.data);
+    } catch { /* ignore */ }
+    setResultsLoading(false);
+  };
+
+  const stableSurveyHash = (title: string, questions: typeof data.questions) => {
+    const raw = title + questions.map((q) => q.id + q.prompt + q.type).join('');
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      const char = raw.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return 'survey-' + Math.abs(hash).toString(36);
+  };
+
+  const moveQuestion = (index: number, direction: -1 | 1) => {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= data.questions.length) return;
+    const qs = [...data.questions];
+    [qs[index], qs[newIndex]] = [qs[newIndex], qs[index]];
+    safeUpdate({ ...data, questions: qs });
+  };
+
+  const questionTypeOptions = [
+    { value: 'text', label: 'Text', icon: <Type className="h-3 w-3" /> },
+    { value: 'single', label: 'Single choice', icon: <ListChecks className="h-3 w-3" /> },
+    { value: 'multi', label: 'Multiple choice', icon: <AlignLeft className="h-3 w-3" /> },
+    { value: 'rating', label: 'Rating', icon: <Star className="h-3 w-3" /> },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <Input value={data.title} onChange={(e) => safeUpdate({ ...data, title: e.target.value })} placeholder="Survey title..." />
+      <TextArea value={data.description || ''} onChange={(e) => safeUpdate({ ...data, description: e.target.value })} placeholder="Description (optional)..." rows={2} />
+      <Section title={`Questions (${data.questions.length})`}>
+        <div className="space-y-3">
+          {data.questions.map((q, i) => (
+            <div key={q.id} className="rounded-xl border border-[var(--neutral-200)] bg-white p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <GripVertical className="h-3.5 w-3.5 text-[var(--neutral-300)]" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-400)]">Q{i + 1}</span>
+                <div className="ml-auto flex items-center gap-1">
+                  <button onClick={() => moveQuestion(i, -1)} disabled={i === 0} className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--neutral-600)] disabled:opacity-30"><ChevronUp className="h-3 w-3" /></button>
+                  <button onClick={() => moveQuestion(i, 1)} disabled={i === data.questions.length - 1} className="rounded p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--neutral-600)] disabled:opacity-30"><ChevronDown className="h-3 w-3" /></button>
+                  <button onClick={() => {
+                    const next = data.questions.filter((_, idx) => idx !== i);
+                    safeUpdate({ ...data, questions: next.length >= 1 ? next : data.questions });
+                  }} className="rounded p-1 text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"><Trash2 className="h-3 w-3" /></button>
+                </div>
+              </div>
+              <Input value={q.prompt} onChange={(e) => {
+                const next = data.questions.map((qq, idx) => idx === i ? { ...qq, prompt: e.target.value } : qq);
+                safeUpdate({ ...data, questions: next });
+              }} placeholder="Question prompt..." />
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={q.type}
+                  onChange={(e) => {
+                    const newType = e.target.value as typeof q.type;
+                    const nextQ = { ...q, type: newType };
+                    if (newType === 'rating' && !nextQ.scaleMax) nextQ.scaleMax = 5;
+                    if ((newType === 'single' || newType === 'multi') && (!nextQ.options || nextQ.options.length === 0)) nextQ.options = ['Option 1', 'Option 2'];
+                    const next = data.questions.map((qq, idx) => idx === i ? nextQ : qq);
+                    safeUpdate({ ...data, questions: next });
+                  }}
+                  className="rounded-lg border border-[var(--neutral-200)] bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] outline-none"
+                >
+                  {questionTypeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <label className="flex items-center gap-1.5 text-xs text-[var(--neutral-600)]">
+                  <input type="checkbox" checked={q.required} onChange={(e) => {
+                    const next = data.questions.map((qq, idx) => idx === i ? { ...qq, required: e.target.checked } : qq);
+                    safeUpdate({ ...data, questions: next });
+                  }} className="h-3.5 w-3.5 accent-[var(--pulse-red)]" />
+                  Required
+                </label>
+                {q.type === 'rating' && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Scale</span>
+                    <input type="number" min={3} max={10} value={q.scaleMax ?? 5}
+                      onChange={(e) => {
+                        const next = data.questions.map((qq, idx) => idx === i ? { ...qq, scaleMax: Math.min(10, Math.max(3, Number(e.target.value) || 5)) } : qq);
+                        safeUpdate({ ...data, questions: next });
+                      }}
+                      className="w-12 rounded-lg border border-[var(--neutral-200)] bg-white px-1.5 py-1 text-xs font-semibold text-[var(--neutral-600)] outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+              {(q.type === 'single' || q.type === 'multi') && (
+                <div className="space-y-1.5">
+                  {q.options?.map((opt, optIdx) => (
+                    <div key={optIdx} className="flex items-center gap-2">
+                      <Input value={opt} onChange={(e) => {
+                        const nextOpts = q.options!.map((o, oi) => oi === optIdx ? e.target.value : o);
+                        const next = data.questions.map((qq, idx) => idx === i ? { ...qq, options: nextOpts } : qq);
+                        safeUpdate({ ...data, questions: next });
+                      }} placeholder={`Option ${optIdx + 1}`} className="flex-1 text-xs" />
+                      <button onClick={() => {
+                        const nextOpts = q.options!.filter((_, oi) => oi !== optIdx);
+                        const next = data.questions.map((qq, idx) => idx === i ? { ...qq, options: nextOpts.length >= 2 ? nextOpts : q.options } : qq);
+                        safeUpdate({ ...data, questions: next });
+                      }} className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"><Trash2 className="h-3 w-3" /></button>
+                    </div>
+                  ))}
+                  <button onClick={() => {
+                    const nextOpts = [...(q.options || []), `Option ${(q.options?.length || 0) + 1}`];
+                    const next = data.questions.map((qq, idx) => idx === i ? { ...qq, options: nextOpts } : qq);
+                    safeUpdate({ ...data, questions: next });
+                  }} className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]">
+                    <Plus className="h-3 w-3" /> Option
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          <button onClick={() => {
+            safeUpdate({
+              ...data,
+              questions: [...data.questions, {
+                id: `survey-q-${Date.now()}`,
+                prompt: 'New question',
+                type: 'text',
+                required: false,
+              }],
+            });
+          }} className="inline-flex items-center gap-1 rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)] border border-[var(--neutral-200)]">
+            <Plus className="h-3 w-3" /> Add question
+          </button>
+        </div>
+      </Section>
+      {entrySlug && (
+        <div className="pt-2">
+          <button
+            onClick={() => {
+              if (!resultsOpen) loadResults();
+              setResultsOpen((o) => !o);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--neutral-600)] hover:border-[var(--pulse-red)] hover:text-[var(--pulse-red)] transition-colors"
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            {resultsOpen ? 'Hide Results' : 'View Results'}
+          </button>
+          {resultsOpen && (
+            <div className="mt-2 rounded-xl border border-[var(--neutral-200)] bg-white p-3 space-y-3">
+              {resultsLoading ? (
+                <div className="flex items-center gap-2 text-xs text-[var(--neutral-500)]">
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[var(--neutral-300)] border-t-[var(--pulse-red)]" />
+                  Loading results...
+                </div>
+              ) : !resultsData ? (
+                <p className="text-xs text-[var(--neutral-500)]">No results yet.</p>
+              ) : resultsData.uniqueRespondents === 0 ? (
+                <p className="text-xs text-[var(--neutral-500)]">No responses yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-[var(--neutral-600)]">{resultsData.uniqueRespondents} respondent{resultsData.uniqueRespondents === 1 ? '' : 's'}</p>
+                  {data.questions.map((q) => {
+                    const qResult = resultsData.results?.[q.id];
+                    if (!qResult) return null;
+                    const maxCount = Math.max(...Object.values(qResult.frequency || {}) as number[]);
+                    return (
+                      <div key={q.id} className="rounded-lg border border-[var(--neutral-100)] p-2.5 space-y-1.5">
+                        <p className="text-xs font-semibold text-[var(--neutral-700)]">{q.prompt}</p>
+                        {q.type === 'text' ? (
+                          <div className="max-h-32 overflow-y-auto space-y-1">
+                            {qResult.samples?.slice(0, 10).map((sample: string, si: number) => (
+                              <p key={si} className="text-[11px] text-[var(--neutral-600)] bg-[var(--neutral-50)] rounded px-2 py-1">{sample}</p>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            {Object.entries(qResult.frequency || {} as Record<string, number>).sort((a, b) => (b[1] as number) - (a[1] as number)).map(([label, count]) => (
+                              <div key={label} className="flex items-center gap-2">
+                                <div className="flex-1 h-5 bg-[var(--neutral-100)] rounded overflow-hidden relative">
+                                  <div className="absolute inset-y-0 left-0 bg-[var(--pulse-red)]/80 rounded" style={{ width: `${maxCount ? (count as number / maxCount) * 100 : 0}%` }} />
+                                  <span className="relative z-10 text-[10px] font-semibold text-[var(--neutral-700)] px-2 leading-5">{label}</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-[var(--neutral-500)] w-6 text-right">{count as number}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

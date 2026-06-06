@@ -18,7 +18,7 @@ import { BUILTIN_BLOCK_DEFINITIONS, formatReferenceNumber } from '@pulse/blocks'
 import {
   EditableHorizontalRule, EditableLink, EditableImage, EditableVideo, EditableAudio,
   EditableEmbed, EditableFile, EditableTable, EditableCallout, EditableAlert, EditableQuiz, EditablePoll,
-  EditableAccordion, EditableTabs, EditableToggle, EditableSpoiler, EditableFlashcard,
+  EditableSurvey, EditableAccordion, EditableTabs, EditableToggle, EditableSpoiler, EditableFlashcard,
   EditableTimeline, EditableComparison, EditableBeforeAfter, EditableChart, EditableMap,
   EditableMath, EditableDiagram, EditableManga, EditableSpeechBubble, EditableCard,
   EditableGallery, EditableCarousel, EditableHeroSection, EditableAnnotatedImage,
@@ -2162,6 +2162,7 @@ function EditableBlock({
   onCommentClick,
   onAddComment,
   isPulsing,
+  entrySlug,
 }: {
   block: Block<BlockData>;
   adapter: EditorStateAdapter<Block<BlockData>>;
@@ -2174,6 +2175,7 @@ function EditableBlock({
   onCommentClick?: () => void;
   onAddComment?: () => void;
   isPulsing?: boolean;
+  entrySlug?: string | null;
 }) {
   const [isActive, setIsActive] = useState(false);
   const [moveTarget, setMoveTarget] = useState('');
@@ -2198,6 +2200,7 @@ function EditableBlock({
       case 'alert': return <EditableAlert block={block} adapter={adapter} />;
       case 'quiz': return <EditableQuiz block={block} adapter={adapter} />;
       case 'poll': return <EditablePoll block={block} adapter={adapter} />;
+      case 'survey': return <EditableSurvey block={block} adapter={adapter} entrySlug={entrySlug} />;
       case 'accordion': return <EditableAccordion block={block} adapter={adapter} />;
       case 'tabs': return <EditableTabs block={block} adapter={adapter} />;
       case 'toggle': return <EditableToggle block={block} adapter={adapter} />;
@@ -2219,7 +2222,7 @@ function EditableBlock({
       case 'annotated-image': return <EditableAnnotatedImage block={block} adapter={adapter} />;
       default: return <GenericBlockPlaceholder block={block} />;
     }
-  }, [block, adapter]);
+  }, [block, adapter, entrySlug]);
 
   return (
     <div
@@ -2409,6 +2412,7 @@ export default function StudioBlockCanvas({
   pulseBlockId,
   onBlockCommentClick,
   onAddBlockComment,
+  entrySlug,
 }: {
   adapter: EditorStateAdapter<Block<BlockData>> | null;
   blocks: Block<BlockData>[];
@@ -2417,6 +2421,7 @@ export default function StudioBlockCanvas({
   pulseBlockId?: string | null;
   onBlockCommentClick?: (blockId: string) => void;
   onAddBlockComment?: (blockId: string) => void;
+  entrySlug?: string | null;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [showPalette, setShowPalette] = useState(false);
@@ -2616,6 +2621,7 @@ export default function StudioBlockCanvas({
             isPulsing={pulseBlockId === block.id}
             onCommentClick={() => onBlockCommentClick?.(block.id)}
             onAddComment={() => onAddBlockComment?.(block.id)}
+            entrySlug={entrySlug}
           />
         ))}
       </div>

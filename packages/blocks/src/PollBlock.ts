@@ -37,7 +37,7 @@ export const pollBlockDataSchema = z
   });
 
 function stablePollId(question: string, options: PollOption[]): string {
-  const raw = question + options.map((o) => o.id + o.label + o.votes).join('');
+  const raw = question + options.map((o) => o.id + o.label).join('');
   let hash = 0;
   for (let i = 0; i < raw.length; i++) {
     const char = raw.charCodeAt(i);
