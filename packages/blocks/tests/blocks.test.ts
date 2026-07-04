@@ -978,17 +978,69 @@ describe("SpeechBubbleBlock", () => {
 });
 
 describe("CardBlock", () => {
-  it("renders optional media and CTA link", () => {
+  it("renders with background image and CTA", () => {
     const html = CardBlock.render({
       title: "Command Palette",
       body: "Search and run editor actions quickly.",
-      mediaUrl: "https://example.com/cover.png",
-      linkUrl: "https://example.com/docs/palette",
+      backgroundType: "image",
+      backgroundImageUrl: "https://example.com/cover.png",
+      backgroundImageFit: "cover",
       ctaLabel: "Read docs",
+      ctaLinkUrl: "https://example.com/docs/palette",
+      ctaAlign: "center",
     });
 
     expect(html).toContain('data-block-type="card"');
     expect(html).toContain("Read docs");
+    expect(html).toContain("background-image:url(https://example.com/cover.png)");
+  });
+
+  it("renders with solid color background and geometric form", () => {
+    const html = CardBlock.render({
+      title: "Feature",
+      body: "Description here.",
+      backgroundType: "solid",
+      backgroundColor: "#f0f0f0",
+      geometricForm: "circle",
+      geometricPosition: "top-right",
+      geometricColor: "rgba(0,0,0,0.1)",
+      geometricOpacity: 0.2,
+    });
+
+    expect(html).toContain('data-block-type="card"');
+    expect(html).toContain("background:#f0f0f0");
+    expect(html).toContain("circle");
+  });
+
+  it("renders overlay text with size class", () => {
+    const html = CardBlock.render({
+      title: "Overlay Card",
+      body: "Body text.",
+      backgroundType: "gradient",
+      backgroundGradient: "linear-gradient(45deg, red, blue)",
+      overlayText: "Hello",
+      overlayAlign: "left",
+      overlayFontSize: "lg",
+    });
+
+    expect(html).toContain("Hello");
+    expect(html).toContain("pulse-card__overlay--left");
+    expect(html).toContain("pulse-card__overlay--lg");
+  });
+
+  it("migrates legacy mediaUrl/linkUrl fields", () => {
+    const html = CardBlock.render({
+      title: "Legacy Card",
+      body: "Legacy body.",
+      mediaUrl: "https://example.com/legacy-cover.png",
+      ctaLabel: "Go",
+      linkUrl: "https://example.com/legacy",
+    });
+
+    expect(html).toContain('data-pulse-card-bg="image"');
+    expect(html).toContain("background-image:url(https://example.com/legacy-cover.png)");
+    expect(html).toContain('href="https://example.com/legacy"');
+    expect(html).toContain("Go");
   });
 });
 
@@ -999,44 +1051,82 @@ describe("GalleryBlock", () => {
         title: "Storyboard",
         layout: "grid",
         columns: 2,
+        gap: 16,
         images: [
           {
             id: "g1",
             src: "https://example.com/1.png",
             alt: "Frame 1",
+            fit: "cover",
           },
         ],
       },
       {
         src: "https://example.com/2.png",
         alt: "Frame 2",
+        title: "Second frame",
+        fit: "contain",
       },
     );
 
     expect(withImage.images).toHaveLength(2);
-    expect(GalleryBlock.render(withImage)).toContain('data-block-type="gallery"');
+    const html = GalleryBlock.render(withImage);
+    expect(html).toContain('data-block-type="gallery"');
+    expect(html).toContain('--gallery-columns:2');
+    expect(html).toContain('--gallery-gap:16px');
+    expect(html).toContain('object-fit:contain');
+  });
+
+  it("renders image links and caption alignment", () => {
+    const html = GalleryBlock.render({
+      title: "Linked Gallery",
+      layout: "grid",
+      columns: 2,
+      gap: 12,
+      images: [
+        {
+          id: "l1",
+          src: "https://example.com/a.png",
+          alt: "A",
+          linkUrl: "https://example.com/a",
+          linkTarget: "_blank",
+          caption: "Caption text",
+          captionAlign: "right",
+        },
+      ],
+    });
+
+    expect(html).toContain('href="https://example.com/a"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('text-align:right');
   });
 });
 
 describe("CarouselBlock", () => {
-  it("adds slides and renders indicators", () => {
+  it("adds slides and renders indicators and arrows", () => {
     const withSlide = addCarouselSlide(
       {
         slides: [{ id: "c1", title: "Slide one" }],
         autoplay: true,
         intervalMs: 4000,
         showIndicators: true,
+        showArrows: true,
       },
       {
         title: "Slide two",
         body: "Second panel",
+        mediaUrl: "https://example.com/slide2.png",
+        mediaFit: "cover",
       },
     );
     const html = CarouselBlock.render(withSlide);
 
     expect(withSlide.slides).toHaveLength(2);
     expect(html).toContain('data-block-type="carousel"');
-    expect(html).toContain('data-indicators="true"');
+    expect(html).toContain('pulse-carousel__indicators');
+    expect(html).toContain('pulse-carousel__arrow');
+    expect(html).toContain('autoplay="true"');
+    expect(html).toContain('object-fit:cover');
   });
 });
 

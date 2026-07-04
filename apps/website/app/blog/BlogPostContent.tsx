@@ -8,6 +8,7 @@ import { formatDisplayDate } from '../../lib/site-content';
 import { useBackendBlogEntry } from '../../lib/use-backend-entries';
 import type { AdaptedBlogEntry } from '../../lib/entry-adapter';
 import { buildSandboxSrcdoc, buildPyodideSrcdoc, base64ToUtf8 } from '@pulse/blocks';
+import { hydrateCarousels } from '../../lib/hydrate-carousels';
 
 import SpotlightCard from '../components/SpotlightCard';
 import ReadingProgress from '../components/ReadingProgress';
@@ -100,6 +101,9 @@ export default function BlogPostContent({
       });
     }
     hydrateVideoBlocks(article);
+
+    // Carousel hydration (autoplay, arrows, dots, scroll-based active dot)
+    const cleanupCarousels = hydrateCarousels(article);
 
     // Use MutationObserver to catch iframes added by React after initial hydration
     const observer = new MutationObserver((mutations) => {
@@ -707,6 +711,7 @@ export default function BlogPostContent({
       article.removeEventListener('submit', handleSubmit);
       article.removeEventListener('mousemove', handleMouseMove);
       observer.disconnect();
+      cleanupCarousels();
     };
   }, [entry?.html]);
 

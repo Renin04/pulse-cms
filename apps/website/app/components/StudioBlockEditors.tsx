@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, forwardRef } from 'react';
-import { Trash2, Plus, Upload, Play, Terminal, GripVertical, ChevronUp, ChevronDown, Type, ListChecks, Star, AlignLeft, BarChart3 } from 'lucide-react';
+import { Trash2, Plus, Upload, Play, Terminal, GripVertical, ChevronUp, ChevronDown, Type, ListChecks, Star, AlignLeft, BarChart3, Image as ImageIcon, MessageSquare, Sun, CloudRain, BrainCircuit, Maximize, MoveVertical, StretchHorizontal, Expand, ExternalLink, Link2 } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
 import { type ReferenceStyle, formatReferenceNumber, buildPyodideSrcdoc } from '@pulse/blocks';
@@ -1754,32 +1754,580 @@ export function EditableSpoiler({ block, adapter }: { block: Block<BlockData>; a
 }
 
 export function EditableCard({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { title: string; body: string; mediaUrl?: string; linkUrl?: string; ctaLabel?: string };
+  const raw = block.data as {
+    title: string;
+    body: string;
+    backgroundType?: 'image' | 'solid' | 'gradient';
+    backgroundImageUrl?: string;
+    backgroundImageFit?: 'cover' | 'fill' | 'fit';
+    backgroundColor?: string;
+    backgroundGradient?: string;
+    geometricForm?: string;
+    geometricSvg?: string;
+    geometricPosition?: string;
+    geometricColor?: string;
+    geometricOpacity?: number;
+    ctaLabel?: string;
+    ctaLinkUrl?: string;
+    ctaAlign?: string;
+    overlayText?: string;
+    overlayAlign?: string;
+    overlayFontSize?: string;
+    // Legacy fields
+    mediaUrl?: string;
+    linkUrl?: string;
+  };
+  const data = {
+    ...raw,
+    backgroundType: raw.backgroundType || (raw.mediaUrl ? 'image' : 'solid'),
+    backgroundImageUrl: raw.backgroundImageUrl || raw.mediaUrl,
+    backgroundImageFit: raw.backgroundImageFit || 'cover',
+    backgroundColor: raw.backgroundColor || '#ffffff',
+    ctaLinkUrl: raw.ctaLinkUrl || raw.linkUrl,
+    ctaAlign: raw.ctaAlign || 'center',
+    overlayAlign: raw.overlayAlign || 'center',
+    overlayFontSize: raw.overlayFontSize || 'md',
+    geometricForm: raw.geometricForm || 'none',
+    geometricPosition: raw.geometricPosition || 'top-right',
+    geometricColor: raw.geometricColor || 'rgba(255,40,0,0.12)',
+    geometricOpacity: raw.geometricOpacity ?? 0.15,
+  };
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const uploaded = await mediaApi.upload(file);
+      adapter.updateBlock(block.id, (b) => ({
+        ...b,
+        data: { ...data, backgroundImageUrl: uploaded.url },
+      }));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const update = (patch: Partial<typeof data>) => {
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, ...patch } }));
+  };
+
   return (
-    <div className="space-y-2">
-      <Input value={data.title} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Card title" />
-      <TextArea value={data.body} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, body: e.target.value } }))} placeholder="Card body text..." rows={2} />
-      <div className="flex gap-2">
-        <Input value={data.mediaUrl || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, mediaUrl: e.target.value } }))} placeholder="Media URL (optional)" className="flex-1" />
-        <Input value={data.linkUrl || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, linkUrl: e.target.value } }))} placeholder="Link URL (optional)" className="flex-1" />
-      </div>
-      <Input value={data.ctaLabel || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, ctaLabel: e.target.value } }))} placeholder="CTA button label (optional)" />
+    <div className="space-y-3">
+      {/* Text */}
+      <Input value={data.title} onChange={(e) => update({ title: e.target.value })} placeholder="Card title" />
+      <TextArea value={data.body} onChange={(e) => update({ body: e.target.value })} placeholder="Card body text..." rows={2} />
+
+      {/* Background */}
+      <Section title="Background">
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Select
+              value={data.backgroundType}
+              onChange={(e) => update({ backgroundType: e.target.value as typeof data.backgroundType })}
+              options={[{ value: 'solid', label: 'Solid' }, { value: 'gradient', label: 'Gradient' }, { value: 'image', label: 'Image' }]}
+            />
+            {data.backgroundType === 'solid' && (
+              <input
+                type="color"
+                value={data.backgroundColor || '#ffffff'}
+                onChange={(e) => update({ backgroundColor: e.target.value })}
+                className="h-8 w-10 cursor-pointer rounded border border-[var(--neutral-200)]"
+              />
+            )}
+            {data.backgroundType === 'gradient' && (
+              <Input
+                value={data.backgroundGradient || ''}
+                onChange={(e) => update({ backgroundGradient: e.target.value })}
+                placeholder="e.g. linear-gradient(45deg, #ff0080, #ff8c00)"
+                className="flex-1 text-xs"
+              />
+            )}
+            {data.backgroundType === 'image' && (
+              <div className="flex flex-1 gap-2">
+                <Input
+                  value={data.backgroundImageUrl || ''}
+                  onChange={(e) => update({ backgroundImageUrl: e.target.value })}
+                  placeholder="Image URL"
+                  className="flex-1 text-xs"
+                />
+                <InlineUploadButton accept="image/*" uploading={uploading} onUpload={handleUpload} />
+              </div>
+            )}
+          </div>
+          {data.backgroundType === 'image' && (
+            <Select
+              value={data.backgroundImageFit || 'cover'}
+              onChange={(e) => update({ backgroundImageFit: e.target.value as typeof data.backgroundImageFit })}
+              options={[{ value: 'cover', label: 'Cover' }, { value: 'fill', label: 'Fill' }, { value: 'fit', label: 'Fit' }]}
+            />
+          )}
+        </div>
+      </Section>
+
+      {/* Geometric Form */}
+      <Section title="Decoration">
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Select
+              value={data.geometricForm || 'none'}
+              onChange={(e) => update({ geometricForm: e.target.value })}
+              options={[
+                { value: 'none', label: 'None' },
+                { value: 'circle', label: 'Circle' },
+                { value: 'triangle', label: 'Triangle' },
+                { value: 'square', label: 'Square' },
+                { value: 'diamond', label: 'Diamond' },
+                { value: 'hexagon', label: 'Hexagon' },
+                { value: 'wave', label: 'Wave' },
+                { value: 'dots', label: 'Dots' },
+                { value: 'lines', label: 'Lines' },
+                { value: 'custom', label: 'Custom SVG' },
+              ]}
+              className="flex-1"
+            />
+            {data.geometricForm && data.geometricForm !== 'none' && (
+              <Select
+                value={data.geometricPosition || 'top-right'}
+                onChange={(e) => update({ geometricPosition: e.target.value })}
+                options={[
+                  { value: 'top-left', label: 'TL' },
+                  { value: 'top-right', label: 'TR' },
+                  { value: 'bottom-left', label: 'BL' },
+                  { value: 'bottom-right', label: 'BR' },
+                  { value: 'center', label: 'Center' },
+                ]}
+              />
+            )}
+          </div>
+          {data.geometricForm === 'custom' && (
+            <TextArea
+              value={data.geometricSvg || ''}
+              onChange={(e) => update({ geometricSvg: e.target.value })}
+              placeholder='<svg viewBox="0 0 100 100">...</svg>'
+              rows={2}
+              className="text-xs font-mono"
+            />
+          )}
+          {data.geometricForm && data.geometricForm !== 'none' && (
+            <div className="flex items-center gap-2">
+              <Label>Color</Label>
+              <input
+                type="color"
+                value={data.geometricColor || 'rgba(255,40,0,0.08)'}
+                onChange={(e) => update({ geometricColor: e.target.value })}
+                className="h-7 w-10 cursor-pointer rounded border border-[var(--neutral-200)]"
+              />
+              <Label>Opacity</Label>
+              <Input
+                type="number"
+                min={0}
+                max={1}
+                step={0.05}
+                value={data.geometricOpacity ?? 0.15}
+                onChange={(e) => update({ geometricOpacity: Number(e.target.value) })}
+                className="w-16 text-xs"
+              />
+            </div>
+          )}
+        </div>
+      </Section>
+
+      {/* Overlay */}
+      <Section title="Overlay Text">
+        <div className="space-y-2">
+          <Input
+            value={data.overlayText || ''}
+            onChange={(e) => update({ overlayText: e.target.value })}
+            placeholder="Optional overlay text"
+          />
+          {data.overlayText && (
+            <div className="flex gap-2">
+              <Select
+                value={data.overlayAlign || 'center'}
+                onChange={(e) => update({ overlayAlign: e.target.value })}
+                options={[{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]}
+              />
+              <Select
+                value={data.overlayFontSize || 'md'}
+                onChange={(e) => update({ overlayFontSize: e.target.value })}
+                options={[{ value: 'sm', label: 'Small' }, { value: 'md', label: 'Medium' }, { value: 'lg', label: 'Large' }, { value: 'xl', label: 'XL' }]}
+              />
+            </div>
+          )}
+        </div>
+      </Section>
+
+      {/* CTA */}
+      <Section title="CTA Button">
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input value={data.ctaLabel || ''} onChange={(e) => update({ ctaLabel: e.target.value })} placeholder="Button text" className="flex-1" />
+            <Input value={data.ctaLinkUrl || ''} onChange={(e) => update({ ctaLinkUrl: e.target.value })} placeholder="URL" className="flex-1" />
+          </div>
+          {data.ctaLabel && data.ctaLinkUrl && (
+            <Select
+              value={data.ctaAlign || 'center'}
+              onChange={(e) => update({ ctaAlign: e.target.value })}
+              options={[{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]}
+            />
+          )}
+        </div>
+      </Section>
     </div>
   );
 }
 
 export function EditableSpeechBubble({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { speaker: string; text: string; tone: string; align: string };
+  const data = block.data as {
+    speaker: string;
+    text: string;
+    tone: string;
+    align: string;
+    title?: string;
+    titleAlign?: string;
+    contentAlign?: string;
+  };
+
+  const titleRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const activeFieldRef = useRef<'title' | 'text'>('text');
+  const skipBlurRef = useRef(false);
+  const savedRangeRef = useRef<Range | null>(null);
+
+  // Link modal state
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [linkModalText, setLinkModalText] = useState('');
+  const [linkModalUrl, setLinkModalUrl] = useState('');
+  const [linkModalRel, setLinkModalRel] = useState('');
+  const [linkModalTarget, setLinkModalTarget] = useState('');
+  const existingLinkRef = useRef<{ text: string; url: string; rel: string; target: string } | null>(null);
+
+  // Ref modal state
+  const [refModalOpen, setRefModalOpen] = useState(false);
+  const [refModalUrl, setRefModalUrl] = useState('');
+  const [refModalText, setRefModalText] = useState('');
+  const [refModalStyle, setRefModalStyle] = useState<'numeric' | 'alphabetic' | 'greek' | 'abjad'>('numeric');
+  const [refModalTarget, setRefModalTarget] = useState('');
+  const [refModalRel, setRefModalRel] = useState('');
+  const existingRefRef = useRef<{ url?: string; text?: string; style: 'numeric' | 'alphabetic' | 'greek' | 'abjad'; target?: string; rel?: string } | null>(null);
+
+  const toneIcons: Record<string, React.ReactNode> = {
+    neutral: <MessageSquare className="h-3.5 w-3.5" />,
+    happy: <Sun className="h-3.5 w-3.5" />,
+    angry: <CloudRain className="h-3.5 w-3.5" />,
+    thinking: <BrainCircuit className="h-3.5 w-3.5" />,
+  };
+
+  const toneLabels: Record<string, string> = {
+    neutral: 'Neutral',
+    happy: 'Happy',
+    angry: 'Angry',
+    thinking: 'Thinking',
+  };
+
+  const titleAlign = data.titleAlign || 'left';
+  const contentAlign = data.contentAlign || 'left';
+
+  useEffect(() => {
+    const el = titleRef.current;
+    if (el) el.innerHTML = markdownToHtml(data.title || '');
+  }, [data.title]);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (el) el.innerHTML = markdownToHtml(data.text);
+  }, [data.text]);
+
+  const getActiveEl = () => {
+    return activeFieldRef.current === 'title' ? titleRef.current : textRef.current;
+  };
+
+  const openLinkModal = (field: 'title' | 'text') => {
+    activeFieldRef.current = field;
+    const el = field === 'title' ? titleRef.current : textRef.current;
+    if (!el) return;
+    skipBlurRef.current = true;
+    const existingLink = getLinkAtCursor(el);
+    if (existingLink) {
+      setLinkModalText(existingLink.text);
+      setLinkModalUrl(existingLink.url);
+      setLinkModalRel(existingLink.rel);
+      setLinkModalTarget(existingLink.target);
+      existingLinkRef.current = existingLink;
+      savedRangeRef.current = null;
+      setLinkModalOpen(true);
+      return;
+    }
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+    if (!selectedText) return;
+    if (selection && selection.rangeCount > 0) {
+      savedRangeRef.current = selection.getRangeAt(0).cloneRange();
+    }
+    existingLinkRef.current = null;
+    setLinkModalText(selectedText);
+    setLinkModalUrl('');
+    setLinkModalRel('');
+    setLinkModalTarget('');
+    setLinkModalOpen(true);
+  };
+
+  const handleLinkConfirm = (url: string, rel: string, target: string) => {
+    const el = getActiveEl();
+    if (!el) return;
+    skipBlurRef.current = false;
+    const parts: string[] = [];
+    if (rel) parts.push(`rel="${rel}"`);
+    if (target) parts.push(`target="${target}"`);
+    const attrs = parts.length > 0 ? `{${parts.join(' ')}}` : '';
+    const markdownText = `[${linkModalText}](${url})${attrs}`;
+    if (existingLinkRef.current) {
+      const links = el.querySelectorAll('span.pulse-editor-link');
+      links.forEach((span) => {
+        if (span.textContent?.trim() === existingLinkRef.current?.text && span.getAttribute('data-url') === existingLinkRef.current?.url) {
+          span.replaceWith(document.createTextNode(markdownText));
+        }
+      });
+    } else if (savedRangeRef.current) {
+      el.focus();
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(savedRangeRef.current);
+      }
+      document.execCommand('insertText', false, markdownText);
+    }
+    skipBlurRef.current = false;
+    setLinkModalOpen(false);
+    existingLinkRef.current = null;
+    savedRangeRef.current = null;
+    const field = activeFieldRef.current;
+    setTimeout(() => {
+      const markdown = htmlToMarkdown(el.innerHTML);
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [field]: markdown } }));
+    }, 0);
+  };
+
+  const handleLinkRemove = () => {
+    const el = getActiveEl();
+    if (!el) return;
+    if (existingLinkRef.current) {
+      const links = el.querySelectorAll('span.pulse-editor-link');
+      links.forEach((span) => {
+        if (span.textContent?.trim() === existingLinkRef.current?.text) {
+          span.replaceWith(document.createTextNode(span.textContent || ''));
+        }
+      });
+    }
+    setLinkModalOpen(false);
+    existingLinkRef.current = null;
+    savedRangeRef.current = null;
+    const field = activeFieldRef.current;
+    setTimeout(() => {
+      const markdown = htmlToMarkdown(el.innerHTML);
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [field]: markdown } }));
+    }, 0);
+  };
+
+  const openRefModal = (field: 'title' | 'text') => {
+    activeFieldRef.current = field;
+    const el = field === 'title' ? titleRef.current : textRef.current;
+    if (!el) return;
+    skipBlurRef.current = true;
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+    if (!selectedText) return;
+    if (selection && selection.rangeCount > 0) {
+      savedRangeRef.current = selection.getRangeAt(0).cloneRange();
+    }
+    existingRefRef.current = null;
+    setRefModalUrl('');
+    setRefModalText(selectedText);
+    setRefModalStyle('numeric');
+    setRefModalTarget('');
+    setRefModalRel('');
+    setRefModalOpen(true);
+  };
+
+  const handleRefConfirm = (url: string, text: string, style: 'numeric' | 'alphabetic' | 'greek' | 'abjad', target: string, rel: string) => {
+    const el = getActiveEl();
+    if (!el) return;
+    skipBlurRef.current = false;
+    const parts: string[] = [];
+    parts.push(`text="${text}"`);
+    parts.push(`style="${style}"`);
+    if (target) parts.push(`target="${target}"`);
+    if (rel) parts.push(`rel="${rel}"`);
+    const attrs = `{${parts.join(' ')}}`;
+    const markdownText = `[ref](${url})${attrs}`;
+    if (savedRangeRef.current) {
+      el.focus();
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(savedRangeRef.current);
+        selection.collapseToEnd();
+      }
+      document.execCommand('insertText', false, markdownText);
+    }
+    skipBlurRef.current = false;
+    setRefModalOpen(false);
+    savedRangeRef.current = null;
+    const field = activeFieldRef.current;
+    setTimeout(() => {
+      const markdown = htmlToMarkdown(el.innerHTML);
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [field]: markdown } }));
+    }, 0);
+  };
+
+  const handleRefRemove = () => {
+    setRefModalOpen(false);
+    savedRangeRef.current = null;
+  };
+
+  const handleBlur = (field: 'title' | 'text') => {
+    if (skipBlurRef.current) return;
+    const el = field === 'title' ? titleRef.current : textRef.current;
+    if (!el) return;
+    const markdown = htmlToMarkdown(el.innerHTML);
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, [field]: markdown } }));
+  };
+
   return (
-    <div className="space-y-2">
-      <div className="flex gap-2">
-        <Input value={data.speaker} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, speaker: e.target.value } }))} placeholder="Speaker name" className="flex-1" />
-        <Select value={data.tone} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, tone: e.target.value } }))}
-          options={[{ value: 'neutral', label: 'Neutral' }, { value: 'happy', label: 'Happy' }, { value: 'angry', label: 'Angry' }, { value: 'thinking', label: 'Thinking' }]} />
-        <Select value={data.align} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, align: e.target.value } }))}
-          options={[{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]} />
+    <div className="space-y-3">
+      {/* Live Preview */}
+      <div className="rounded-xl border border-[var(--neutral-200)] bg-[var(--neutral-50)] p-3">
+        <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-400)] mb-1.5">Preview</div>
+        <div className={`pulse-speech-bubble pulse-speech-bubble--${data.tone} pulse-speech-bubble--align-${data.align}`} style={{ marginTop: 0, marginBottom: 0 }}>
+          {data.title ? (
+            <div className="pulse-speech-bubble__title" style={{ textAlign: titleAlign }} dangerouslySetInnerHTML={{ __html: markdownToHtml(data.title) }} />
+          ) : null}
+          <div className="pulse-speech-bubble__body">
+            <div className="pulse-speech-bubble__text" style={{ textAlign: contentAlign }} dangerouslySetInnerHTML={{ __html: markdownToHtml(data.text) }} />
+            <div className="pulse-speech-bubble__tail"></div>
+          </div>
+          <figcaption className="pulse-speech-bubble__speaker">{data.speaker}</figcaption>
+        </div>
       </div>
-      <TextArea value={data.text} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, text: e.target.value } }))} placeholder="What does the character say?" rows={2} />
+
+      {/* Tone + Align */}
+      <div className="flex gap-2">
+        <div className="flex rounded-lg border border-[var(--neutral-200)] overflow-hidden">
+          {(['neutral', 'happy', 'angry', 'thinking'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, tone: t } }))}
+              className={`flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                data.tone === t
+                  ? 'bg-[var(--pulse-red)] text-white'
+                  : 'bg-white text-[var(--neutral-600)] hover:bg-[var(--neutral-50)]'
+              }`}
+              title={toneLabels[t]}
+            >
+              {toneIcons[t]} {toneLabels[t]}
+            </button>
+          ))}
+        </div>
+
+      </div>
+
+      {/* Title — contentEditable with link/ref support */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <Label>Title (optional)</Label>
+          <div className="flex gap-1">
+            <button onClick={() => openLinkModal('title')} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-red)]" title="Add link">
+              <Link2 className="h-3 w-3" /> Link
+            </button>
+            <button onClick={() => openRefModal('title')} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-red)]" title="Add reference">
+              <ExternalLink className="h-3 w-3" /> Ref
+            </button>
+          </div>
+        </div>
+        <div
+          ref={titleRef}
+          contentEditable
+          suppressContentEditableWarning
+          onBlur={() => handleBlur('title')}
+          onMouseDown={() => { activeFieldRef.current = 'title'; }}
+          onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+          className="min-h-[2.5rem] w-full rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-2 text-sm text-[var(--neutral-700)] outline-none focus:border-[var(--pulse-red)]"
+          style={{ textAlign: titleAlign }}
+        />
+        <div className="mt-1 flex flex-wrap gap-1">
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, titleAlign: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                titleAlign === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Dialogue — contentEditable with link/ref support */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <Label>Dialogue</Label>
+          <div className="flex gap-1">
+            <button onClick={() => openLinkModal('text')} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-red)]" title="Add link">
+              <Link2 className="h-3 w-3" /> Link
+            </button>
+            <button onClick={() => openRefModal('text')} className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold text-[var(--neutral-500)] hover:bg-[var(--neutral-100)] hover:text-[var(--pulse-red)]" title="Add reference">
+              <ExternalLink className="h-3 w-3" /> Ref
+            </button>
+          </div>
+        </div>
+        <div
+          ref={textRef}
+          contentEditable
+          suppressContentEditableWarning
+          onBlur={() => handleBlur('text')}
+          onMouseDown={() => { activeFieldRef.current = 'text'; }}
+          className="min-h-[5rem] w-full rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-2 text-sm text-[var(--neutral-700)] outline-none focus:border-[var(--pulse-red)]"
+          style={{ textAlign: contentAlign }}
+        />
+        <div className="mt-1 flex flex-wrap gap-1">
+          {(['left','center','right','justify'] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, contentAlign: a } }))}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                contentAlign === a ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <LinkModal
+        isOpen={linkModalOpen}
+        onClose={() => { setLinkModalOpen(false); skipBlurRef.current = false; }}
+        onConfirm={handleLinkConfirm}
+        onRemove={existingLinkRef.current ? handleLinkRemove : undefined}
+        defaultText={linkModalText}
+        defaultUrl={linkModalUrl}
+        defaultRel={linkModalRel}
+        defaultTarget={linkModalTarget}
+      />
+
+      <RefModal
+        isOpen={refModalOpen}
+        onClose={() => { setRefModalOpen(false); skipBlurRef.current = false; }}
+        onConfirm={handleRefConfirm}
+        onRemove={existingRefRef.current ? handleRefRemove : undefined}
+        defaultUrl={refModalUrl}
+        defaultText={refModalText}
+        defaultStyle={refModalStyle}
+        defaultTarget={refModalTarget}
+        defaultRel={refModalRel}
+      />
     </div>
   );
 }
@@ -2477,7 +3025,43 @@ export function EditableChart({ block, adapter }: { block: Block<BlockData>; ada
 }
 
 export function EditableGallery({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { title?: string; layout: string; columns: number; images: { id: string; src: string; alt: string; caption?: string }[] };
+  const data = block.data as {
+    title?: string;
+    layout: string;
+    columns: number;
+    gap?: number;
+    images: {
+      id: string;
+      src: string;
+      alt: string;
+      caption?: string;
+      title?: string;
+      fit?: string;
+      linkUrl?: string;
+      linkTarget?: string;
+      linkRel?: string;
+      captionAlign?: string;
+      titleAlign?: string;
+    }[];
+  };
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  const updateImage = (i: number, patch: Partial<typeof data.images[0]>) => {
+    const next = data.images.map((im, idx) => idx === i ? { ...im, ...patch } : im);
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, images: next } }));
+  };
+
+  const handleUpload = async (file: File, i: number) => {
+    setUploadingIdx(i);
+    try {
+      const uploaded = await mediaApi.upload(file);
+      updateImage(i, { src: uploaded.url });
+    } finally {
+      setUploadingIdx(null);
+    }
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
@@ -2488,35 +3072,68 @@ export function EditableGallery({ block, adapter }: { block: Block<BlockData>; a
           <Label>Cols</Label>
           <Input type="number" min={1} max={6} value={data.columns} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, columns: Number(e.target.value) || 3 } }))} className="w-14 text-xs" />
         </div>
+        <div className="flex items-center gap-1">
+          <Label>Gap</Label>
+          <Input type="number" min={0} max={64} value={data.gap ?? 12} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, gap: Number(e.target.value) || 0 } }))} className="w-14 text-xs" />
+        </div>
       </div>
       <Section title={`Images (${data.images.length})`}>
-        <div className="grid grid-cols-2 gap-2">
-          {data.images.map((img, i) => (
-            <div key={img.id} className="space-y-1 rounded-lg bg-white p-2">
-              <div className="flex items-center gap-1">
-                <Input value={img.src} onChange={(e) => {
-                  const next = data.images.map((im, idx) => idx === i ? { ...im, src: e.target.value } : im);
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, images: next } }));
-                }} placeholder="Image URL" className="flex-1 text-xs" />
-                <button onClick={() => {
-                  const next = data.images.filter((_, idx) => idx !== i);
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, images: next.length ? next : data.images } }));
-                }} className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"><Trash2 className="h-3 w-3" /></button>
+        <div className="space-y-1">
+          {data.images.map((img, i) => {
+            const isOpen = openIdx === i;
+            return (
+              <div key={img.id} className="rounded-lg border border-[var(--neutral-200)] bg-white overflow-hidden">
+                <div className="flex w-full items-center gap-2 px-3 py-2">
+                  <button
+                    onClick={() => setOpenIdx(isOpen ? null : i)}
+                    className="flex flex-1 items-center gap-2 text-left hover:bg-[var(--neutral-50)]"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded bg-[var(--neutral-100)] text-[10px] font-bold text-[var(--neutral-500)]">{i + 1}</span>
+                    <img src={img.src} alt="" className="h-6 w-6 rounded object-cover" />
+                    <span className="flex-1 truncate text-xs font-semibold text-[var(--neutral-700)]">{img.alt || `Image ${i + 1}`}</span>
+                    {isOpen ? <ChevronUp className="h-3 w-3 text-[var(--neutral-400)]" /> : <ChevronDown className="h-3 w-3 text-[var(--neutral-400)]" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const next = data.images.filter((_, idx) => idx !== i);
+                      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, images: next.length ? next : data.images } }));
+                      if (openIdx === i) setOpenIdx(null);
+                    }}
+                    className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+                {isOpen && (
+                  <div className="space-y-2 border-t border-[var(--neutral-100)] p-3">
+                    <div className="flex gap-2">
+                      <Input value={img.src} onChange={(e) => updateImage(i, { src: e.target.value })} placeholder="Image URL" className="flex-1 text-xs" />
+                      <InlineUploadButton accept="image/*" uploading={uploadingIdx === i} onUpload={(file) => handleUpload(file, i)} />
+                    </div>
+                    <div className="flex gap-2">
+                      <Input value={img.alt} onChange={(e) => updateImage(i, { alt: e.target.value })} placeholder="Alt text" className="flex-1 text-xs" />
+                      <Input value={img.title || ''} onChange={(e) => updateImage(i, { title: e.target.value })} placeholder="Title" className="flex-1 text-xs" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Input value={img.caption || ''} onChange={(e) => updateImage(i, { caption: e.target.value })} placeholder="Caption" className="flex-1 text-xs" />
+                      <Select value={img.fit || 'cover'} onChange={(e) => updateImage(i, { fit: e.target.value })} options={[{ value: 'cover', label: 'Cover' }, { value: 'contain', label: 'Contain' }, { value: 'fill', label: 'Fill' }]} />
+                    </div>
+                    <div className="flex gap-2">
+                      <Input value={img.linkUrl || ''} onChange={(e) => updateImage(i, { linkUrl: e.target.value })} placeholder="Link URL" className="flex-1 text-xs" />
+                      <Input value={img.linkTarget || ''} onChange={(e) => updateImage(i, { linkTarget: e.target.value })} placeholder="Target" className="w-20 text-xs" />
+                      <Input value={img.linkRel || ''} onChange={(e) => updateImage(i, { linkRel: e.target.value })} placeholder="Rel" className="w-20 text-xs" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Select value={img.captionAlign || 'center'} onChange={(e) => updateImage(i, { captionAlign: e.target.value })} options={[{ value: 'left', label: 'C-Left' }, { value: 'center', label: 'C-Center' }, { value: 'right', label: 'C-Right' }, { value: 'justify', label: 'C-Justify' }]} />
+                      <Select value={img.titleAlign || 'left'} onChange={(e) => updateImage(i, { titleAlign: e.target.value })} options={[{ value: 'left', label: 'T-Left' }, { value: 'center', label: 'T-Center' }, { value: 'right', label: 'T-Right' }, { value: 'justify', label: 'T-Justify' }]} />
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex gap-1">
-                <Input value={img.alt} onChange={(e) => {
-                  const next = data.images.map((im, idx) => idx === i ? { ...im, alt: e.target.value } : im);
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, images: next } }));
-                }} placeholder="Alt" className="flex-1 text-xs" />
-                <Input value={img.caption || ''} onChange={(e) => {
-                  const next = data.images.map((im, idx) => idx === i ? { ...im, caption: e.target.value } : im);
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, images: next } }));
-                }} placeholder="Caption" className="flex-1 text-xs" />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-        <button onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, images: [...data.images, { id: `gal-${Date.now()}`, src: 'https://example.com/image.jpg', alt: 'Image' }] } }))}
+        <button onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, images: [...data.images, { id: `gal-${Date.now()}`, src: 'https://example.com/image.jpg', alt: 'Image', fit: 'cover' }] } }))}
           className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]">
           <Plus className="h-3 w-3" /> Image
         </button>
@@ -2526,42 +3143,88 @@ export function EditableGallery({ block, adapter }: { block: Block<BlockData>; a
 }
 
 export function EditableCarousel({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { slides: { id: string; title?: string; body?: string; mediaUrl?: string }[]; autoplay: boolean; intervalMs: number; showIndicators: boolean };
+  const data = block.data as {
+    slides: { id: string; title?: string; body?: string; mediaUrl?: string; mediaFit?: string }[];
+    autoplay: boolean;
+    intervalMs: number;
+    showIndicators: boolean;
+    showArrows?: boolean;
+    slideHeight?: string;
+  };
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  const updateSlide = (i: number, patch: Partial<typeof data.slides[0]>) => {
+    const next = data.slides.map((s, idx) => idx === i ? { ...s, ...patch } : s);
+    adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, slides: next } }));
+  };
+
+  const handleUpload = async (file: File, i: number) => {
+    setUploadingIdx(i);
+    try {
+      const uploaded = await mediaApi.upload(file);
+      updateSlide(i, { mediaUrl: uploaded.url });
+    } finally {
+      setUploadingIdx(null);
+    }
+  };
+
   return (
     <div className="space-y-2">
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-4">
         <Checkbox label="Autoplay" checked={data.autoplay} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, autoplay: e.target.checked } }))} />
         <Checkbox label="Indicators" checked={data.showIndicators} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, showIndicators: e.target.checked } }))} />
+        <Checkbox label="Arrows" checked={data.showArrows ?? true} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, showArrows: e.target.checked } }))} />
         <div className="flex items-center gap-1">
           <Label>Interval (ms)</Label>
           <Input type="number" min={1000} max={120000} step={1000} value={data.intervalMs} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, intervalMs: Number(e.target.value) || 5000 } }))} className="w-20 text-xs" />
         </div>
+        <div className="flex items-center gap-1">
+          <Label>Height</Label>
+          <Input value={data.slideHeight || '360px'} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, slideHeight: e.target.value } }))} className="w-20 text-xs" />
+        </div>
       </div>
       <Section title={`Slides (${data.slides.length})`}>
         <div className="space-y-1">
-          {data.slides.map((slide, i) => (
-            <div key={slide.id} className="space-y-1 rounded-lg bg-white p-2">
-              <div className="flex items-center gap-2">
-                <Input value={slide.title || ''} onChange={(e) => {
-                  const next = data.slides.map((s, idx) => idx === i ? { ...s, title: e.target.value } : s);
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, slides: next } }));
-                }} placeholder="Slide title" className="flex-1 text-xs" />
-                <button onClick={() => {
-                  const next = data.slides.filter((_, idx) => idx !== i);
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, slides: next.length ? next : data.slides } }));
-                }} className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"><Trash2 className="h-3 w-3" /></button>
+          {data.slides.map((slide, i) => {
+            const isOpen = openIdx === i;
+            return (
+              <div key={slide.id} className="rounded-lg border border-[var(--neutral-200)] bg-white overflow-hidden">
+                <div className="flex w-full items-center gap-2 px-3 py-2">
+                  <button
+                    onClick={() => setOpenIdx(isOpen ? null : i)}
+                    className="flex flex-1 items-center gap-2 text-left hover:bg-[var(--neutral-50)]"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded bg-[var(--neutral-100)] text-[10px] font-bold text-[var(--neutral-500)]">{i + 1}</span>
+                    <span className="flex-1 truncate text-xs font-semibold text-[var(--neutral-700)]">{slide.title || `Slide ${i + 1}`}</span>
+                    {isOpen ? <ChevronUp className="h-3 w-3 text-[var(--neutral-400)]" /> : <ChevronDown className="h-3 w-3 text-[var(--neutral-400)]" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const next = data.slides.filter((_, idx) => idx !== i);
+                      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, slides: next.length ? next : data.slides } }));
+                      if (openIdx === i) setOpenIdx(null);
+                    }}
+                    className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+                {isOpen && (
+                  <div className="space-y-2 border-t border-[var(--neutral-100)] p-3">
+                    <Input value={slide.title || ''} onChange={(e) => updateSlide(i, { title: e.target.value })} placeholder="Slide title" className="text-xs" />
+                    <div className="flex gap-2">
+                      <Input value={slide.mediaUrl || ''} onChange={(e) => updateSlide(i, { mediaUrl: e.target.value })} placeholder="Media URL" className="flex-1 text-xs" />
+                      <InlineUploadButton accept="image/*" uploading={uploadingIdx === i} onUpload={(file) => handleUpload(file, i)} />
+                    </div>
+                    <Select value={slide.mediaFit || 'cover'} onChange={(e) => updateSlide(i, { mediaFit: e.target.value })} options={[{ value: 'cover', label: 'Cover' }, { value: 'contain', label: 'Contain' }, { value: 'fill', label: 'Fill' }]} />
+                    <TextArea value={slide.body || ''} onChange={(e) => updateSlide(i, { body: e.target.value })} placeholder="Body text (optional)" rows={2} className="text-xs" />
+                  </div>
+                )}
               </div>
-              <Input value={slide.mediaUrl || ''} onChange={(e) => {
-                const next = data.slides.map((s, idx) => idx === i ? { ...s, mediaUrl: e.target.value } : s);
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, slides: next } }));
-              }} placeholder="Media URL (optional)" className="text-xs" />
-              <TextArea value={slide.body || ''} onChange={(e) => {
-                const next = data.slides.map((s, idx) => idx === i ? { ...s, body: e.target.value } : s);
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, slides: next } }));
-              }} placeholder="Body text (optional)" rows={1} className="text-xs" />
-            </div>
-          ))}
-          <button onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, slides: [...data.slides, { id: `slide-${Date.now()}`, title: 'New slide', body: '' }] } }))}
+            );
+          })}
+          <button onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, slides: [...data.slides, { id: `slide-${Date.now()}`, title: 'New slide', body: '', mediaFit: 'cover' }] } }))}
             className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]">
             <Plus className="h-3 w-3" /> Slide
           </button>
@@ -2572,44 +3235,298 @@ export function EditableCarousel({ block, adapter }: { block: Block<BlockData>; 
 }
 
 export function EditableManga({ block, adapter }: { block: Block<BlockData>; adapter: EditorStateAdapter<Block<BlockData>> }) {
-  const data = block.data as { title?: string; layout: string; panels: { id: string; imageUrl?: string; caption?: string; dialogue?: string }[]; readingDirection: string };
+  const data = block.data as {
+    title?: string;
+    layout: string;
+    panels: {
+      id: string;
+      mode?: string;
+      imageUrl?: string;
+      caption?: string;
+      dialogue?: string;
+      textContent?: string;
+      backgroundColor?: string;
+      textColor?: string;
+      panelSize?: string;
+      originalWidth?: number;
+      originalHeight?: number;
+    }[];
+    readingDirection: string;
+  };
+
+  const layoutCols: Record<string, string> = {
+    single: 'grid-cols-1',
+    'two-up': 'grid-cols-2',
+    'grid-2x2': 'grid-cols-2',
+    strip: 'flex flex-row overflow-x-auto gap-3 pb-2',
+  };
+
+  const sizeIcons: Record<string, React.ReactNode> = {
+    normal: <Maximize className="h-3 w-3" />,
+    wide: <StretchHorizontal className="h-3 w-3" />,
+    tall: <MoveVertical className="h-3 w-3" />,
+    hero: <Expand className="h-3 w-3" />,
+  };
+
+  const sizeLabels: Record<string, string> = {
+    normal: 'Normal',
+    wide: 'Wide',
+    tall: 'Tall',
+    hero: 'Hero',
+  };
+
+  const handleUpload = async (file: File, panelIndex: number) => {
+    try {
+      const uploaded = await mediaApi.upload(file);
+      const next = data.panels.map((p, idx) =>
+        idx === panelIndex
+          ? { ...p, imageUrl: uploaded.url, originalWidth: uploaded.width, originalHeight: uploaded.height }
+          : p
+      );
+      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+    } catch (err) {
+      alert('Upload failed: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const isStrip = data.layout === 'strip';
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {/* Header controls */}
       <div className="flex gap-2">
-        <Input value={data.title || ''} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))} placeholder="Manga title (optional)" className="flex-1" />
-        <Select value={data.layout} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, layout: e.target.value } }))}
-          options={[{ value: 'single', label: 'Single' }, { value: 'two-up', label: 'Two-up' }, { value: 'grid-2x2', label: '2x2 Grid' }, { value: 'strip', label: 'Strip' }]} />
-        <Select value={data.readingDirection} onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, readingDirection: e.target.value } }))}
-          options={[{ value: 'ltr', label: 'LTR' }, { value: 'rtl', label: 'RTL' }]} />
+        <Input
+          value={data.title || ''}
+          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, title: e.target.value } }))}
+          placeholder="Manga title (optional)"
+          className="flex-1"
+        />
+        <Select
+          value={data.layout}
+          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, layout: e.target.value } }))}
+          options={[
+            { value: 'single', label: 'Single' },
+            { value: 'two-up', label: 'Two-up' },
+            { value: 'grid-2x2', label: '2x2 Grid' },
+            { value: 'strip', label: 'Strip' },
+          ]}
+        />
+        <Select
+          value={data.readingDirection}
+          onChange={(e) => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, readingDirection: e.target.value } }))}
+          options={[{ value: 'ltr', label: 'LTR' }, { value: 'rtl', label: 'RTL' }]}
+        />
       </div>
+
+      {/* Panels grid */}
       <Section title={`Panels (${data.panels.length})`}>
-        <div className="grid grid-cols-2 gap-2">
-          {data.panels.map((panel, i) => (
-            <div key={panel.id} className="space-y-1 rounded-lg bg-white p-2">
-              <div className="flex items-center gap-1">
-                <Input value={panel.imageUrl || ''} onChange={(e) => {
-                  const next = data.panels.map((p, idx) => idx === i ? { ...p, imageUrl: e.target.value } : p);
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
-                }} placeholder="Panel image URL" className="flex-1 text-xs" />
-                <button onClick={() => {
-                  const next = data.panels.filter((_, idx) => idx !== i);
-                  adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next.length ? next : data.panels } }));
-                }} className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)]"><Trash2 className="h-3 w-3" /></button>
+        <div className={`${isStrip ? layoutCols[data.layout] : `grid ${layoutCols[data.layout] || 'grid-cols-2'} gap-3`}`}>
+          {data.panels.map((panel, i) => {
+            const mode = panel.mode || 'pic';
+            const size = panel.panelSize || 'normal';
+            const gridSpanClass = size === 'wide' ? 'col-span-2' : size === 'tall' ? 'row-span-2' : size === 'hero' ? 'col-span-full row-span-2' : '';
+            const flexWidth = isStrip ? (size === 'wide' || size === 'hero' ? 'w-72' : 'w-44') : '';
+
+            return (
+              <div
+                key={panel.id}
+                className={`rounded-xl border-2 border-[var(--pulse-black)] bg-white overflow-hidden transition-shadow hover:shadow-[3px_3px_0_var(--pulse-black)] ${gridSpanClass} ${flexWidth} ${isStrip ? 'flex-shrink-0' : ''}`}
+              >
+                {/* Panel toolbar */}
+                <div className="flex items-center gap-1 px-2 py-1.5 bg-[var(--neutral-50)] border-b border-[var(--neutral-200)]">
+                  <span className="text-[10px] font-bold text-[var(--neutral-400)] mr-1">#{i + 1}</span>
+
+                  {/* Mode toggle */}
+                  <div className="flex rounded border border-[var(--neutral-200)] overflow-hidden">
+                    <button
+                      onClick={() => {
+                        const next = data.panels.map((p, idx) => idx === i ? { ...p, mode: 'pic' } : p);
+                        adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+                      }}
+                      className={`px-1.5 py-0.5 ${mode === 'pic' ? 'bg-[var(--pulse-red)] text-white' : 'bg-white text-[var(--neutral-500)]'}`}
+                      title="Picture mode"
+                    >
+                      <ImageIcon className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const next = data.panels.map((p, idx) => idx === i ? { ...p, mode: 'text' } : p);
+                        adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+                      }}
+                      className={`px-1.5 py-0.5 ${mode === 'text' ? 'bg-[var(--pulse-red)] text-white' : 'bg-white text-[var(--neutral-500)]'}`}
+                      title="Text mode"
+                    >
+                      <Type className="h-3 w-3" />
+                    </button>
+                  </div>
+
+                  {/* Size selector */}
+                  <div className="flex rounded border border-[var(--neutral-200)] overflow-hidden ml-auto">
+                    {(['normal', 'wide', 'tall', 'hero'] as const).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          const next = data.panels.map((p, idx) => idx === i ? { ...p, panelSize: s } : p);
+                          adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+                        }}
+                        className={`px-1.5 py-0.5 ${size === s ? 'bg-[var(--pulse-black)] text-white' : 'bg-white text-[var(--neutral-500)]'}`}
+                        title={sizeLabels[s]}
+                      >
+                        {sizeIcons[s]}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const next = data.panels.filter((_, idx) => idx !== i);
+                      adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next.length ? next : data.panels } }));
+                    }}
+                    className="text-[var(--neutral-400)] hover:text-[var(--pulse-red)] ml-1"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+
+                {/* Panel content */}
+                <div className="p-2 space-y-2">
+                  {mode === 'pic' ? (
+                    <>
+                      <div className="flex gap-1.5">
+                        <Input
+                          value={panel.imageUrl || ''}
+                          onChange={(e) => {
+                            const next = data.panels.map((p, idx) => idx === i ? { ...p, imageUrl: e.target.value } : p);
+                            adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+                          }}
+                          placeholder="Image URL"
+                          className="flex-1 text-xs"
+                        />
+                        <InlineUploadButton accept="image/*" uploading={false} onUpload={(file) => handleUpload(file, i)} />
+                      </div>
+                      {panel.imageUrl && (
+                        <div className="rounded-md border border-[var(--neutral-200)] overflow-hidden">
+                          <img
+                            src={panel.imageUrl}
+                            alt={panel.caption || `Panel ${i + 1}`}
+                            className="w-full h-20 object-cover"
+                            onLoad={(e) => {
+                              const img = e.currentTarget;
+                              if (!panel.originalWidth && img.naturalWidth) {
+                                const next = data.panels.map((p, idx) =>
+                                  idx === i ? { ...p, originalWidth: img.naturalWidth, originalHeight: img.naturalHeight } : p
+                                );
+                                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+                              }
+                            }}
+                          />
+                          {panel.originalWidth && panel.originalHeight && (
+                            <div className="px-2 py-0.5 text-[10px] text-[var(--neutral-400)] bg-[var(--neutral-50)]">
+                              {panel.originalWidth} x {panel.originalHeight}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <Input
+                        value={panel.caption || ''}
+                        onChange={(e) => {
+                          const next = data.panels.map((p, idx) => idx === i ? { ...p, caption: e.target.value } : p);
+                          adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+                        }}
+                        placeholder="Caption"
+                        className="text-xs"
+                      />
+                      <TextArea
+                        value={panel.dialogue || ''}
+                        onChange={(e) => {
+                          const next = data.panels.map((p, idx) => idx === i ? { ...p, dialogue: e.target.value } : p);
+                          adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+                        }}
+                        placeholder="Dialogue (optional)"
+                        rows={1}
+                        className="text-xs"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <TextArea
+                        value={panel.textContent || ''}
+                        onChange={(e) => {
+                          const next = data.panels.map((p, idx) => idx === i ? { ...p, textContent: e.target.value } : p);
+                          adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+                        }}
+                        placeholder="Story text..."
+                        rows={3}
+                        className="text-xs"
+                      />
+                      <div className="flex gap-2 items-center">
+                        <div className="flex items-center gap-1">
+                          <Label>Bg</Label>
+                          <input
+                            type="color"
+                            value={panel.backgroundColor || '#1a1a2e'}
+                            onChange={(e) => {
+                              const next = data.panels.map((p, idx) => idx === i ? { ...p, backgroundColor: e.target.value } : p);
+                              adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+                            }}
+                            className="w-7 h-7 rounded cursor-pointer border border-[var(--neutral-200)]"
+                          />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Label>Text</Label>
+                          <input
+                            type="color"
+                            value={panel.textColor || '#ffffff'}
+                            onChange={(e) => {
+                              const next = data.panels.map((p, idx) => idx === i ? { ...p, textColor: e.target.value } : p);
+                              adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
+                            }}
+                            className="w-7 h-7 rounded cursor-pointer border border-[var(--neutral-200)]"
+                          />
+                        </div>
+                      </div>
+                      {/* Live text preview */}
+                      <div
+                        className="rounded-md p-2 min-h-[60px] flex items-center justify-center"
+                        style={{
+                          backgroundColor: panel.backgroundColor || '#1a1a2e',
+                          color: panel.textColor || '#ffffff',
+                        }}
+                      >
+                        <p className="text-xs text-center font-medium">
+                          {panel.textContent || <span className="opacity-40">Preview...</span>}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-              <Input value={panel.caption || ''} onChange={(e) => {
-                const next = data.panels.map((p, idx) => idx === i ? { ...p, caption: e.target.value } : p);
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
-              }} placeholder="Caption" className="text-xs" />
-              <TextArea value={panel.dialogue || ''} onChange={(e) => {
-                const next = data.panels.map((p, idx) => idx === i ? { ...p, dialogue: e.target.value } : p);
-                adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: next } }));
-              }} placeholder="Dialogue (optional)" rows={1} className="text-xs" />
-            </div>
-          ))}
+            );
+          })}
         </div>
-        <button onClick={() => adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, panels: [...data.panels, { id: `panel-${Date.now()}`, caption: 'New panel' }] } }))}
-          className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-xs font-semibold text-[var(--neutral-600)] hover:bg-[var(--neutral-100)]">
-          <Plus className="h-3 w-3" /> Panel
+
+        {/* Add panel button */}
+        <button
+          onClick={() =>
+            adapter.updateBlock(block.id, (b) => ({
+              ...b,
+              data: {
+                ...data,
+                panels: [
+                  ...data.panels,
+                  {
+                    id: `panel-${Date.now()}`,
+                    mode: 'pic',
+                    caption: `Panel ${data.panels.length + 1}`,
+                    panelSize: 'normal',
+                  },
+                ],
+              },
+            }))
+          }
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border-2 border-dashed border-[var(--neutral-300)] bg-[var(--neutral-50)] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--neutral-500)] hover:border-[var(--pulse-red)] hover:text-[var(--pulse-red)] transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" /> Add Panel
         </button>
       </Section>
     </div>

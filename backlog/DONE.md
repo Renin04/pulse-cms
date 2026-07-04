@@ -1,10 +1,33 @@
-﻿# Pulse â€” Completed Tasks
+# Pulse â€” Completed Tasks
 
 > Archive of all completed tasks from the backlog. Tasks are moved here when marked as âœ… in BACKLOG.md.
 > This file serves as a historical record of project progress.
 
-**Last Updated:** 2026-05-21  
-**Total Completed Tasks:** 405
+**Last Updated:** 2026-07-04  
+**Total Completed Tasks:** 406
+
+---
+
+## Bug-Fix Session 99 — Card/Gallery/Carousel Blocks (Bugs #104-#110)
+**Completed:** 2026-07-04
+
+- ✅ Bugs #104-#106: Card block complete redesign. New renderer supports solid/gradient/image backgrounds, geometric SVG decorations, overlay text, and styled CTA. Editor updated with background, decoration, overlay, and CTA controls plus image upload. Added backward compatibility for legacy `mediaUrl`/`linkUrl` fields.
+- ✅ Bugs #107-#109: Gallery block complete redesign. New renderer supports grid/masonry layouts, per-image titles/captions, object-fit, and links. Editor updated with accordion image list, inline upload, and per-image alignment controls.
+- ✅ Bug #110: Carousel block renderer and CSS fix. Rewrote `CarouselBlock.ts` with semantic HTML and ARIA attributes. Added gallery-style responsive CSS with dark mode support. Created shared `hydrate-carousels.ts` utility for autoplay, arrows, dots, and scroll-based active-dot updates. Wired into `BlogPostContent.tsx` and `StudioBlogPreview.tsx`.
+- ✅ Hardening: Added backward compatibility for legacy Card block data (`mediaUrl` → `backgroundImageUrl`, `linkUrl` → `ctaLinkUrl`) and fixed invalid nested `<button>` HTML in `EditableGallery`/`EditableCarousel` accordion headers.
+
+**Files Changed:**
+- `packages/blocks/src/CardBlock.ts` — renderer rewrite + legacy migration
+- `packages/blocks/src/GalleryBlock.ts` — renderer rewrite
+- `packages/blocks/src/CarouselBlock.ts` — renderer rewrite
+- `apps/website/app/components/StudioBlockEditors.tsx` — `EditableCard`, `EditableGallery`, `EditableCarousel` updates
+- `apps/website/app/globals.css` — card/gallery/carousel CSS redesign
+- `apps/website/lib/hydrate-carousels.ts` — new
+- `apps/website/app/blog/BlogPostContent.tsx` — carousel hydration
+- `apps/website/app/components/StudioBlogPreview.tsx` — carousel hydration
+- `packages/blocks/tests/blocks.test.ts` — added legacy card migration test
+
+**Quality Gates:** lint ✅ typecheck ✅ build ✅ test ✅ (1076/1076)
 
 ---
 

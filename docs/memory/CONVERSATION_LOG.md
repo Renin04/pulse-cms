@@ -3,8 +3,61 @@
 > Chronological record of all development sessions.
 > Each entry captures what was done, decisions made, and next steps.
 
-**Last Updated:** 2026-05-21  
-**Total Sessions:** 92
+**Last Updated:** 2026-07-04  
+**Total Sessions:** 99
+
+## Session 99 — Bugs #104-#110: Card/Gallery/Carousel Redesign + Fixes
+**Date:** 2026-07-04  
+**Duration:** Standard  
+**Focus:** Redesign and fix Card, Gallery, and Carousel blocks across renderer, CSS, editor, and hydration
+
+### Summary
+Redesigned the Card and Gallery blocks and fixed the Carousel block across renderer, editor CSS, and client-side hydration. Added backward compatibility for legacy Card block data so existing saved cards continue to render after the schema redesign.
+
+### What Was Done
+- ✅ **Bugs #104-#106 — Card block redesign & editor**:
+  - Rewrote `packages/blocks/src/CardBlock.ts` to support solid/gradient/image backgrounds, geometric SVG decorations, overlay text, and a styled CTA button with arrow icon.
+  - Added dark-mode-aware, token-driven CSS for cards in `apps/website/app/globals.css`.
+  - Updated `EditableCard` in `apps/website/app/components/StudioBlockEditors.tsx` with sections for background, decoration, overlay text, and CTA, including image upload and color/opacity controls.
+  - Added backward compatibility: legacy `mediaUrl` maps to `backgroundImageUrl` and legacy `linkUrl` maps to `ctaLinkUrl`; missing new fields default safely.
+- Fixed invalid nested `<button>` HTML in `EditableGallery` and `EditableCarousel` accordion headers (delete button inside expand button) to eliminate React hydration warnings.
+
+- ✅ **Bugs #107-#109 — Gallery block redesign & editor**:
+  - Rewrote `packages/blocks/src/GalleryBlock.ts` with grid/masonry layouts, per-image titles/captions, object-fit options, and link support.
+  - Added responsive, dark-mode-aware gallery CSS in `apps/website/app/globals.css`.
+  - Updated `EditableGallery` with accordion image list, inline upload, and per-image title/caption/fit/link/alignment controls.
+
+- ✅ **Bug #110 — Carousel block renderer, CSS, and hydration**:
+  - Rewrote `packages/blocks/src/CarouselBlock.ts` to emit semantic, accessible HTML: `role="group" aria-roledescription="carousel"`, `role="list"` track, `role="listitem"` slides with `aria-roledescription="slide"`, inline SVG arrow icons, and `aria-selected` dots.
+  - Replaced carousel CSS section in `apps/website/app/globals.css` with token-driven styling: warm off-white/jasmine gradient background, lifted slide content panel with backdrop blur, image zoom on hover, pill-style active dot, accessible focus states, reduced-motion support, and full `.blog-dark-mode` overrides.
+  - Created shared `apps/website/lib/hydrate-carousels.ts` utility that wires autoplay, prev/next arrow clicks, dot clicks, and scroll-based active-dot updates.
+  - Integrated hydration into `BlogPostContent.tsx` and `StudioBlogPreview.tsx`.
+  - Preserved existing data attributes and class names so existing consumers keep working.
+
+### Files Changed
+- `packages/blocks/src/CardBlock.ts` — renderer rewrite + legacy migration
+- `packages/blocks/src/GalleryBlock.ts` — renderer rewrite
+- `packages/blocks/src/CarouselBlock.ts` — renderer rewrite
+- `apps/website/app/components/StudioBlockEditors.tsx` — `EditableCard`, `EditableGallery`, `EditableCarousel` updates
+- `apps/website/app/globals.css` — card/gallery/carousel CSS redesign
+- `apps/website/lib/hydrate-carousels.ts` — new shared hydration utility
+- `apps/website/app/blog/BlogPostContent.tsx` — use shared carousel hydration
+- `apps/website/app/components/StudioBlogPreview.tsx` — add carousel hydration
+- `packages/blocks/tests/blocks.test.ts` — added legacy card migration test
+- `docs/memory/CONTEXT_SNAPSHOT.md` — updated current state
+- `backlog/DONE.md` — archived completed task
+
+### Quality Gates
+- ✅ `npm run lint` — passed
+- ✅ `npm run typecheck` — passed
+- ✅ `npm run build` — passed
+- ✅ `npm run test` — 51 test files, 1076 tests passed
+- ✅ Puppeteer L-5 advanced blocks QA on `http://localhost:6001/demo` — Card, Gallery, and Carousel PASS (14/15; remaining Speech Bubble failure is pre-existing from session 98)
+
+### Decisions Made
+- No schema changes for Gallery or Carousel; existing data continues to validate.
+- Card schema now accepts legacy `mediaUrl`/`linkUrl` fields and migrates them to the new shape on render/serialize/deserialize to avoid breaking existing saved entries.
+- Extracted carousel hydration into a reusable utility to avoid duplicating logic between blog post and studio preview.
 
 ## Session 92 — Bug #22 + #23: Commenting System + Notebook
 **Date:** 2026-05-21  
@@ -3219,3 +3272,33 @@ pm run build in pps/website)
 - packages/blocks/tests/blocks.test.ts
 - packages/renderer/tests/block-parity.test.ts
 - pulse bug list.md
+
+
+---
+
+## Session 98 — 2026-06-06
+
+**Agent:** Kimi Code CLI
+**Focus:** Bugs 96-103 (Manga Panel & Speech Bubble complete redesign)
+
+**Completed:**
+- Bug #96: Manga panel complete refactor. Each panel now supports pic/text mode toggle. Pic mode: URL input + inline upload with thumbnail preview + caption + dialogue. Text mode: story textarea + background/text color pickers + live preview.
+- Bug #97: Manga panel preview rendering fixed. Added comprehensive `.pulse-manga-layout` and `.pulse-manga-panel` CSS to globals.css. Proper rendering in both preview panel and blog post.
+- Bug #98: Grid layouts are now visually distinct: single (1 col), two-up (2 col), grid-2x2 (2 col with comic gutters), strip (horizontal scroll filmstrip with snap).
+- Bug #99: Creative manga panel UI redesign. Comic-book themed: bold black borders, halftone placeholders, shadow lift on hover, dashed inner border on container, panel toolbars with visual size icons.
+- Bug #100: Panel sizes added: normal, wide (span 2 cols), tall (span 2 rows), hero (full width + tall). Auto-detects uploaded image dimensions.
+- Bug #101: Speech bubble complete creative redesign. Four distinct designs: neutral (classic rounded), happy (sunshine cloud with rays), angry (jagged clip-path with action lines), thinking (dotted cloud with bubble tail chain). Real CSS tails and decorations.
+- Bug #102: Speech bubble controls expanded. Added title + titleAlign, contentAlign, link URL/target/rel (with checkbox grid), ref URL/text/style. Live bubble preview in editor.
+- Bug #103: Speech bubble tones are now visually unique. Each has different shapes, colors, borders, decorations, and tail styles. Full dark mode support for all variants.
+- Quality gates: typecheck pass, build pass, 1072 tests pass.
+
+**Files changed:**
+- packages/blocks/src/MangaPanelBlock.ts (schema + render refactor)
+- packages/blocks/src/SpeechBubbleBlock.ts (schema + render refactor)
+- packages/blocks/src/index.ts (export new types)
+- apps/website/app/components/StudioBlockEditors.tsx (redesigned EditableManga + EditableSpeechBubble)
+- apps/website/app/globals.css (added manga + speech bubble styles, ~500 lines)
+- packages/renderer/src/styles/layout-modes.css (updated manga grid base)
+- packages/blocks/tests/blocks.test.ts (updated tests)
+- pulse bug list.md (marked #96-103 complete)
+- docs/memory/CONTEXT_SNAPSHOT.md (session summary)

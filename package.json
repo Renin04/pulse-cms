@@ -10,8 +10,8 @@
   "scripts": {
     "docs:check": "node scripts/check-backlog.mjs",
     "build:clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-    "build": "npm run build:clean && node ./node_modules/typescript/bin/tsc -p tsconfig.build.json",
-    "dev:manual-lab": "npm run build && node --experimental-specifier-resolution=node apps/manual-lab/server.mjs",
+    "build": "npm run build:clean && node ./node_modules/typescript/bin/tsc -p tsconfig.build.json && node scripts/fix-dist-imports.mjs",
+    "dev:manual-lab": "npm run build && node apps/manual-lab/server.mjs",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier \"**/*.{ts,cjs,json,yml,yaml}\" --write",

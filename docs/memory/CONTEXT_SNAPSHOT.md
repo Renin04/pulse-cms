@@ -3,13 +3,38 @@
 > Quick reference for the next agent session.
 > Update this at the end of every session.
 
-**Last Updated:** 2026-06-06
-**Current Session:** Session 97 — Bugs 91/92/93/94/95 (Survey block: editor, renderer redesign, results storage, multiple choice, text input)
+**Last Updated:** 2026-07-04
+**Current Session:** Session 99 — Bugs #104-#110 (Card/Gallery/Carousel block redesign, fixes, and hydration)
 **Current Phase:** Phase 4 — AI Builder & Automation Runtime (bug-fixing branch)
 
 ---
 
 ## Current Focus
+
+**What we just completed (Session 99):**
+- Bugs #104-#106 — Card block redesign: Rewrote `CardBlock.ts` renderer with solid/gradient/image backgrounds, geometric SVG decorations, overlay text, and styled CTA button. Updated `EditableCard` in `StudioBlockEditors.tsx` with structured background, decoration, overlay, and CTA controls plus image upload.
+- Bugs #107-#109 — Gallery block redesign: Rewrote `GalleryBlock.ts` renderer with grid/masonry layouts, per-image titles/captions, object-fit options, and link support. Updated `EditableGallery` with accordion image list, upload, and alignment controls.
+- Bug #110 — Carousel block fixed in both preview panel and blog post. Rewrote `CarouselBlock.ts` renderer with semantic HTML, ARIA roles, inline SVG arrows, and gallery-style slide cards.
+- Replaced card, gallery, and carousel CSS in `globals.css` with token-driven, responsive, dark-mode-aware styling.
+- Added shared `apps/website/lib/hydrate-carousels.ts` utility handling autoplay, arrow/dot navigation, and scroll-based active-dot updates.
+- Wired hydration into `BlogPostContent.tsx` and `StudioBlogPreview.tsx`.
+- Added backward compatibility for legacy Card block data (`mediaUrl` → `backgroundImageUrl`, `linkUrl` → `ctaLinkUrl`) so existing saved cards keep rendering.
+- Fixed invalid nested `<button>` HTML in `EditableGallery` and `EditableCarousel` accordion headers to eliminate React hydration warnings.
+- Puppeteer L-5 advanced blocks QA on `http://localhost:6001/demo` confirms Card, Gallery, and Carousel PASS.
+- Files changed: `packages/blocks/src/CardBlock.ts`, `packages/blocks/src/GalleryBlock.ts`, `packages/blocks/src/CarouselBlock.ts`, `apps/website/app/components/StudioBlockEditors.tsx`, `apps/website/app/globals.css`, `apps/website/lib/hydrate-carousels.ts`, `apps/website/app/blog/BlogPostContent.tsx`, `apps/website/app/components/StudioBlogPreview.tsx`, `packages/blocks/tests/blocks.test.ts`, `docs/memory/CONTEXT_SNAPSHOT.md`, `docs/memory/CONVERSATION_LOG.md`, `backlog/DONE.md`.
+- Quality gates: lint ✅ typecheck ✅ build ✅ test ✅ (51 test files, 1076 tests passed).
+
+**What we just completed (Session 98):**
+- Bug #96: Manga panel complete refactor. Each panel supports pic/text mode toggle. Pic mode: URL input + inline upload with thumbnail preview + caption + dialogue. Text mode: story textarea + background/text color pickers + live preview.
+- Bug #97: Manga panel preview rendering fixed. Added comprehensive `.pulse-manga-layout` and `.pulse-manga-panel` CSS to globals.css. Works in both preview panel and blog post.
+- Bug #98: Grid layouts are now visually distinct: single (1 col), two-up (2 col), grid-2x2 (2 col with comic gutters), strip (horizontal scroll filmstrip with snap).
+- Bug #99: Creative manga panel UI redesign. Comic-book themed: bold black borders, halftone placeholders, shadow lift on hover, dashed inner border, panel toolbars with visual size icons.
+- Bug #100: Panel sizes added: normal, wide (span 2 cols), tall (span 2 rows), hero (full width + tall). Auto-detects uploaded image dimensions.
+- Bug #101: Speech bubble complete creative redesign. Four distinct designs: neutral (classic rounded), happy (sunshine cloud with rays), angry (jagged clip-path with action lines), thinking (dotted cloud with bubble tail chain). Real CSS tails and decorations.
+- Bug #102: Speech bubble controls expanded. Added title + titleAlign, contentAlign, link URL/target/rel, ref URL/text/style. Live bubble preview in editor.
+- Bug #103: Speech bubble tones are now visually unique. Each has different shapes, colors, borders, decorations, and tail styles. Full dark mode support.
+- Files changed: `packages/blocks/src/MangaPanelBlock.ts`, `packages/blocks/src/SpeechBubbleBlock.ts`, `packages/blocks/src/index.ts`, `apps/website/app/components/StudioBlockEditors.tsx`, `apps/website/app/globals.css`, `packages/renderer/src/styles/layout-modes.css`, `pulse bug list.md`, `docs/memory/CONTEXT_SNAPSHOT.md`.
+- Quality gates: typecheck pass, build pass, 1072 tests pass.
 
 **What we just completed (Session 97):**
 - Bug #91: Survey block is now fully editable in the studio. `EditableSurvey` component with title, description, question CRUD (add/remove/reorder), type selector, required toggle, options management for single/multi, and scale config for rating.

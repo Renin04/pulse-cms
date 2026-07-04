@@ -9,6 +9,7 @@ import { adaptEntryDetail } from '../../lib/entry-adapter'
 import { formatDisplayDate } from '../../lib/site-content'
 import { buildSandboxSrcdoc, base64ToUtf8 } from '@pulse/blocks'
 import { initShikiHighlighter } from '../../lib/shiki-highlighter'
+import { hydrateCarousels } from '../../lib/hydrate-carousels'
 
 // Eagerly initialize Shiki so code blocks render with syntax highlighting + iframes
 initShikiHighlighter().catch(() => {})
@@ -66,7 +67,12 @@ export default function StudioBlogPreview() {
   useEffect(() => {
     if (!entry?.html) return
     const article = document.querySelector('article.studio-rendered')
-    if (article) hydrateDemoIframes(article as HTMLElement)
+    if (!article) return
+    hydrateDemoIframes(article as HTMLElement)
+    const cleanupCarousels = hydrateCarousels(article)
+    return () => {
+      cleanupCarousels()
+    }
   }, [entry?.html])
 
   if (loading) {

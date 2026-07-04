@@ -19,6 +19,7 @@ export interface CarouselSlide {
   title?: string;
   body?: string;
   mediaUrl?: string;
+  mediaFit?: "cover" | "contain" | "fill";
 }
 
 export interface CarouselBlockData extends Record<string, unknown> {
@@ -26,6 +27,8 @@ export interface CarouselBlockData extends Record<string, unknown> {
   autoplay: boolean;
   intervalMs: number;
   showIndicators: boolean;
+  showArrows?: boolean;
+  slideHeight?: string;
 }
 
 const carouselSlideSchema = z
@@ -33,9 +36,13 @@ const carouselSlideSchema = z
     id: z.string(),
     title: z.string().optional(),
     body: z.string().optional(),
-    mediaUrl: z.string().refine(hasAllowedCarouselProtocol, {
-      message: "Unsupported carousel media URL protocol",
-    }).optional(),
+    mediaUrl: z
+      .string()
+      .refine(hasAllowedCarouselProtocol, {
+        message: "Unsupported carousel media URL protocol",
+      })
+      .optional(),
+    mediaFit: z.enum(["cover", "contain", "fill"]).optional(),
   })
   .strict();
 
@@ -45,6 +52,8 @@ export const carouselBlockDataSchema = z
     autoplay: z.boolean(),
     intervalMs: z.number().int().min(1000).max(120_000),
     showIndicators: z.boolean(),
+    showArrows: z.boolean().optional(),
+    slideHeight: z.string().optional(),
   })
   .strict();
 
@@ -71,10 +80,14 @@ export function addCarouselSlide(
         title: slide.title,
         body: slide.body,
         mediaUrl: slide.mediaUrl,
+        mediaFit: slide.mediaFit,
       },
     ],
   });
 }
+
+const chevronLeftSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>`;
+const chevronRightSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>`;
 
 export const CarouselBlock: BlockTypeDefinition<CarouselBlockData> = {
   type: "carousel",
@@ -97,6 +110,8 @@ export const CarouselBlock: BlockTypeDefinition<CarouselBlockData> = {
     autoplay: false,
     intervalMs: 5000,
     showIndicators: true,
+    showArrows: true,
+    slideHeight: "360px",
   },
   config: {
     category: "advanced",
@@ -104,25 +119,46 @@ export const CarouselBlock: BlockTypeDefinition<CarouselBlockData> = {
   },
   render(data) {
     const parsed = carouselBlockDataSchema.parse(data);
+    const carouselId = `carousel-${Math.random().toString(36).slice(2, 9)}`;
+    const height = parsed.slideHeight || "360px";
+    const totalSlides = parsed.slides.length;
+
     const slides = parsed.slides
       .map((slide, index) => {
+        const fit = slide.mediaFit ?? "cover";
+        const label = slide.title ?? `Slide ${index + 1}`;
         const media = slide.mediaUrl
-          ? `<img src="${escapeHtml(slide.mediaUrl)}" alt="${escapeHtml(slide.title ?? `Slide ${index + 1}`)}" loading="lazy" decoding="async" />`
+          ? `<div class="pulse-carousel__media"><img src="${escapeHtml(slide.mediaUrl)}" alt="${escapeHtml(
+              label,
+            )}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="width:100%;height:100%;object-fit:${fit};display:block;" /></div>`
           : "";
-        const title = slide.title ? `<h4>${escapeHtml(slide.title)}</h4>` : "";
-        const body = slide.body ? `<p>${escapeHtml(slide.body)}</p>` : "";
-        return `<article data-slide-index="${index}" data-active="${String(index === 0)}">${media}${title}${body}</article>`;
+        const title = slide.title
+          ? `<h4 class="pulse-carousel__slide-title">${escapeHtml(slide.title)}</h4>`
+          : "";
+        const body = slide.body ? `<p class="pulse-carousel__slide-body">${escapeHtml(slide.body)}</p>` : "";
+        const activeAttr = index === 0 ? ' data-active="true"' : "";
+        return `<article class="pulse-carousel__slide" data-slide-index="${index}"${activeAttr} role="listitem" aria-roledescription="slide" aria-label="${escapeHtml(
+          label,
+        )} — ${index + 1} of ${totalSlides}">${media}<div class="pulse-carousel__slide-content">${title}${body}</div></article>`;
       })
       .join("");
+
     const indicators = parsed.showIndicators
-      ? `<div data-indicators="true">${parsed.slides
-          .map((_, index) => `<button type="button" data-target-index="${index}"></button>`)
+      ? `<div class="pulse-carousel__indicators" role="tablist" aria-label="Slide indicators">${parsed.slides
+          .map(
+            (_, index) =>
+              `<button type="button" class="pulse-carousel__dot${index === 0 ? " pulse-carousel__dot--active" : ""}" data-target-index="${index}" role="tab" aria-label="Go to slide ${index + 1}"${index === 0 ? ' aria-selected="true"' : ""}></button>`,
+          )
           .join("")}</div>`
       : "";
 
-    return `<section data-block-type="carousel" data-autoplay="${String(
-      parsed.autoplay,
-    )}" data-interval-ms="${parsed.intervalMs}">${slides}${indicators}</section>`;
+    const arrows = parsed.showArrows
+      ? `<button type="button" class="pulse-carousel__arrow pulse-carousel__arrow--prev" aria-label="Previous slide">${chevronLeftSvg}</button><button type="button" class="pulse-carousel__arrow pulse-carousel__arrow--next" aria-label="Next slide">${chevronRightSvg}</button>`
+      : "";
+
+    const autoplayAttr = ` data-autoplay="${parsed.autoplay ? "true" : "false"}"${parsed.autoplay ? ` data-interval="${parsed.intervalMs}"` : ""}`;
+
+    return `<section class="pulse-carousel" id="${carouselId}" data-block-type="carousel"${autoplayAttr} style="--carousel-height:${height};" role="group" aria-roledescription="carousel" aria-label="Image carousel"><div class="pulse-carousel__track" role="list">${slides}</div>${arrows}${indicators}</section>`;
   },
   serialize(data) {
     const parsed = carouselBlockDataSchema.parse(data);
