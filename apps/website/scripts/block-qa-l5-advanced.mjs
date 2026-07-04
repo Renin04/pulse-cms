@@ -131,7 +131,7 @@ const BLOCK_SPECS = [
     assertions: {
       selector: '[data-block-type="speech-bubble"]',
       tagName: 'FIGURE',
-      childSelector: 'blockquote',
+      childSelector: '.pulse-speech-bubble__body',
       attrCheck: { name: 'data-tone', values: ['neutral', 'happy', 'angry', 'thinking'] },
     },
   },
