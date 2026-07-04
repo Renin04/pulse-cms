@@ -6438,13 +6438,41 @@ img {
 /* ── Pulse Card Block ───────────────────────────────────────────── */
 
 .pulse-card {
-  --card-radius: 1.125rem;
-  --card-padding: 1.5rem;
+  /* Scale tokens */
+  --card-padding-sm: 1rem;
+  --card-padding-md: 1.5rem;
+  --card-padding-lg: 2rem;
+  --card-padding-xl: 2.5rem;
+  --card-radius-none: 0;
+  --card-radius-sm: 0.5rem;
+  --card-radius-md: 0.75rem;
+  --card-radius-lg: 1.125rem;
+  --card-radius-xl: 1.75rem;
+  --card-title-sm: 1rem;
+  --card-title-md: 1.2rem;
+  --card-title-lg: 1.35rem;
+  --card-title-xl: 1.65rem;
+  --card-body-sm: 0.875rem;
+  --card-body-md: 0.98rem;
+  --card-body-lg: 1.1rem;
+
+  --card-radius: var(--card-radius-lg);
+  --card-padding: var(--card-padding-md);
   --card-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
   --card-shadow-hover: 0 20px 44px rgba(0, 0, 0, 0.14);
   --card-border: rgba(0, 0, 0, 0.07);
   --card-text: var(--pulse-black);
   --card-text-muted: var(--neutral-600);
+  --card-title-color: var(--card-text);
+  --card-body-color: var(--card-text-muted);
+  --card-title-align: left;
+  --card-body-align: left;
+  --card-title-size: var(--card-title-lg);
+  --card-body-size: var(--card-body-md);
+  --card-scrim-opacity: 0.5;
+  --cta-bg: var(--pulse-red);
+  --cta-color: var(--pulse-white);
+  --cta-radius: 9999px;
 
   position: relative;
   border-radius: var(--card-radius);
@@ -6509,9 +6537,9 @@ img {
   pointer-events: none;
   background: linear-gradient(
     165deg,
-    rgba(0, 0, 0, 0.18) 0%,
-    rgba(0, 0, 0, 0.42) 50%,
-    rgba(0, 0, 0, 0.68) 100%
+    rgba(0, 0, 0, calc(0.18 + var(--card-scrim-opacity) * 0.5)) 0%,
+    rgba(0, 0, 0, calc(0.42 + var(--card-scrim-opacity) * 0.4)) 50%,
+    rgba(0, 0, 0, calc(0.68 + var(--card-scrim-opacity) * 0.24)) 100%
   );
   border-radius: var(--card-radius);
 }
@@ -6657,20 +6685,50 @@ img {
 
 .pulse-card__title {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: var(--card-title-size);
   font-weight: 800;
   line-height: 1.2;
-  color: var(--card-text);
+  color: var(--card-title-color);
+  text-align: var(--card-title-align);
   letter-spacing: -0.02em;
 }
 
 .pulse-card__body {
   margin: 0.35rem 0 1rem;
-  font-size: 0.98rem;
+  font-size: var(--card-body-size);
   line-height: 1.7;
-  color: var(--card-text-muted);
+  color: var(--card-body-color);
+  text-align: var(--card-body-align);
   flex: 1;
 }
+
+/* Typography alignment modifiers (used when JS variables aren't enough) */
+.pulse-card--title-left .pulse-card__title { text-align: left; }
+.pulse-card--title-center .pulse-card__title { text-align: center; }
+.pulse-card--title-right .pulse-card__title { text-align: right; }
+.pulse-card--body-left .pulse-card__body { text-align: left; }
+.pulse-card--body-center .pulse-card__body { text-align: center; }
+.pulse-card--body-right .pulse-card__body { text-align: right; }
+
+/* Typography size modifiers */
+.pulse-card--title-size-sm { --card-title-size: var(--card-title-sm); }
+.pulse-card--title-size-md { --card-title-size: var(--card-title-md); }
+.pulse-card--title-size-lg { --card-title-size: var(--card-title-lg); }
+.pulse-card--title-size-xl { --card-title-size: var(--card-title-xl); }
+.pulse-card--body-size-sm { --card-body-size: var(--card-body-sm); }
+.pulse-card--body-size-md { --card-body-size: var(--card-body-md); }
+.pulse-card--body-size-lg { --card-body-size: var(--card-body-lg); }
+
+/* Layout modifiers */
+.pulse-card--padding-sm { --card-padding: var(--card-padding-sm); }
+.pulse-card--padding-md { --card-padding: var(--card-padding-md); }
+.pulse-card--padding-lg { --card-padding: var(--card-padding-lg); }
+.pulse-card--padding-xl { --card-padding: var(--card-padding-xl); }
+.pulse-card--radius-none { --card-radius: var(--card-radius-none); }
+.pulse-card--radius-sm { --card-radius: var(--card-radius-sm); }
+.pulse-card--radius-md { --card-radius: var(--card-radius-md); }
+.pulse-card--radius-lg { --card-radius: var(--card-radius-lg); }
+.pulse-card--radius-xl { --card-radius: var(--card-radius-xl); }
 
 /* CTA: branded button with arrow micro-interaction */
 .pulse-card__cta {
@@ -6696,28 +6754,78 @@ img {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.7rem 1.35rem;
-  border-radius: 9999px;
+  border-radius: var(--cta-radius);
   font-size: 0.875rem;
   font-weight: 700;
   text-decoration: none;
-  background: var(--pulse-red);
-  color: var(--pulse-white);
+  background: var(--cta-bg);
+  color: var(--cta-color);
   border: 1.5px solid transparent;
   transition: transform 180ms cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 180ms ease-out,
-    background-color 180ms ease-out, border-color 180ms ease-out;
-  box-shadow: 0 4px 14px rgba(255, 40, 0, 0.32);
+    background-color 180ms ease-out, border-color 180ms ease-out, color 180ms ease-out;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--cta-bg) 32%, transparent);
 }
 
 .pulse-card__cta-btn:hover {
   transform: translateY(-2px);
-  background: #e62300;
-  box-shadow: 0 8px 24px rgba(255, 40, 0, 0.38);
+  filter: brightness(0.92);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--cta-bg) 38%, transparent);
 }
 
 .pulse-card__cta-btn:focus-visible {
-  outline: 2px solid var(--pulse-red);
+  outline: 2px solid var(--cta-bg);
   outline-offset: 3px;
 }
+
+/* CTA style variants */
+.pulse-card__cta-btn--outline {
+  background: transparent;
+  color: var(--cta-bg);
+  border-color: var(--cta-bg);
+  box-shadow: none;
+}
+
+.pulse-card__cta-btn--outline:hover {
+  background: color-mix(in srgb, var(--cta-bg) 10%, transparent);
+  box-shadow: none;
+}
+
+.pulse-card__cta-btn--ghost {
+  background: transparent;
+  color: var(--cta-bg);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.pulse-card__cta-btn--ghost:hover {
+  background: color-mix(in srgb, var(--cta-bg) 10%, transparent);
+  box-shadow: none;
+}
+
+.pulse-card__cta-btn--link {
+  background: transparent;
+  color: var(--cta-bg);
+  border-color: transparent;
+  box-shadow: none;
+  padding: 0.35rem 0;
+}
+
+.pulse-card__cta-btn--link:hover {
+  background: transparent;
+  filter: none;
+}
+
+.pulse-card__cta-btn--link:hover .pulse-card__cta-label {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* CTA radius modifiers */
+.pulse-card__cta-btn--radius-none { --cta-radius: 0; }
+.pulse-card__cta-btn--radius-sm { --cta-radius: 0.375rem; }
+.pulse-card__cta-btn--radius-md { --cta-radius: 0.625rem; }
+.pulse-card__cta-btn--radius-lg { --cta-radius: 0.875rem; }
+.pulse-card__cta-btn--radius-pill { --cta-radius: 9999px; }
 
 .pulse-card__cta-arrow {
   width: 15px;
@@ -6743,8 +6851,8 @@ img {
 /* Responsive scaling */
 @media (min-width: 768px) {
   .pulse-card {
-    --card-padding: 1.5rem;
-    --card-radius: 1.125rem;
+    --card-padding-md: 1.5rem;
+    --card-radius-lg: 1.125rem;
   }
 
   .pulse-card__geometric {
@@ -6757,23 +6865,19 @@ img {
     height: 180px;
   }
 
-  .pulse-card__title {
-    font-size: 1.5rem;
-  }
-
-  .pulse-card__body {
-    font-size: 1rem;
-  }
+  .pulse-card--title-size-lg { --card-title-size: 1.5rem; }
+  .pulse-card--title-size-xl { --card-title-size: 1.85rem; }
+  .pulse-card--body-size-lg { --card-body-size: 1.05rem; }
 }
 
 @media (min-width: 1024px) {
   .pulse-card {
-    --card-radius: 1.25rem;
+    --card-radius-lg: 1.25rem;
+    --card-radius-xl: 2rem;
   }
 
-  .pulse-card__title {
-    font-size: 1.65rem;
-  }
+  .pulse-card--title-size-lg { --card-title-size: 1.65rem; }
+  .pulse-card--title-size-xl { --card-title-size: 2rem; }
 }
 
 /* Dark mode overrides */
@@ -6813,13 +6917,13 @@ img {
   box-shadow: 0 8px 24px rgba(255, 40, 0, 0.45);
 }
 
-.blog-dark-mode .pulse-card--bg-image .pulse-card__cta-btn {
+.blog-dark-mode .pulse-card--bg-image .pulse-card__cta-btn:not([data-cta-custom]) {
   background: var(--pulse-white);
   color: var(--pulse-black);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
-.blog-dark-mode .pulse-card--bg-image .pulse-card__cta-btn:hover {
+.blog-dark-mode .pulse-card--bg-image .pulse-card__cta-btn:not([data-cta-custom]):hover {
   background: var(--pulse-jasmine);
   color: var(--pulse-black);
   box-shadow: 0 8px 24px rgba(255, 230, 149, 0.28);

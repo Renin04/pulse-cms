@@ -34,8 +34,16 @@ export type CardGeometricPosition =
   | "bottom-right"
   | "center";
 export type CardCtaAlign = "left" | "center" | "right";
+export type CardCtaStyle = "filled" | "outline" | "ghost" | "link";
+export type CardCtaBorderRadius = "none" | "sm" | "md" | "lg" | "pill";
+export type CardCtaTarget = "_self" | "_blank";
 export type CardOverlayAlign = "left" | "center" | "right";
 export type CardOverlayFontSize = "sm" | "md" | "lg" | "xl";
+export type CardTextAlign = "left" | "center" | "right";
+export type CardTextSize = "sm" | "md" | "lg" | "xl";
+export type CardBodyTextSize = "sm" | "md" | "lg";
+export type CardPadding = "sm" | "md" | "lg" | "xl";
+export type CardRadius = "none" | "sm" | "md" | "lg" | "xl";
 
 export interface CardBlockData extends Record<string, unknown> {
   title: string;
@@ -55,10 +63,28 @@ export interface CardBlockData extends Record<string, unknown> {
   geometricColor?: string;
   geometricOpacity?: number;
 
+  // Typography
+  titleColor?: string;
+  bodyColor?: string;
+  titleAlign?: CardTextAlign;
+  bodyAlign?: CardTextAlign;
+  titleSize?: CardTextSize;
+  bodySize?: CardBodyTextSize;
+
   // CTA
   ctaLabel?: string;
   ctaLinkUrl?: string;
   ctaAlign?: CardCtaAlign;
+  ctaStyle?: CardCtaStyle;
+  ctaBgColor?: string;
+  ctaTextColor?: string;
+  ctaBorderRadius?: CardCtaBorderRadius;
+  ctaTarget?: CardCtaTarget;
+
+  // Layout
+  cardPadding?: CardPadding;
+  cardRadius?: CardRadius;
+  imageScrimOpacity?: number;
 
   // Overlay text
   overlayText?: string;
@@ -112,6 +138,20 @@ export const cardBlockDataSchema = z
       })
       .optional(),
     ctaAlign: z.enum(["left", "center", "right"]).optional(),
+    ctaStyle: z.enum(["filled", "outline", "ghost", "link"]).optional(),
+    ctaBgColor: z.string().optional(),
+    ctaTextColor: z.string().optional(),
+    ctaBorderRadius: z.enum(["none", "sm", "md", "lg", "pill"]).optional(),
+    ctaTarget: z.enum(["_self", "_blank"]).optional(),
+    titleColor: z.string().optional(),
+    bodyColor: z.string().optional(),
+    titleAlign: z.enum(["left", "center", "right"]).optional(),
+    bodyAlign: z.enum(["left", "center", "right"]).optional(),
+    titleSize: z.enum(["sm", "md", "lg", "xl"]).optional(),
+    bodySize: z.enum(["sm", "md", "lg"]).optional(),
+    cardPadding: z.enum(["sm", "md", "lg", "xl"]).optional(),
+    cardRadius: z.enum(["none", "sm", "md", "lg", "xl"]).optional(),
+    imageScrimOpacity: z.number().min(0).max(1).optional(),
     overlayText: z.string().optional(),
     overlayAlign: z.enum(["left", "center", "right"]).optional(),
     overlayFontSize: z.enum(["sm", "md", "lg", "xl"]).optional(),
@@ -141,36 +181,39 @@ function migrateCardData(data: CardBlockData): CardBlockData {
   const hasNewCta = data.ctaLinkUrl;
   const shouldMigrateCta = !hasNewCta && legacyLink && data.ctaLabel;
 
-  if (!shouldMigrateBackground && !shouldMigrateCta) {
-    return {
-      ...data,
-      backgroundType: data.backgroundType ?? "solid",
-      backgroundColor: data.backgroundColor ?? "#ffffff",
-      geometricForm: data.geometricForm ?? "none",
-      geometricPosition: data.geometricPosition ?? "top-right",
-      geometricColor: data.geometricColor ?? "#ff2800",
-      geometricOpacity: data.geometricOpacity ?? 0.12,
-      ctaAlign: data.ctaAlign ?? "center",
-      overlayAlign: data.overlayAlign ?? "center",
-      overlayFontSize: data.overlayFontSize ?? "md",
-    };
-  }
-
-  return {
+  const migrated: CardBlockData = {
     ...data,
-    backgroundType: shouldMigrateBackground ? "image" : (data.backgroundType ?? "solid"),
-    backgroundImageUrl: shouldMigrateBackground ? legacyMedia : data.backgroundImageUrl,
-    backgroundImageFit: data.backgroundImageFit ?? "cover",
+    backgroundType: data.backgroundType ?? "solid",
     backgroundColor: data.backgroundColor ?? "#ffffff",
-    ctaLinkUrl: shouldMigrateCta ? legacyLink : data.ctaLinkUrl,
-    ctaAlign: data.ctaAlign ?? "center",
-    overlayAlign: data.overlayAlign ?? "center",
-    overlayFontSize: data.overlayFontSize ?? "md",
     geometricForm: data.geometricForm ?? "none",
     geometricPosition: data.geometricPosition ?? "top-right",
     geometricColor: data.geometricColor ?? "#ff2800",
     geometricOpacity: data.geometricOpacity ?? 0.12,
+    titleAlign: data.titleAlign ?? "left",
+    bodyAlign: data.bodyAlign ?? "left",
+    titleSize: data.titleSize ?? "lg",
+    bodySize: data.bodySize ?? "md",
+    ctaAlign: data.ctaAlign ?? "center",
+    ctaStyle: data.ctaStyle ?? "filled",
+    ctaBorderRadius: data.ctaBorderRadius ?? "pill",
+    ctaTarget: data.ctaTarget ?? "_blank",
+    cardPadding: data.cardPadding ?? "md",
+    cardRadius: data.cardRadius ?? "lg",
+    imageScrimOpacity: data.imageScrimOpacity ?? 0.5,
+    overlayAlign: data.overlayAlign ?? "center",
+    overlayFontSize: data.overlayFontSize ?? "md",
   };
+
+  if (shouldMigrateBackground) {
+    migrated.backgroundType = "image";
+    migrated.backgroundImageUrl = legacyMedia;
+    migrated.backgroundImageFit = data.backgroundImageFit ?? "cover";
+  }
+  if (shouldMigrateCta) {
+    migrated.ctaLinkUrl = legacyLink;
+  }
+
+  return migrated;
 }
 
 const PRESET_SVGS: Record<string, string> = {
@@ -240,7 +283,17 @@ function buildOverlayElement(data: CardBlockData): string {
 function buildCtaElement(data: CardBlockData): string {
   if (!data.ctaLinkUrl || !data.ctaLabel) return "";
   const align = data.ctaAlign ?? "center";
-  return `<div class="pulse-card__cta pulse-card__cta--${align}"><a href="${escapeHtml(data.ctaLinkUrl)}" class="pulse-card__cta-btn" target="_blank" rel="noopener noreferrer" role="button"><span class="pulse-card__cta-label">${escapeHtml(data.ctaLabel)}</span>${CTA_ARROW_ICON}</a></div>`;
+  const style = data.ctaStyle ?? "filled";
+  const radius = data.ctaBorderRadius ?? "pill";
+  const target = data.ctaTarget ?? "_blank";
+  const rel = target === "_blank" ? ' rel="noopener noreferrer"' : "";
+  const ctaVars: string[] = [];
+  const hasCustomColors = Boolean(data.ctaBgColor || data.ctaTextColor);
+  if (data.ctaBgColor) ctaVars.push(`--cta-bg:${escapeHtml(data.ctaBgColor)}`);
+  if (data.ctaTextColor) ctaVars.push(`--cta-color:${escapeHtml(data.ctaTextColor)}`);
+  const styleAttr = ctaVars.length ? ` style="${ctaVars.join(";")}"` : "";
+  const customAttr = hasCustomColors ? ' data-cta-custom="true"' : "";
+  return `<div class="pulse-card__cta pulse-card__cta--${align}"><a href="${escapeHtml(data.ctaLinkUrl)}" class="pulse-card__cta-btn pulse-card__cta-btn--${style} pulse-card__cta-btn--radius-${radius}"${styleAttr}${customAttr} target="${target}"${rel} role="button"><span class="pulse-card__cta-label">${escapeHtml(data.ctaLabel)}</span>${CTA_ARROW_ICON}</a></div>`;
 }
 
 function buildImageScrim(data: CardBlockData): string {
@@ -262,7 +315,17 @@ export const CardBlock: BlockTypeDefinition<CardBlockData> = {
     geometricPosition: "top-right",
     geometricColor: "#ff2800",
     geometricOpacity: 0.12,
+    titleAlign: "left",
+    bodyAlign: "left",
+    titleSize: "lg",
+    bodySize: "md",
     ctaAlign: "center",
+    ctaStyle: "filled",
+    ctaBorderRadius: "pill",
+    ctaTarget: "_blank",
+    cardPadding: "md",
+    cardRadius: "lg",
+    imageScrimOpacity: 0.5,
     overlayAlign: "center",
     overlayFontSize: "md",
   },
@@ -279,8 +342,31 @@ export const CardBlock: BlockTypeDefinition<CardBlockData> = {
     const overlay = buildOverlayElement(parsed);
     const cta = buildCtaElement(parsed);
 
+    const cssVars = [
+      `--card-title-color:${parsed.titleColor ? escapeHtml(parsed.titleColor) : "var(--card-text)"}`,
+      `--card-body-color:${parsed.bodyColor ? escapeHtml(parsed.bodyColor) : "var(--card-text-muted)"}`,
+      `--card-title-align:${parsed.titleAlign ?? "left"}`,
+      `--card-body-align:${parsed.bodyAlign ?? "left"}`,
+      `--card-padding:var(--card-padding-${parsed.cardPadding ?? "md"})`,
+      `--card-radius:var(--card-radius-${parsed.cardRadius ?? "lg"})`,
+      `--card-scrim-opacity:${parsed.imageScrimOpacity ?? 0.5}`,
+    ];
+    if (parsed.titleSize) cssVars.push(`--card-title-size:var(--card-title-${parsed.titleSize})`);
+    if (parsed.bodySize) cssVars.push(`--card-body-size:var(--card-body-${parsed.bodySize})`);
+
+    const classes = [
+      "pulse-card",
+      bgClass,
+      `pulse-card--title-${parsed.titleAlign ?? "left"}`,
+      `pulse-card--body-${parsed.bodyAlign ?? "left"}`,
+      `pulse-card--title-size-${parsed.titleSize ?? "lg"}`,
+      `pulse-card--body-size-${parsed.bodySize ?? "md"}`,
+      `pulse-card--padding-${parsed.cardPadding ?? "md"}`,
+      `pulse-card--radius-${parsed.cardRadius ?? "lg"}`,
+    ].join(" ");
+
     return (
-      `<article class="pulse-card ${bgClass}" data-block-type="card" data-pulse-card-bg="${parsed.backgroundType}" aria-label="${escapeHtml(parsed.title)}" style="${bgStyle}">` +
+      `<article class="${classes}" data-block-type="card" data-pulse-card-bg="${parsed.backgroundType}" aria-label="${escapeHtml(parsed.title)}" style="${bgStyle}${cssVars.join(";")};">` +
       `${scrim}${geo}${overlay}` +
       `<div class="pulse-card__content">` +
       `<h3 class="pulse-card__title">${escapeHtml(parsed.title)}</h3>` +

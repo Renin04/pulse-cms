@@ -4,7 +4,7 @@ import { setCodeBlockHighlighter } from './packages/blocks/src/CodeBlock'
 
 // Mock highlighter
 setCodeBlockHighlighter({
-  codeToHtml(code, options) {
+  codeToHtml(code, _options) {
     return `<pre><code>${code}</code></pre>`
   }
 })

@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, forwardRef } from 'react';
-import { Trash2, Plus, Upload, Play, Terminal, GripVertical, ChevronUp, ChevronDown, Type, ListChecks, Star, AlignLeft, BarChart3, Image as ImageIcon, MessageSquare, Sun, CloudRain, BrainCircuit, Maximize, MoveVertical, StretchHorizontal, Expand, ExternalLink, Link2 } from 'lucide-react';
+import { Trash2, Plus, Upload, Play, Terminal, GripVertical, ChevronUp, ChevronDown, Type, ListChecks, Star, AlignLeft, AlignCenter, AlignRight, BarChart3, Image as ImageIcon, MessageSquare, Sun, CloudRain, BrainCircuit, Maximize, MoveVertical, StretchHorizontal, Expand, ExternalLink, Link2, Palette, Layout, MousePointerClick, Type as TypeIcon } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
-import { type ReferenceStyle, formatReferenceNumber, buildPyodideSrcdoc } from '@pulse/blocks';
+import { type ReferenceStyle, formatReferenceNumber, buildPyodideSrcdoc, CardBlock } from '@pulse/blocks';
 import { media as mediaApi } from '@/lib/api-client';
 import { createSandboxHtml } from './CodeSandbox';
 
@@ -62,6 +62,95 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div className="mb-3 rounded-xl border border-[var(--neutral-200)] bg-[var(--neutral-50)] p-3">
       <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">{title}</p>
       {children}
+    </div>
+  );
+}
+
+function AccordionSection({ title, icon: Icon, children, defaultOpen = false }: { title: string; icon?: React.ElementType; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="rounded-xl border border-[var(--neutral-200)] bg-[var(--neutral-50)] overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-[var(--neutral-100)] transition-colors"
+      >
+        <span className="flex items-center gap-2 text-xs font-bold text-[var(--neutral-700)]">
+          {Icon && <Icon className="h-3.5 w-3.5 text-[var(--pulse-red)]" />}
+          {title}
+        </span>
+        <ChevronDown className={`h-3.5 w-3.5 text-[var(--neutral-500)] transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div className="border-t border-[var(--neutral-200)] p-3 space-y-3">{children}</div>}
+    </div>
+  );
+}
+
+const PRESET_COLORS = [
+  '#ff2800', '#ff7a00', '#ff0080', '#8e2de2', '#4a00e0',
+  '#0061ff', '#60efff', '#134e5e', '#71b280', '#ff9a9e',
+  '#373737', '#6c757d', '#ffffff', '#f8f9fa', '#e9ecef',
+];
+
+function ColorSwatch({ label, value, onChange, allowClear }: { label: string; value?: string; onChange: (color: string) => void; allowClear?: boolean }) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {allowClear && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            title="Default"
+            className={`h-6 w-6 rounded-full border-2 border-[var(--neutral-300)] bg-[var(--neutral-100)] flex items-center justify-center ${!value ? 'ring-2 ring-[var(--pulse-red)]' : ''}`}
+          >
+            <span className="text-[9px] text-[var(--neutral-500)]">✕</span>
+          </button>
+        )}
+        {PRESET_COLORS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => onChange(c)}
+            title={c}
+            className={`h-6 w-6 rounded-full border border-[var(--neutral-200)] ${value === c ? 'ring-2 ring-[var(--pulse-red)] ring-offset-1' : ''}`}
+            style={{ background: c }}
+          />
+        ))}
+        <div className="relative h-6 w-6 overflow-hidden rounded-full border border-[var(--neutral-200)]">
+          <input
+            type="color"
+            value={value || '#ffffff'}
+            onChange={(e) => onChange(e.target.value)}
+            className="absolute -inset-2 h-10 w-10 cursor-pointer border-0 p-0"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AlignButtonGroup({ value, onChange }: { value: 'left' | 'center' | 'right'; onChange: (v: 'left' | 'center' | 'right') => void }) {
+  const buttons: { value: 'left' | 'center' | 'right'; icon: React.ReactNode }[] = [
+    { value: 'left', icon: <AlignLeft className="h-3.5 w-3.5" /> },
+    { value: 'center', icon: <AlignCenter className="h-3.5 w-3.5" /> },
+    { value: 'right', icon: <AlignRight className="h-3.5 w-3.5" /> },
+  ];
+  return (
+    <div className="inline-flex rounded-lg border border-[var(--neutral-200)] bg-white p-0.5">
+      {buttons.map((b) => (
+        <button
+          key={b.value}
+          type="button"
+          onClick={() => onChange(b.value)}
+          className={`rounded-md px-2 py-1 transition-colors ${
+            value === b.value ? 'bg-[var(--pulse-red)] text-white' : 'text-[var(--neutral-500)] hover:bg-[var(--neutral-100)]'
+          }`}
+          aria-label={`Align ${b.value}`}
+        >
+          {b.icon}
+        </button>
+      ))}
     </div>
   );
 }
@@ -1808,9 +1897,23 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
     geometricPosition?: string;
     geometricColor?: string;
     geometricOpacity?: number;
+    titleColor?: string;
+    bodyColor?: string;
+    titleAlign?: 'left' | 'center' | 'right';
+    bodyAlign?: 'left' | 'center' | 'right';
+    titleSize?: 'sm' | 'md' | 'lg' | 'xl';
+    bodySize?: 'sm' | 'md' | 'lg';
     ctaLabel?: string;
     ctaLinkUrl?: string;
-    ctaAlign?: string;
+    ctaAlign?: 'left' | 'center' | 'right';
+    ctaStyle?: 'filled' | 'outline' | 'ghost' | 'link';
+    ctaBgColor?: string;
+    ctaTextColor?: string;
+    ctaBorderRadius?: 'none' | 'sm' | 'md' | 'lg' | 'pill';
+    ctaTarget?: '_self' | '_blank';
+    cardPadding?: 'sm' | 'md' | 'lg' | 'xl';
+    cardRadius?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+    imageScrimOpacity?: number;
     overlayText?: string;
     overlayAlign?: string;
     overlayFontSize?: string;
@@ -1826,12 +1929,22 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
     backgroundColor: raw.backgroundColor || '#ffffff',
     ctaLinkUrl: raw.ctaLinkUrl || raw.linkUrl,
     ctaAlign: raw.ctaAlign || 'center',
+    ctaStyle: raw.ctaStyle || 'filled',
+    ctaBorderRadius: raw.ctaBorderRadius || 'pill',
+    ctaTarget: raw.ctaTarget || '_blank',
     overlayAlign: raw.overlayAlign || 'center',
     overlayFontSize: raw.overlayFontSize || 'md',
     geometricForm: raw.geometricForm || 'none',
     geometricPosition: raw.geometricPosition || 'top-right',
     geometricColor: normalizeColorToHex(raw.geometricColor),
     geometricOpacity: raw.geometricOpacity ?? 0.15,
+    titleAlign: raw.titleAlign || 'left',
+    bodyAlign: raw.bodyAlign || 'left',
+    titleSize: raw.titleSize || 'lg',
+    bodySize: raw.bodySize || 'md',
+    cardPadding: raw.cardPadding || 'md',
+    cardRadius: raw.cardRadius || 'lg',
+    imageScrimOpacity: raw.imageScrimOpacity ?? 0.5,
   };
   const [uploading, setUploading] = useState(false);
   const [gradientMode, setGradientMode] = useState<'presets' | 'builder' | 'raw'>(
@@ -1874,14 +1987,66 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
     update({ backgroundGradient: `linear-gradient(${gradientDir}, ${gradientFrom}, ${gradientTo})` });
   };
 
+  const previewHtml = useMemo(() => {
+    try {
+      return CardBlock.render(data);
+    } catch {
+      return '';
+    }
+  }, [data]);
+
+  const hasCta = Boolean(data.ctaLabel && data.ctaLinkUrl);
+
   return (
     <div className="space-y-3">
-      {/* Text */}
-      <Input value={data.title} onChange={(e) => update({ title: e.target.value })} placeholder="Card title" />
-      <TextArea value={data.body} onChange={(e) => update({ body: e.target.value })} placeholder="Card body text..." rows={2} />
+      {/* Live mini-preview */}
+      <div className="rounded-xl border border-[var(--neutral-200)] bg-[var(--neutral-100)] p-2">
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--neutral-500)]">Preview</p>
+        <div
+          className="pulse-card-preview rounded-lg bg-white p-2"
+          style={{ minHeight: '120px' }}
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: previewHtml }}
+        />
+      </div>
 
-      {/* Background */}
-      <Section title="Background">
+      <AccordionSection title="Content" icon={TypeIcon} defaultOpen>
+        <Input value={data.title} onChange={(e) => update({ title: e.target.value })} placeholder="Card title" />
+        <TextArea value={data.body} onChange={(e) => update({ body: e.target.value })} placeholder="Card body text..." rows={2} />
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-[var(--neutral-600)]">Title alignment</span>
+          <AlignButtonGroup value={data.titleAlign} onChange={(v) => update({ titleAlign: v })} />
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-[var(--neutral-600)]">Body alignment</span>
+          <AlignButtonGroup value={data.bodyAlign} onChange={(v) => update({ bodyAlign: v })} />
+        </div>
+      </AccordionSection>
+
+      <AccordionSection title="Typography" icon={Palette}>
+        <ColorSwatch label="Title color" value={data.titleColor} allowClear onChange={(c) => update({ titleColor: c })} />
+        <ColorSwatch label="Body color" value={data.bodyColor} allowClear onChange={(c) => update({ bodyColor: c })} />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label>Title size</Label>
+            <Select
+              value={data.titleSize}
+              onChange={(e) => update({ titleSize: e.target.value as typeof data.titleSize })}
+              options={[{ value: 'sm', label: 'Small' }, { value: 'md', label: 'Medium' }, { value: 'lg', label: 'Large' }, { value: 'xl', label: 'XL' }]}
+            />
+          </div>
+          <div>
+            <Label>Body size</Label>
+            <Select
+              value={data.bodySize}
+              onChange={(e) => update({ bodySize: e.target.value as typeof data.bodySize })}
+              options={[{ value: 'sm', label: 'Small' }, { value: 'md', label: 'Medium' }, { value: 'lg', label: 'Large' }]}
+            />
+          </div>
+        </div>
+      </AccordionSection>
+
+      <AccordionSection title="Background" icon={ImageIcon}>
         <div className="space-y-2">
           <div className="flex gap-2">
             <Select
@@ -1930,6 +2095,7 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
                 {(['presets', 'builder', 'raw'] as const).map((m) => (
                   <button
                     key={m}
+                    type="button"
                     onClick={() => setGradientMode(m)}
                     className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
                       gradientMode === m ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
@@ -1945,6 +2111,7 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
                   {presetGradients.map((g) => (
                     <button
                       key={g.name}
+                      type="button"
                       onClick={() => update({ backgroundGradient: g.value })}
                       className={`group relative h-10 overflow-hidden rounded-md border-2 ${
                         data.backgroundGradient === g.value ? 'border-[var(--pulse-red)]' : 'border-transparent'
@@ -1994,17 +2161,95 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
           )}
 
           {data.backgroundType === 'image' && (
-            <Select
-              value={data.backgroundImageFit || 'cover'}
-              onChange={(e) => update({ backgroundImageFit: e.target.value as typeof data.backgroundImageFit })}
-              options={[{ value: 'cover', label: 'Cover' }, { value: 'fill', label: 'Fill' }, { value: 'fit', label: 'Fit' }]}
-            />
+            <>
+              <Select
+                value={data.backgroundImageFit || 'cover'}
+                onChange={(e) => update({ backgroundImageFit: e.target.value as typeof data.backgroundImageFit })}
+                options={[{ value: 'cover', label: 'Cover' }, { value: 'fill', label: 'Fill' }, { value: 'fit', label: 'Fit' }]}
+              />
+              <div>
+                <Label>Image dimming</Label>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={data.imageScrimOpacity}
+                  onChange={(e) => update({ imageScrimOpacity: Number(e.target.value) })}
+                  className="w-full accent-[var(--pulse-red)]"
+                />
+              </div>
+            </>
           )}
         </div>
-      </Section>
+      </AccordionSection>
 
-      {/* Geometric Form */}
-      <Section title="Decoration">
+      <AccordionSection title="CTA Button" icon={MousePointerClick}>
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input value={data.ctaLabel || ''} onChange={(e) => update({ ctaLabel: e.target.value })} placeholder="Button text" className="flex-1" />
+            <Input
+              value={data.ctaLinkUrl || ''}
+              onChange={(e) => update({ ctaLinkUrl: e.target.value })}
+              onBlur={(e) => update({ ctaLinkUrl: sanitizeCardUrl(e.target.value) })}
+              placeholder="URL"
+              className="flex-1"
+            />
+          </div>
+          {hasCta && (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-[var(--neutral-600)]">Alignment</span>
+                <AlignButtonGroup value={data.ctaAlign} onChange={(v) => update({ ctaAlign: v })} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Style</Label>
+                  <Select
+                    value={data.ctaStyle}
+                    onChange={(e) => update({ ctaStyle: e.target.value as typeof data.ctaStyle })}
+                    options={[
+                      { value: 'filled', label: 'Filled' },
+                      { value: 'outline', label: 'Outline' },
+                      { value: 'ghost', label: 'Ghost' },
+                      { value: 'link', label: 'Link' },
+                    ]}
+                  />
+                </div>
+                <div>
+                  <Label>Radius</Label>
+                  <Select
+                    value={data.ctaBorderRadius}
+                    onChange={(e) => update({ ctaBorderRadius: e.target.value as typeof data.ctaBorderRadius })}
+                    options={[
+                      { value: 'none', label: 'None' },
+                      { value: 'sm', label: 'Small' },
+                      { value: 'md', label: 'Medium' },
+                      { value: 'lg', label: 'Large' },
+                      { value: 'pill', label: 'Pill' },
+                    ]}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  label="Open in new tab"
+                  checked={data.ctaTarget === '_blank'}
+                  onChange={(e) => update({ ctaTarget: e.target.checked ? '_blank' : '_self' })}
+                />
+              </div>
+              {data.ctaStyle !== 'link' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <ColorSwatch label="Button color" value={data.ctaBgColor} allowClear onChange={(c) => update({ ctaBgColor: c })} />
+                  <ColorSwatch label="Button text" value={data.ctaTextColor} allowClear onChange={(c) => update({ ctaTextColor: c })} />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </AccordionSection>
+
+      <AccordionSection title="Decoration" icon={Star}>
         <div className="space-y-2">
           <div className="flex gap-2">
             <Select
@@ -2048,31 +2293,26 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
             />
           )}
           {data.geometricForm && data.geometricForm !== 'none' && (
-            <div className="flex items-center gap-2">
-              <Label>Color</Label>
-              <input
-                type="color"
-                value={data.geometricColor}
-                onChange={(e) => update({ geometricColor: e.target.value })}
-                className="h-7 w-10 cursor-pointer rounded border border-[var(--neutral-200)]"
-              />
-              <Label>Opacity</Label>
-              <Input
-                type="number"
-                min={0}
-                max={1}
-                step={0.05}
-                value={data.geometricOpacity}
-                onChange={(e) => update({ geometricOpacity: Number(e.target.value) })}
-                className="w-16 text-xs"
-              />
+            <div className="space-y-2">
+              <ColorSwatch label="Decoration color" value={data.geometricColor} onChange={(c) => update({ geometricColor: c })} />
+              <div>
+                <Label>Opacity</Label>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={data.geometricOpacity}
+                  onChange={(e) => update({ geometricOpacity: Number(e.target.value) })}
+                  className="w-full accent-[var(--pulse-red)]"
+                />
+              </div>
             </div>
           )}
         </div>
-      </Section>
+      </AccordionSection>
 
-      {/* Overlay */}
-      <Section title="Overlay Text">
+      <AccordionSection title="Overlay Text" icon={Type}>
         <div className="space-y-2">
           <Input
             value={data.overlayText || ''}
@@ -2094,30 +2334,34 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
             </div>
           )}
         </div>
-      </Section>
+      </AccordionSection>
 
-      {/* CTA */}
-      <Section title="CTA Button">
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <Input value={data.ctaLabel || ''} onChange={(e) => update({ ctaLabel: e.target.value })} placeholder="Button text" className="flex-1" />
-            <Input
-              value={data.ctaLinkUrl || ''}
-              onChange={(e) => update({ ctaLinkUrl: e.target.value })}
-              onBlur={(e) => update({ ctaLinkUrl: sanitizeCardUrl(e.target.value) })}
-              placeholder="URL"
-              className="flex-1"
+      <AccordionSection title="Layout" icon={Layout}>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label>Padding</Label>
+            <Select
+              value={data.cardPadding}
+              onChange={(e) => update({ cardPadding: e.target.value as typeof data.cardPadding })}
+              options={[{ value: 'sm', label: 'Small' }, { value: 'md', label: 'Medium' }, { value: 'lg', label: 'Large' }, { value: 'xl', label: 'XL' }]}
             />
           </div>
-          {data.ctaLabel && data.ctaLinkUrl && (
+          <div>
+            <Label>Corner radius</Label>
             <Select
-              value={data.ctaAlign || 'center'}
-              onChange={(e) => update({ ctaAlign: e.target.value })}
-              options={[{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]}
+              value={data.cardRadius}
+              onChange={(e) => update({ cardRadius: e.target.value as typeof data.cardRadius })}
+              options={[
+                { value: 'none', label: 'None' },
+                { value: 'sm', label: 'Small' },
+                { value: 'md', label: 'Medium' },
+                { value: 'lg', label: 'Large' },
+                { value: 'xl', label: 'XL' },
+              ]}
             />
-          )}
+          </div>
         </div>
-      </Section>
+      </AccordionSection>
     </div>
   );
 }

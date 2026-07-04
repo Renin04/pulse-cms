@@ -1042,6 +1042,49 @@ describe("CardBlock", () => {
     expect(html).toContain('href="https://example.com/legacy"');
     expect(html).toContain("Go");
   });
+
+  it("renders customization tokens for typography, CTA, and layout", () => {
+    const html = CardBlock.render({
+      title: "Styled Card",
+      body: "Styled body.",
+      backgroundType: "gradient",
+      backgroundGradient: "linear-gradient(135deg, #ff0080, #ff8c00)",
+      titleColor: "#ffffff",
+      bodyColor: "rgba(255,255,255,0.9)",
+      titleAlign: "center",
+      bodyAlign: "center",
+      titleSize: "xl",
+      bodySize: "lg",
+      ctaLabel: "Explore",
+      ctaLinkUrl: "https://example.com",
+      ctaStyle: "outline",
+      ctaBgColor: "#ffffff",
+      ctaTextColor: "#ff0080",
+      ctaBorderRadius: "lg",
+      ctaTarget: "_self",
+      cardPadding: "lg",
+      cardRadius: "xl",
+      imageScrimOpacity: 0.7,
+    });
+
+    expect(html).toContain('--card-title-color:#ffffff');
+    expect(html).toContain('--card-body-color:rgba(255,255,255,0.9)');
+    expect(html).toContain('--card-title-align:center');
+    expect(html).toContain('--card-body-align:center');
+    expect(html).toContain('pulse-card--title-center');
+    expect(html).toContain('pulse-card--body-center');
+    expect(html).toContain('pulse-card--title-size-xl');
+    expect(html).toContain('pulse-card--body-size-lg');
+    expect(html).toContain('pulse-card--padding-lg');
+    expect(html).toContain('pulse-card--radius-xl');
+    expect(html).toContain('--card-scrim-opacity:0.7');
+    expect(html).toContain('pulse-card__cta-btn--outline');
+    expect(html).toContain('pulse-card__cta-btn--radius-lg');
+    expect(html).toContain('--cta-bg:#ffffff');
+    expect(html).toContain('--cta-color:#ff0080');
+    expect(html).toContain('target="_self"');
+    expect(html).not.toContain('rel="noopener noreferrer"');
+  });
 });
 
 describe("GalleryBlock", () => {
