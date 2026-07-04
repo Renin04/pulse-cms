@@ -15,6 +15,7 @@
 - ✅ Bugs #107-#109: Gallery block complete redesign. New renderer supports grid/masonry layouts, per-image titles/captions, object-fit, and links. Editor updated with accordion image list, inline upload, and per-image alignment controls.
 - ✅ Bug #110: Carousel block renderer and CSS fix. Rewrote `CarouselBlock.ts` with semantic HTML and ARIA attributes. Added gallery-style responsive CSS with dark mode support. Created shared `hydrate-carousels.ts` utility for autoplay, arrows, dots, and scroll-based active-dot updates. Wired into `BlogPostContent.tsx` and `StudioBlogPreview.tsx`.
 - ✅ Hardening: Added backward compatibility for legacy Card block data (`mediaUrl` → `backgroundImageUrl`, `linkUrl` → `ctaLinkUrl`) and fixed invalid nested `<button>` HTML in `EditableGallery`/`EditableCarousel` accordion headers.
+- ✅ Re-examination of bugs #96-#103 (Manga Panel + Speech Bubble): full L-5 advanced blocks QA now 15/15 PASS after updating the outdated Speech Bubble QA assertion.
 
 **Files Changed:**
 - `packages/blocks/src/CardBlock.ts` — renderer rewrite + legacy migration

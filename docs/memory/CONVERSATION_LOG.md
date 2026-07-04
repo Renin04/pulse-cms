@@ -53,6 +53,7 @@ Redesigned the Card and Gallery blocks and fixed the Carousel block across rende
 - ✅ `npm run build` — passed
 - ✅ `npm run test` — 51 test files, 1076 tests passed
 - ✅ Puppeteer L-5 advanced blocks QA on `http://localhost:6001/demo` — Card, Gallery, and Carousel PASS (14/15; remaining Speech Bubble failure is pre-existing from session 98)
+- ✅ Re-examined bugs #96-#103 (Manga Panel + Speech Bubble): full L-5 advanced blocks QA now 15/15 PASS after updating the outdated Speech Bubble QA assertion from `<blockquote>` to `.pulse-speech-bubble__body`.
 
 ### Decisions Made
 - No schema changes for Gallery or Carousel; existing data continues to validate.

@@ -21,6 +21,7 @@
 - Added backward compatibility for legacy Card block data (`mediaUrl` → `backgroundImageUrl`, `linkUrl` → `ctaLinkUrl`) so existing saved cards keep rendering.
 - Fixed invalid nested `<button>` HTML in `EditableGallery` and `EditableCarousel` accordion headers to eliminate React hydration warnings.
 - Puppeteer L-5 advanced blocks QA on `http://localhost:6001/demo` confirms Card, Gallery, and Carousel PASS.
+- Re-examined bugs #96-#103 (Manga Panel + Speech Bubble from session 98): L-5 QA now passes for both. The only issue found was an outdated QA assertion expecting a `<blockquote>` inside Speech Bubble; updated to `.pulse-speech-bubble__body` and re-ran full L-5 suite: 15/15 PASS.
 - Files changed: `packages/blocks/src/CardBlock.ts`, `packages/blocks/src/GalleryBlock.ts`, `packages/blocks/src/CarouselBlock.ts`, `apps/website/app/components/StudioBlockEditors.tsx`, `apps/website/app/globals.css`, `apps/website/lib/hydrate-carousels.ts`, `apps/website/app/blog/BlogPostContent.tsx`, `apps/website/app/components/StudioBlogPreview.tsx`, `packages/blocks/tests/blocks.test.ts`, `docs/memory/CONTEXT_SNAPSHOT.md`, `docs/memory/CONVERSATION_LOG.md`, `backlog/DONE.md`.
 - Quality gates: lint ✅ typecheck ✅ build ✅ test ✅ (51 test files, 1076 tests passed).
 
