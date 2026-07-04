@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, forwardRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, forwardRef } from 'react';
 import { Trash2, Plus, Upload, Play, Terminal, GripVertical, ChevronUp, ChevronDown, Type, ListChecks, Star, AlignLeft, AlignCenter, AlignRight, BarChart3, Image as ImageIcon, MessageSquare, Sun, CloudRain, BrainCircuit, Maximize, MoveVertical, StretchHorizontal, Expand, ExternalLink, Link2, Palette, Layout, MousePointerClick, Type as TypeIcon } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
