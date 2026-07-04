@@ -625,9 +625,9 @@ function PulseBlogStudioInner() {
 
   // Hydrate interactive blocks after preview renders (React strips inline scripts from dangerouslySetInnerHTML)
   useLayoutEffect(() => {
-    const preview = document.querySelector('.studio-rendered.mt-6') as HTMLElement | null;
+    const preview = document.querySelector('.studio-rendered') as HTMLElement | null;
     if (!preview) {
-      console.warn('[Pulse] Preview pane not found: .studio-rendered.mt-6');
+      // Preview pane may not be mounted on initial renders or in list view; skip silently.
       return;
     }
 
@@ -1059,7 +1059,7 @@ function PulseBlogStudioInner() {
 
     // --- Legacy hydration for poll/tabs/spoiler/survey ---
     function hydrateLegacyInteractive() {
-      const p = document.querySelector('.studio-rendered.mt-6');
+      const p = document.querySelector('.studio-rendered');
       if (!p) return;
 
       p.querySelectorAll('.pulse-tabs').forEach((sec) => {

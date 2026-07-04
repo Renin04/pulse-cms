@@ -73,52 +73,15 @@
   }
 }
 
-.pulse-layout--manga .pulse-layout__inner,
-.pulse-manga-grid {
+/* Manga layout base — grid details are in globals.css for block-level styling */
+.pulse-layout--manga .pulse-layout__inner {
   display: grid;
   grid-template-columns: repeat(var(--pulse-layout-manga-columns), minmax(0, 1fr));
   gap: var(--pulse-layout-manga-gap);
 }
 
 @media (max-width: 767px) {
-  .pulse-layout--manga .pulse-layout__inner,
-  .pulse-manga-grid {
+  .pulse-layout--manga .pulse-layout__inner {
     grid-template-columns: repeat(min(var(--pulse-layout-manga-columns), 2), minmax(0, 1fr));
   }
-}
-
-.pulse-manga-panel {
-  display: block;
-  min-width: 0;
-}
-
-.pulse-manga-panel--wide {
-  grid-column: span 2;
-}
-
-.pulse-manga-panel--tall {
-  grid-row: span 2;
-}
-
-.pulse-manga-panel--hero {
-  grid-column: 1 / -1;
-  grid-row: span 2;
-}
-
-.pulse-manga-panel--align-left {
-  text-align: left;
-}
-
-.pulse-manga-panel--align-center {
-  text-align: center;
-}
-
-.pulse-manga-panel--align-right {
-  text-align: right;
-}
-
-.pulse-manga-panel--sticky {
-  position: sticky;
-  top: var(--pulse-layout-sticky-top);
-  z-index: var(--pulse-layout-sticky-z-index);
 }

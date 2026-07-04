@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { BlockTypeDefinition } from "./types";
-import { escapeHtml, parseJson } from "./types";
+import { parseJson } from "./types";
 import { renderInlineMarkdown } from "./BlockquoteBlock";
 
 export interface TableBlockData extends Record<string, unknown> {

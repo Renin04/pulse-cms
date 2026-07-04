@@ -5,8 +5,6 @@ import { escapeHtml, parseJson } from "./types";
 import {
   SUPPORTED_CODE_LANGUAGES,
   type SupportedCodeLanguage,
-  buildSandboxSrcdoc,
-  utf8ToBase64,
 } from "./CodeBlock";
 
 export interface CodeSandboxBlockData extends Record<string, unknown> {
@@ -28,10 +26,6 @@ export const codeSandboxBlockDataSchema = z
     readOnly: z.boolean().default(false),
   })
   .passthrough() as z.ZodType<CodeSandboxBlockData>;
-
-function escapeAttr(text: string): string {
-  return text.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-}
 
 export function buildPyodideSrcdoc(code: string): string {
   const safeCode = escapeHtml(code);

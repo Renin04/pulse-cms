@@ -148,8 +148,8 @@ function migrateCardData(data: CardBlockData): CardBlockData {
       backgroundColor: data.backgroundColor ?? "#ffffff",
       geometricForm: data.geometricForm ?? "none",
       geometricPosition: data.geometricPosition ?? "top-right",
-      geometricColor: data.geometricColor ?? "rgba(255,40,0,0.12)",
-      geometricOpacity: data.geometricOpacity ?? 0.15,
+      geometricColor: data.geometricColor ?? "#ff2800",
+      geometricOpacity: data.geometricOpacity ?? 0.12,
       ctaAlign: data.ctaAlign ?? "center",
       overlayAlign: data.overlayAlign ?? "center",
       overlayFontSize: data.overlayFontSize ?? "md",
@@ -168,8 +168,8 @@ function migrateCardData(data: CardBlockData): CardBlockData {
     overlayFontSize: data.overlayFontSize ?? "md",
     geometricForm: data.geometricForm ?? "none",
     geometricPosition: data.geometricPosition ?? "top-right",
-    geometricColor: data.geometricColor ?? "rgba(255,40,0,0.12)",
-    geometricOpacity: data.geometricOpacity ?? 0.15,
+    geometricColor: data.geometricColor ?? "#ff2800",
+    geometricOpacity: data.geometricOpacity ?? 0.12,
   };
 }
 
@@ -222,7 +222,7 @@ function buildGeometricElement(data: CardBlockData): string {
   if (!svg) return "";
 
   const pos = data.geometricPosition ?? "top-right";
-  const color = escapeHtml(data.geometricColor ?? "rgba(255,40,0,0.12)");
+  const color = escapeHtml(data.geometricColor ?? "#ff2800");
   const opacity = data.geometricOpacity ?? 0.15;
 
   const positionClass = `pulse-card__geo--${pos}`;
@@ -260,8 +260,8 @@ export const CardBlock: BlockTypeDefinition<CardBlockData> = {
     backgroundColor: "#ffffff",
     geometricForm: "none",
     geometricPosition: "top-right",
-    geometricColor: "rgba(255,40,0,0.12)",
-    geometricOpacity: 0.15,
+    geometricColor: "#ff2800",
+    geometricOpacity: 0.12,
     ctaAlign: "center",
     overlayAlign: "center",
     overlayFontSize: "md",

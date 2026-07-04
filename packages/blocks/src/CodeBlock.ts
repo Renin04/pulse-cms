@@ -142,7 +142,6 @@ function wrapCodeBlock(innerHtml: string, data: CodeBlockData): string {
 
   // Run mode — emit tabs, run button, and output iframe directly
   if (data.mode === "run" && isRunnable) {
-    const codeB64 = utf8ToBase64(data.code);
     const srcdoc = buildSandboxSrcdoc(data.code, data.language);
     const escapedSrcdoc = escapeAttr(srcdoc);
     return `<div class="pulse-code-block" data-mode="run" data-active-tab="code" data-language="${data.language}">

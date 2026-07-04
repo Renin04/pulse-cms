@@ -81,6 +81,7 @@ export const CalloutBlock: BlockTypeDefinition<CalloutBlockData> = {
     <span class="pulse-callout-icon" aria-hidden="true">${iconSvg}</span>
     <span class="pulse-callout-label">${label}</span>
   </div>
+  ${titleMarkup}
   <div class="pulse-callout-body">${renderInlineMarkdown(parsed.body)}</div>
 </aside>`;
   },

@@ -129,7 +129,7 @@ export {
   addMangaPanel,
   setMangaLayout,
 } from "./MangaPanelBlock";
-export type { MangaPanelBlockData, MangaPanel, MangaPanelLayout } from "./MangaPanelBlock";
+export type { MangaPanelBlockData, MangaPanel, MangaPanelLayout, MangaPanelMode, MangaPanelSize } from "./MangaPanelBlock";
 export { MapBlock, mapBlockDataSchema } from "./MapBlock";
 export type { MapBlockData, MapProvider } from "./MapBlock";
 export { MathEquationBlock, mathEquationBlockDataSchema } from "./MathEquationBlock";

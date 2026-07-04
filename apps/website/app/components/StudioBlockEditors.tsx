@@ -66,6 +66,47 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+// ─── Color helpers ───
+
+function parseRgba(rgba: string): { r: number; g: number; b: number; a: number } | null {
+  const m = rgba.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+))?\s*\)/);
+  if (!m) return null;
+  return {
+    r: Number(m[1]),
+    g: Number(m[2]),
+    b: Number(m[3]),
+    a: m[4] === undefined ? 1 : Number(m[4]),
+  };
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const toHex = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function normalizeColorToHex(color?: string): string {
+  if (!color) return '#ff2800';
+  if (color.startsWith('#')) return color;
+  const rgba = parseRgba(color);
+  if (rgba) return rgbToHex(rgba.r, rgba.g, rgba.b);
+  return '#ff2800';
+}
+
+function sanitizeCardUrl(url: string): string {
+  if (!url) return url;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) return trimmed;
+  try {
+    const parsed = new URL(trimmed);
+    if (['http:', 'https:'].includes(parsed.protocol)) return trimmed;
+  } catch {
+    if (!trimmed.includes(':') && trimmed.includes('.')) {
+      return `https://${trimmed}`;
+    }
+  }
+  return trimmed;
+}
+
 // ─── Markdown <-> HTML helpers for inline links ───
 
 
@@ -1789,10 +1830,13 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
     overlayFontSize: raw.overlayFontSize || 'md',
     geometricForm: raw.geometricForm || 'none',
     geometricPosition: raw.geometricPosition || 'top-right',
-    geometricColor: raw.geometricColor || 'rgba(255,40,0,0.12)',
+    geometricColor: normalizeColorToHex(raw.geometricColor),
     geometricOpacity: raw.geometricOpacity ?? 0.15,
   };
   const [uploading, setUploading] = useState(false);
+  const [gradientMode, setGradientMode] = useState<'presets' | 'builder' | 'raw'>(
+    data.backgroundGradient && !data.backgroundGradient.startsWith('linear-gradient') ? 'raw' : 'presets'
+  );
 
   const handleUpload = async (file: File) => {
     setUploading(true);
@@ -1809,6 +1853,25 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
 
   const update = (patch: Partial<typeof data>) => {
     adapter.updateBlock(block.id, (b) => ({ ...b, data: { ...data, ...patch } }));
+  };
+
+  const presetGradients = [
+    { name: 'Sunset', value: 'linear-gradient(135deg, #ff0080 0%, #ff8c00 100%)' },
+    { name: 'Ocean', value: 'linear-gradient(135deg, #0061ff 0%, #60efff 100%)' },
+    { name: 'Forest', value: 'linear-gradient(135deg, #134e5e 0%, #71b280 100%)' },
+    { name: 'Berry', value: 'linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%)' },
+    { name: 'Peach', value: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)' },
+    { name: 'Midnight', value: 'linear-gradient(135deg, #232526 0%, #414345 100%)' },
+    { name: 'Cotton', value: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)' },
+    { name: 'Pulse', value: 'linear-gradient(135deg, #ff2800 0%, #ff7a00 100%)' },
+  ];
+
+  const [gradientDir, setGradientDir] = useState('135deg');
+  const [gradientFrom, setGradientFrom] = useState('#ff0080');
+  const [gradientTo, setGradientTo] = useState('#ff8c00');
+
+  const applyBuiltGradient = () => {
+    update({ backgroundGradient: `linear-gradient(${gradientDir}, ${gradientFrom}, ${gradientTo})` });
   };
 
   return (
@@ -1835,12 +1898,18 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
               />
             )}
             {data.backgroundType === 'gradient' && (
-              <Input
-                value={data.backgroundGradient || ''}
-                onChange={(e) => update({ backgroundGradient: e.target.value })}
-                placeholder="e.g. linear-gradient(45deg, #ff0080, #ff8c00)"
-                className="flex-1 text-xs"
-              />
+              <div className="flex flex-1 items-center gap-2">
+                <div
+                  className="h-8 w-10 flex-shrink-0 rounded border border-[var(--neutral-200)]"
+                  style={{ background: data.backgroundGradient || 'linear-gradient(135deg, #ff0080, #ff8c00)' }}
+                />
+                <Input
+                  value={data.backgroundGradient || ''}
+                  onChange={(e) => update({ backgroundGradient: e.target.value })}
+                  placeholder="CSS gradient"
+                  className="flex-1 text-xs"
+                />
+              </div>
             )}
             {data.backgroundType === 'image' && (
               <div className="flex flex-1 gap-2">
@@ -1854,6 +1923,76 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
               </div>
             )}
           </div>
+
+          {data.backgroundType === 'gradient' && (
+            <div className="space-y-2 rounded-lg border border-[var(--neutral-200)] bg-white p-2">
+              <div className="flex gap-1">
+                {(['presets', 'builder', 'raw'] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setGradientMode(m)}
+                    className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                      gradientMode === m ? 'bg-[var(--pulse-red)] text-white' : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+
+              {gradientMode === 'presets' && (
+                <div className="grid grid-cols-4 gap-2">
+                  {presetGradients.map((g) => (
+                    <button
+                      key={g.name}
+                      onClick={() => update({ backgroundGradient: g.value })}
+                      className={`group relative h-10 overflow-hidden rounded-md border-2 ${
+                        data.backgroundGradient === g.value ? 'border-[var(--pulse-red)]' : 'border-transparent'
+                      }`}
+                      title={g.name}
+                    >
+                      <div className="absolute inset-0" style={{ background: g.value }} />
+                      <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white opacity-0 shadow-black drop-shadow group-hover:opacity-100">
+                        {g.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {gradientMode === 'builder' && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label>Dir</Label>
+                    <Select
+                      value={gradientDir}
+                      onChange={(e) => { setGradientDir(e.target.value); applyBuiltGradient(); }}
+                      options={[
+                        { value: 'to right', label: '→' },
+                        { value: 'to bottom', label: '↓' },
+                        { value: '45deg', label: '↘' },
+                        { value: '135deg', label: '↗' },
+                        { value: 'to bottom right', label: '↘ (long)' },
+                      ]}
+                    />
+                    <input type="color" value={gradientFrom} onChange={(e) => { setGradientFrom(e.target.value); applyBuiltGradient(); }} className="h-7 w-10 cursor-pointer rounded border border-[var(--neutral-200)]" />
+                    <input type="color" value={gradientTo} onChange={(e) => { setGradientTo(e.target.value); applyBuiltGradient(); }} className="h-7 w-10 cursor-pointer rounded border border-[var(--neutral-200)]" />
+                  </div>
+                </div>
+              )}
+
+              {gradientMode === 'raw' && (
+                <TextArea
+                  value={data.backgroundGradient || ''}
+                  onChange={(e) => update({ backgroundGradient: e.target.value })}
+                  placeholder="linear-gradient(45deg, #ff0080, #ff8c00)"
+                  rows={2}
+                  className="text-xs font-mono"
+                />
+              )}
+            </div>
+          )}
+
           {data.backgroundType === 'image' && (
             <Select
               value={data.backgroundImageFit || 'cover'}
@@ -1913,7 +2052,7 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
               <Label>Color</Label>
               <input
                 type="color"
-                value={data.geometricColor || 'rgba(255,40,0,0.08)'}
+                value={data.geometricColor}
                 onChange={(e) => update({ geometricColor: e.target.value })}
                 className="h-7 w-10 cursor-pointer rounded border border-[var(--neutral-200)]"
               />
@@ -1923,7 +2062,7 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
                 min={0}
                 max={1}
                 step={0.05}
-                value={data.geometricOpacity ?? 0.15}
+                value={data.geometricOpacity}
                 onChange={(e) => update({ geometricOpacity: Number(e.target.value) })}
                 className="w-16 text-xs"
               />
@@ -1962,7 +2101,13 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
         <div className="space-y-2">
           <div className="flex gap-2">
             <Input value={data.ctaLabel || ''} onChange={(e) => update({ ctaLabel: e.target.value })} placeholder="Button text" className="flex-1" />
-            <Input value={data.ctaLinkUrl || ''} onChange={(e) => update({ ctaLinkUrl: e.target.value })} placeholder="URL" className="flex-1" />
+            <Input
+              value={data.ctaLinkUrl || ''}
+              onChange={(e) => update({ ctaLinkUrl: e.target.value })}
+              onBlur={(e) => update({ ctaLinkUrl: sanitizeCardUrl(e.target.value) })}
+              placeholder="URL"
+              className="flex-1"
+            />
           </div>
           {data.ctaLabel && data.ctaLinkUrl && (
             <Select
