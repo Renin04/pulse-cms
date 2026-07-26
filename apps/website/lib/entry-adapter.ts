@@ -2,6 +2,7 @@ import type { Block, BlockData, EntryStatus } from "@pulse/core";
 import { PulseRenderer, RendererRegistry, registerBuiltinRenderers, renderBranch, renderConditional, renderCodePlayground } from "@pulse/renderer";
 import { formatReferenceNumber, sanitizeUrl } from "@pulse/blocks"
 import type { EntryDetail } from "./api-client";
+import { wrapHtmlWithBranchGate } from "./branch-gate";
 
 export interface AdaptedBlogEntry {
   id: string;
@@ -278,7 +279,7 @@ function renderHtml(blocks: Block<BlockData>[]): string {
     const blockHtmls: string[] = [];
     for (const block of blocks) {
       try {
-        blockHtmls.push(renderer.renderDocument([block]).html);
+        blockHtmls.push(wrapHtmlWithBranchGate(block, renderer.renderDocument([block]).html));
       } catch (blockErr) {
         console.error(`[renderHtml] Block ${block.type} (id=${block.id}) failed to render:`, blockErr);
         console.error(`[renderHtml] Block data:`, JSON.stringify(block, null, 2));

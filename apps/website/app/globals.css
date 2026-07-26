@@ -27,7 +27,7 @@
   --neutral-900: #111827;
   
   /* Typography */
-  --font-sans: var(--font-vazirmatn, 'Vazirmatn'), var(--font-codec-pro, 'Codec Pro'), 'Segoe UI', 'Trebuchet MS', sans-serif;
+  --font-sans: var(--font-vazirmatn, 'Vazirmatn'), var(--font-montserrat, 'Montserrat'), 'Segoe UI', 'Trebuchet MS', sans-serif;
   --font-display: var(--font-vazirmatn, 'Vazirmatn'), var(--font-bahnschrift, 'Bahnschrift'), 'Segoe UI', 'Trebuchet MS', sans-serif;
   --font-accent: var(--font-vazirmatn, 'Vazirmatn'), var(--font-bahnschrift, 'Bahnschrift'), 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;

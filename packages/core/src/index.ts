@@ -21,5 +21,6 @@ export * from "./plugins/examples/MarkdownPlugin";
 export * from "./plugins/examples/SlashCommandsPlugin";
 export * from "./types/public";
 export * from "./api/VanillaEditorAPI";
+export * from "./article";
 export * from "./review";
 export * from "./cms";

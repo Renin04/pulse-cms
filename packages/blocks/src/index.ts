@@ -40,7 +40,28 @@ import { TimelineBlock } from "./TimelineBlock";
 import { ToggleBlock } from "./ToggleBlock";
 import type { BlockTypeDefinition } from "./types";
 import { VideoBlock } from "./VideoBlock";
+import { AutoSolveEquationBlock } from "./AutoSolveEquationBlock";
+import { BranchesBlock } from "./BranchesBlock";
+import { SteppedEquationBlock } from "./SteppedEquationBlock";
 
+export {
+  AutoSolveEquationBlock,
+  autoSolveEquationBlockDataSchema,
+  normalizeAutoSolveEquationData,
+} from "./AutoSolveEquationBlock";
+export type { AutoSolveEquationBlockData } from "./AutoSolveEquationBlock";
+export {
+  BranchesBlock,
+  branchesBlockDataSchema,
+  normalizeBranchesData,
+} from "./BranchesBlock";
+export type { BranchesBlockData, BranchPath } from "./BranchesBlock";
+export {
+  SteppedEquationBlock,
+  steppedEquationBlockDataSchema,
+  normalizeSteppedEquationData,
+} from "./SteppedEquationBlock";
+export type { SteppedEquationBlockData, SteppedEquationStep } from "./SteppedEquationBlock";
 export { AlertBlock, alertBlockDataSchema, dismissAlert, resetAlert } from "./AlertBlock";
 export type { AlertBlockData, AlertSeverity } from "./AlertBlock";
 export { AccordionBlock, accordionBlockDataSchema, addAccordionItem } from "./AccordionBlock";
@@ -59,7 +80,15 @@ export {
   setBeforeAfterPosition,
 } from "./BeforeAfterBlock";
 export type { BeforeAfterBlockData } from "./BeforeAfterBlock";
-export { BlockquoteBlock, blockquoteBlockDataSchema, renderInlineMarkdown } from "./BlockquoteBlock";
+export { BlockquoteBlock, blockquoteBlockDataSchema } from "./BlockquoteBlock";
+export {
+  renderInlineMarkdown,
+  renderInlineMarks,
+  isValidInlineHexColor,
+  normalizeInlineHexColor,
+  INLINE_HEX_COLOR_PATTERN,
+} from "./inlineMarkdown";
+export type { InlineMarkdownHandlers } from "./inlineMarkdown";
 export { CardBlock, cardBlockDataSchema } from "./CardBlock";
 export type { CardBlockData } from "./CardBlock";
 export { CalloutBlock, calloutBlockDataSchema, updateCallout } from "./CalloutBlock";
@@ -232,11 +261,18 @@ export const PHASE2_EXPANSION_BLOCK_DEFINITIONS = [
   AnnotatedImageBlock,
 ] as const;
 
+export const PHASE3_BLOCK_DEFINITIONS = [
+  AutoSolveEquationBlock,
+  BranchesBlock,
+  SteppedEquationBlock,
+] as const;
+
 export const BUILTIN_BLOCK_DEFINITIONS = [
   ...BASIC_BLOCK_DEFINITIONS,
   ...EXTENDED_BLOCK_DEFINITIONS,
   ...INTERACTIVE_CREATIVE_BLOCK_DEFINITIONS,
   ...PHASE2_EXPANSION_BLOCK_DEFINITIONS,
+  ...PHASE3_BLOCK_DEFINITIONS,
 ] as const;
 
 function toCoreBlockDefinition(definition: BlockTypeDefinition): BlockDefinition {
@@ -289,6 +325,12 @@ export function registerPhase2ExpansionBlocks(
   registry: BlockRegistry = BlockRegistry.getInstance(),
 ): BlockDefinition[] {
   return registerDefinitions(PHASE2_EXPANSION_BLOCK_DEFINITIONS, registry);
+}
+
+export function registerPhase3Blocks(
+  registry: BlockRegistry = BlockRegistry.getInstance(),
+): BlockDefinition[] {
+  return registerDefinitions(PHASE3_BLOCK_DEFINITIONS, registry);
 }
 
 export function registerBuiltinBlocks(

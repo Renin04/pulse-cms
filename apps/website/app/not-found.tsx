@@ -72,14 +72,14 @@ export default function NotFound() {
             className={`select-none text-[7rem] font-bold leading-none tracking-tighter text-white transition-transform duration-100 md:text-[9rem] ${
               glitch ? 'translate-x-[2px] text-[#FF2800]' : ''
             }`}
-            style={{ fontFamily: 'var(--font-codec-pro), monospace' }}
+            style={{ fontFamily: 'var(--font-montserrat), sans-serif' }}
           >
             404
           </h1>
           {glitch && (
             <span
               className="pointer-events-none absolute left-0 top-0 select-none text-[7rem] font-bold leading-none tracking-tighter text-[#FFE695]/70 md:text-[9rem]"
-              style={{ fontFamily: 'var(--font-codec-pro), monospace', transform: 'translate(-3px, 2px)' }}
+              style={{ fontFamily: 'var(--font-montserrat), sans-serif', transform: 'translate(-3px, 2px)' }}
               aria-hidden
             >
               404

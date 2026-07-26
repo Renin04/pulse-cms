@@ -6,10 +6,20 @@ playwright-report/
 
 # Next.js build output
 .next/
+.next2/
 
 # Development databases
 *.db
 *.db-journal
+dev.db*
+
+# Logs and generated artifacts
+*.log
+blog-lighthouse*.json
+apps/website/uploads/
+apps/website/screenshots/
+docs/template.zip
+apps/website/test-sandbox.html
 
 # Turbo/cache
 .turbo/

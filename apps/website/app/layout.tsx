@@ -5,25 +5,30 @@ import SmartNavigationWrapper from './components/SmartNavigationWrapper';
 import Navigation from './components/Navigation';
 import { getSiteUrl } from '../lib/site';
 
-const codecPro = localFont({
+const montserrat = localFont({
   src: [
     {
-      path: './fonts/codec-pro/Codec-Pro-Light-trial.ttf',
-      weight: '300',
-      style: 'normal',
-    },
-    {
-      path: './fonts/codec-pro/Codec-Pro-News-trial.ttf',
+      path: './fonts/montserrat/Montserrat-Regular.ttf',
       weight: '400',
       style: 'normal',
     },
     {
-      path: './fonts/codec-pro/Codec-Pro-Bold-trial.ttf',
+      path: './fonts/montserrat/Montserrat-Medium.ttf',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: './fonts/montserrat/Montserrat-SemiBold.ttf',
+      weight: '600',
+      style: 'normal',
+    },
+    {
+      path: './fonts/montserrat/Montserrat-Bold.ttf',
       weight: '700',
       style: 'normal',
     },
   ],
-  variable: '--font-codec-pro',
+  variable: '--font-montserrat',
   display: 'swap',
 });
 
@@ -112,7 +117,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${codecPro.className} ${vazirmatn.className} ${codecPro.variable} ${bahnschrift.variable} ${vazirmatn.variable} antialiased`}
+        className={`${montserrat.className} ${vazirmatn.className} ${montserrat.variable} ${bahnschrift.variable} ${vazirmatn.variable} antialiased`}
       >
         <a
           href="#main-content"

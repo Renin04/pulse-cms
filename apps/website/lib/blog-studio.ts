@@ -15,6 +15,7 @@ import {
 } from '@pulse/renderer'
 import { BUILTIN_BLOCK_DEFINITIONS, formatReferenceNumber } from '@pulse/blocks'
 import { initShikiHighlighter } from './shiki-highlighter'
+import { wrapHtmlWithBranchGate } from './branch-gate'
 
 export interface StudioTextMarks {
   bold: boolean
@@ -499,7 +500,7 @@ export function renderStudioBlocksHtml(blocks: StudioBlock[]): string {
     const blockHtmls: string[] = []
     for (const block of blocks) {
       try {
-        blockHtmls.push(renderer.renderDocument([block]).html)
+        blockHtmls.push(wrapHtmlWithBranchGate(block, renderer.renderDocument([block]).html))
       } catch (blockErr) {
         console.error(`[renderStudioBlocksHtml] Block ${block.type} (id=${block.id}) failed to render:`, blockErr)
         console.error(`[renderStudioBlocksHtml] Block data:`, JSON.stringify(block, null, 2))

@@ -1,0 +1,50 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Length 1247 >>
+stream
+BT /F1 20 Tf 56 780 Td (The Interactive Content Checklist) Tj ET
+BT /F2 11 Tf 56 758 Td (Ten questions to ask before you hit publish) Tj ET
+0.85 0.15 0.10 RG 2 w 56 748 m 380 748 l S
+BT /F2 11 Tf 66 716 Td (1.  Does the reader get to DO something in the first 30 seconds?) Tj ET
+BT /F2 11 Tf 66 690 Td (2.  Is there at least one choice that changes what they see next?) Tj ET
+BT /F2 11 Tf 66 664 Td (3.  Does every interactive element answer "what is in it for me"?) Tj ET
+BT /F2 11 Tf 66 638 Td (4.  Can a skimmer still get the gist \(SSR fallbacks, details, tables\)?) Tj ET
+BT /F2 11 Tf 66 612 Td (5.  Does every quiz and poll give feedback worth the click?) Tj ET
+BT /F2 11 Tf 66 586 Td (6.  Is there a branch point a reader would actually care about?) Tj ET
+BT /F2 11 Tf 66 560 Td (7.  Do your charts earn their place, or would a sentence do?) Tj ET
+BT /F2 11 Tf 66 534 Td (8.  Does the page work with JavaScript disabled \(crawlable content\)?) Tj ET
+BT /F2 11 Tf 66 508 Td (9.  Is every claim backed by a reference a reader can check?) Tj ET
+BT /F2 11 Tf 66 482 Td (10. Would you finish your own article? Honestly?) Tj ET
+0.5 0.5 0.5 RG 0.5 w 56 420 m 539 420 l S
+BT /F2 9 Tf 56 404 Td (Pulse  The Interactive Content Playbook, 2026) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000326 00000 n 
+0000000396 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1695
+%%EOF

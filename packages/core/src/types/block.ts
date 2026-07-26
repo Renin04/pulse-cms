@@ -2,11 +2,15 @@ import type { ZodType } from "zod";
 
 export type BlockData = Record<string, unknown>;
 
+/** Wrapper-level metadata attached next to (never inside) a block's `data`. */
+export type BlockMeta = Record<string, unknown>;
+
 export interface Block<TData extends BlockData = BlockData> {
   id: string;
   parentId?: string | null;
   type: string;
   data: TData;
+  meta?: BlockMeta;
   createdAt: string;
   updatedAt: string;
 }

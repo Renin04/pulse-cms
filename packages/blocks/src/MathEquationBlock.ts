@@ -3,6 +3,10 @@ import { z } from "zod";
 import type { BlockTypeDefinition } from "./types";
 import { escapeHtml, parseJson } from "./types";
 
+export type MathAlign = "left" | "center" | "right";
+
+export type MathCaptionAlign = "left" | "center" | "right" | "justify";
+
 export interface MathEquationBlockData extends Record<string, unknown> {
   latex: string;
   displayMode: boolean;
