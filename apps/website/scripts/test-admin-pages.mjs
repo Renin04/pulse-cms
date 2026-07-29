@@ -14,7 +14,7 @@ await new Promise(r => setTimeout(r, 1000));
 const hasEmail = await page.$('input[type="email"]');
 if (hasEmail) {
   await page.type('input[type="email"]', 'mmshfa@pulse.local');
-  await page.type('input[type="password"]', '**removed**');
+  await page.type('input[type="password"]', process.env.ADMIN_PASSWORD);
   await page.click('button[type="submit"]');
   await new Promise(r => setTimeout(r, 3000));
 }

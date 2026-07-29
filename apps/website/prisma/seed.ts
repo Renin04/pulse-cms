@@ -121,13 +121,19 @@ async function main() {
     });
   }
 
-  // Create default admin user
-  const existingAdmin = await prisma.user.findUnique({ where: { email: "mmshfa@pulse.local" } });
+  // Create default admin user — credentials come from env; a random password
+  // is generated (and printed once) when ADMIN_PASSWORD is not set. Never
+  // commit real credentials here.
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@pulse.local";
+  const adminPassword =
+    process.env.ADMIN_PASSWORD || (await import("crypto")).randomBytes(16).toString("hex");
+
+  const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!existingAdmin) {
     const adminUser = await prisma.user.create({
       data: {
-        email: "mmshfa@pulse.local",
-        passwordHash: await hashPassword("**removed**"),
+        email: adminEmail,
+        passwordHash: await hashPassword(adminPassword),
         displayName: "Administrator",
         status: "active",
       },
@@ -135,7 +141,11 @@ async function main() {
     await prisma.userRole.create({
       data: { userId: adminUser.id, roleId: superAdminRole.id },
     });
-    console.log("Created default admin user: mmshfa@pulse.local / **removed**");
+    console.log(`Created default admin user: ${adminEmail} / ${adminPassword}`);
+    if (!process.env.ADMIN_PASSWORD) {
+      console.log("⚠️  Randomly generated password — save it now; it will not be shown again.");
+      console.log("    Set ADMIN_EMAIL / ADMIN_PASSWORD env vars to control the credentials.");
+    }
   }
 
   // Create default content types

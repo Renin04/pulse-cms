@@ -33,7 +33,7 @@ const emailInput = await page.$('input[type="email"], input[name="email"]');
 if (emailInput) {
   console.log('Email input found');
   await page.type('input[type="email"], input[name="email"]', 'mmshfa@pulse.local');
-  await page.type('input[type="password"], input[name="password"]', '**removed**');
+  await page.type('input[type="password"], input[name="password"]', process.env.ADMIN_PASSWORD);
   await page.click('button[type="submit"]');
   await new Promise(r => setTimeout(r, 4000));
 } else {

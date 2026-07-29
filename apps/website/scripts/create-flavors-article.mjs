@@ -3,7 +3,7 @@
  */
 
 const BASE_URL = 'http://localhost:3000';
-const LOGIN = { email: 'mmshfa@pulse.local', password: '**removed**' };
+const LOGIN = { email: process.env.ADMIN_EMAIL || 'admin@pulse.local', password: process.env.ADMIN_PASSWORD };
 const IMG_BASE = '/images/flavors';
 
 let token = null;

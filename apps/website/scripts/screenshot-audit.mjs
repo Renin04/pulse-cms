@@ -26,7 +26,7 @@ const BASE_URL = process.env.PULSE_BASE_URL || 'http://localhost:3000';
 
 // Admin credentials for authenticated screenshots
 const ADMIN_EMAIL = process.env.PULSE_ADMIN_EMAIL || 'mmshfa@pulse.local';
-const ADMIN_PASSWORD = process.env.PULSE_ADMIN_PASSWORD || '**removed**';
+const ADMIN_PASSWORD = process.env.PULSE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
 
 const VIEWPORTS = {
   desktop: { width: 1920, height: 1080, deviceScaleFactor: 1 },
