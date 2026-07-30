@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { BlockTypeDefinition } from "./types";
-import { escapeHtml, parseJson } from "./types";
+import { escapeHtml, parseJson, stableRenderId } from "./types";
 
 const ALLOWED_CAROUSEL_PROTOCOLS = new Set(["http:", "https:"]);
 
@@ -119,7 +119,7 @@ export const CarouselBlock: BlockTypeDefinition<CarouselBlockData> = {
   },
   render(data) {
     const parsed = carouselBlockDataSchema.parse(data);
-    const carouselId = `carousel-${Math.random().toString(36).slice(2, 9)}`;
+    const carouselId = stableRenderId("carousel", JSON.stringify(parsed));
     const height = parsed.slideHeight || "360px";
     const totalSlides = parsed.slides.length;
 

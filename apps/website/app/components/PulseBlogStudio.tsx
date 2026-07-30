@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 // import type { ChangeEvent } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -11,7 +11,7 @@ import {
   FileText, Sparkles, ArrowLeft, ChevronDown, ChevronUp, X,
   PanelLeft, PanelLeftClose, Monitor, Tablet, Smartphone, Focus,
   Columns2, HelpCircle, Image as ImageIcon, Upload, List,
-  Search, MessageSquare, BookOpen,
+  Search, MessageSquare, BookOpen, ListTree,
 } from 'lucide-react'
 import { countWords, formatReadTime } from '../../lib/blog-studio'
 import { ToastProvider, useToast } from './ToastProvider'
@@ -40,6 +40,14 @@ import { entries as entriesApi, taxonomies as taxonomiesApi, media as mediaApi }
 import type { TaxonomyItem, TaxonomyTermItem } from '../../lib/api-client'
 import StudioBlockCanvas from './StudioBlockCanvas'
 import StudioCommentsPanel from './StudioCommentsPanel'
+import StudioOutlinePanel from './StudioOutlinePanel'
+import {
+  createEmptyOutlineStore,
+  loadOutlineStore,
+  pruneOutlineStore,
+  saveOutlineStore,
+  type OutlineStore,
+} from '@/lib/studio-outline'
 import StudioNotebookPanel from './StudioNotebookPanel'
 import { buildSandboxSrcdoc, base64ToUtf8 } from '@pulse/blocks'
 import { initShikiHighlighter } from '../../lib/shiki-highlighter'
@@ -405,6 +413,7 @@ function PulseBlogStudioInner() {
   const [helpOpen, setHelpOpen] = useState(false)
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [notebookOpen, setNotebookOpen] = useState(false)
+  const [outlineOpen, setOutlineOpen] = useState(false)
   const [deviceMode, setDeviceMode] = useState<DeviceMode>('desktop')
   const [focusMode, setFocusMode] = useState(false)
   const sidebarOpenBeforeFocusRef = useRef(true)
@@ -487,6 +496,17 @@ function PulseBlogStudioInner() {
         handleSave()
         e.preventDefault(); return
       }
+      // Outline panel — Ctrl+O
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'o') {
+        e.preventDefault()
+        e.stopPropagation()
+        setOutlineOpen((o) => !o)
+        setCommentsOpen(false)
+        setNotebookOpen(false)
+        setPreviewOpen(false)
+        setHelpOpen(false)
+        return
+      }
       // Comments panel
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
         e.preventDefault()
@@ -547,6 +567,27 @@ function PulseBlogStudioInner() {
   /* Comment system */
   const [commentSystem, setCommentSystem] = useState<CommentSystem>(() => createCommentSystem())
   const [, commentTick] = useState(0)
+
+  /* Outline panel store (per-entry, localStorage-persisted) */
+  const [outlineStore, setOutlineStore] = useState<OutlineStore>(() => createEmptyOutlineStore())
+
+  const handleOutlineStoreChange = useCallback((next: OutlineStore) => {
+    setOutlineStore(next)
+    if (selectedEntry) saveOutlineStore(selectedEntry.id || selectedEntry.slug, next)
+  }, [selectedEntry])
+
+  // Load the outline store when the entry changes
+  useEffect(() => {
+    if (!selectedEntry) return
+    setOutlineStore(loadOutlineStore(selectedEntry.id || selectedEntry.slug))
+    setOutlineOpen(false)
+  }, [selectedEntry?.id, selectedEntry?.slug])
+
+  // Drop outline meta for blocks that no longer exist
+  useEffect(() => {
+    const pruned = pruneOutlineStore(outlineStore, editorBlocks.map((b) => b.id))
+    if (pruned !== outlineStore) handleOutlineStoreChange(pruned)
+  }, [editorBlocks, outlineStore, handleOutlineStoreChange])
 
   // Load comments when entry changes
   useEffect(() => {
@@ -1448,6 +1489,9 @@ return (
               <IconBtn onClick={handleSave} active={isDirty} title="Save (Ctrl+S)"> <Save className="h-4 w-4" /> </IconBtn>
               <IconBtn onClick={() => { setPreviewOpen(p => !p); setHelpOpen(false); setCommentsOpen(false); setNotebookOpen(false) }} active={previewOpen} title="Toggle preview (Ctrl+P)"> <Columns2 className="h-4 w-4" /> </IconBtn>
               <IconBtn onClick={() => { setHelpOpen(h => !h); setPreviewOpen(false); setCommentsOpen(false); setNotebookOpen(false) }} active={helpOpen} title="Help (Ctrl+H)"> <HelpCircle className="h-4 w-4" /> </IconBtn>
+              <IconBtn onClick={() => { setOutlineOpen(o => !o); setCommentsOpen(false); setNotebookOpen(false); setPreviewOpen(false); setHelpOpen(false) }} active={outlineOpen} title="Outline (Ctrl+O)">
+                <ListTree className="h-4 w-4" />
+              </IconBtn>
               <IconBtn onClick={() => { setCommentsOpen(c => !c); setNotebookOpen(false); setPreviewOpen(false); setHelpOpen(false) }} active={commentsOpen} title="Comments (Ctrl+Shift+C)">
                 <MessageSquare className="h-4 w-4" />
               </IconBtn>
@@ -1856,6 +1900,37 @@ return (
                   entryId={selectedEntry.id || selectedEntry.slug}
                   activeBlockId={activeBlockId}
                   blocks={editorBlocks}
+                  onSelectBlock={(blockId) => {
+                    setActiveBlockId(blockId)
+                    setPulseBlockId(blockId)
+                    setTimeout(() => setPulseBlockId(null), 2200)
+                    // Wait for panel animation (300ms) then smooth-scroll block into center view
+                    setTimeout(() => {
+                      const el = document.querySelector(`[data-block-id="${blockId}"]`)
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      }
+                    }, 350)
+                  }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Outline panel */}
+          <AnimatePresence>
+            {outlineOpen && selectedEntry && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 380, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="flex-shrink-0 overflow-hidden border-l border-[var(--neutral-200)]"
+              >
+                <StudioOutlinePanel
+                  blocks={editorBlocks}
+                  store={outlineStore}
+                  onStoreChange={handleOutlineStoreChange}
                   onSelectBlock={(blockId) => {
                     setActiveBlockId(blockId)
                     setPulseBlockId(blockId)

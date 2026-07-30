@@ -1,7 +1,7 @@
 ﻿import { z } from "zod";
 
 import type { BlockTypeDefinition } from "./types";
-import { escapeHtml, parseJson } from "./types";
+import { escapeHtml, parseJson, stableRenderId } from "./types";
 
 const ALLOWED_VIDEO_PROTOCOLS = new Set(["http:", "https:"]);
 
@@ -230,7 +230,7 @@ export const VideoBlock: BlockTypeDefinition<VideoBlockData> = {
     }
 
     // Click-to-load for YouTube/Vimeo to avoid localhost blocking and improve privacy
-    const embedId = 'v_' + Math.random().toString(36).slice(2, 9);
+    const embedId = stableRenderId("v", JSON.stringify(parsed));
     const clickToLoadHtml = parsed.provider === 'youtube'
       ? (() => {
           const vid = getYouTubeVideoId(parsed.url);

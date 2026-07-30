@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
+  GitFork,
   Command, Plus,
   Trash2, Copy, CopyX, X, EyeOff, Type, Heading,
   List, Code, Quote, MessageSquare, Image as ImageIcon,
@@ -14,7 +15,7 @@ import {
 } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
-import { BUILTIN_BLOCK_DEFINITIONS, formatReferenceNumber } from '@pulse/blocks';
+import { BUILTIN_BLOCK_DEFINITIONS, formatReferenceNumber, normalizeBranchesData } from '@pulse/blocks';
 import {
   EditableHorizontalRule, EditableLink, EditableImage, EditableVideo, EditableAudio,
   EditableEmbed, EditableFile, EditableTable, EditableCallout, EditableAlert, EditableQuiz, EditablePoll,
@@ -30,7 +31,7 @@ import {
 import { StudioTooltip } from './StudioTooltip';
 import { createSandboxHtml } from './CodeSandbox';
 
-const blockTypeToIcon: Record<string, React.ElementType> = {
+export const blockTypeToIcon: Record<string, React.ElementType> = {
   text: Type,
   heading: Heading,
   list: List,
@@ -70,7 +71,7 @@ const blockTypeToIcon: Record<string, React.ElementType> = {
   horizontalrule: ArrowRight,
 };
 
-const blockTypeToLabel: Record<string, string> = {
+export const blockTypeToLabel: Record<string, string> = {
   text: 'Paragraph',
   heading: 'Heading',
   list: 'List',
@@ -110,7 +111,7 @@ const blockTypeToLabel: Record<string, string> = {
   'horizontal-rule': 'Divider',
 };
 
-const blockTypeToDescription: Record<string, string> = {
+export const blockTypeToDescription: Record<string, string> = {
   text: 'Plain text with formatting',
   heading: 'Section heading in 6 levels',
   list: 'Bulleted, numbered, or custom lists',
@@ -2132,6 +2133,62 @@ function EditableList({ block, adapter }: { block: Block<BlockData>; adapter: Ed
   );
 }
 
+function EditableBranches({ block }: { block: Block<BlockData> }) {
+  const data = useMemo(() => normalizeBranchesData(block.data), [block.data]);
+  const prompt = data.prompt?.trim();
+
+  return (
+    <div className="rounded-xl border border-[var(--neutral-200)] bg-[var(--neutral-50)]/60 p-4">
+      {/* Header: icon + prompt + path count */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
+          <GitFork className="h-5 w-5 text-[var(--pulse-red)]" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-[var(--pulse-black)]">
+            {prompt || 'Branches'}
+          </p>
+          <p className="text-xs text-[var(--neutral-500)]">
+            {data.branches.length > 0
+              ? `${data.branches.length} path${data.branches.length === 1 ? '' : 's'} for the reader to choose`
+              : 'No paths defined yet'}
+          </p>
+        </div>
+      </div>
+
+      {/* Ordered branch options */}
+      {data.branches.length > 0 && (
+        <ol className="mt-3 space-y-2">
+          {data.branches.map((branch, index) => (
+            <li
+              key={branch.id}
+              className="flex items-start gap-2.5 rounded-lg border border-[var(--neutral-200)] bg-white px-3 py-2.5"
+            >
+              <span className="mt-0.5 shrink-0 rounded-md bg-[var(--pulse-red)]/10 px-1.5 py-0.5 text-[10px] font-bold text-[var(--pulse-red)]">
+                Path {index + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-[var(--pulse-black)]">
+                  {branch.label.trim() || `Path ${index + 1}`}
+                </p>
+                {branch.description?.trim() && (
+                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-[var(--neutral-500)]">
+                    {branch.description}
+                  </p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      <p className="mt-3 border-t border-[var(--neutral-200)] pt-2.5 text-[10px] text-[var(--neutral-400)]">
+        Canvas preview — the reader picks one of the paths in the published version.
+      </p>
+    </div>
+  );
+}
+
 function GenericBlockPlaceholder({ block }: { block: Block<BlockData> }) {
   const Icon = blockTypeToIcon[block.type] || FileText;
   const label = blockTypeToLabel[block.type] || block.type;
@@ -2216,6 +2273,7 @@ function EditableBlock({
       case 'manga-panel': return <EditableManga block={block} adapter={adapter} />;
       case 'speech-bubble': return <EditableSpeechBubble block={block} adapter={adapter} />;
       case 'card': return <EditableCard block={block} adapter={adapter} />;
+      case 'branches': return <EditableBranches block={block} />;
       case 'gallery': return <EditableGallery block={block} adapter={adapter} />;
       case 'carousel': return <EditableCarousel block={block} adapter={adapter} />;
       case 'hero-section': return <EditableHeroSection block={block} adapter={adapter} />;

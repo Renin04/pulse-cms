@@ -51,3 +51,20 @@ export function parseJson<TData>(content: string): TData {
     throw new Error(`Failed to parse serialized block: ${String(error)}`);
   }
 }
+
+/**
+ * Deterministic render id (djb2 hash of the block's parsed data). Blocks that
+ * emit ids into HTML MUST NOT use Math.random/crypto.randomUUID at render
+ * time: a random id makes the SSR document differ from the RSC payload, and
+ * React then replaces the hydrated article DOM, discarding every listener
+ * the public hydrators attached. A data-derived id is stable across renders.
+ */
+export function stableRenderId(prefix: string, seed: string): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return `${prefix}-${Math.abs(hash).toString(36)}`;
+}

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { BlockTypeDefinition } from "./types";
-import { escapeHtml, parseJson } from "./types";
+import { escapeHtml, parseJson, stableRenderId } from "./types";
 
 export interface TabItem {
   id: string;
@@ -118,7 +118,7 @@ export const TabsBlock: BlockTypeDefinition<TabsBlockData> = {
   render(data) {
     const parsed = tabsBlockDataSchema.parse(data);
     const activeTabId = parsed.activeTabId ?? parsed.tabs[0].id;
-    const tabsId = `tabs-${Math.random().toString(36).slice(2, 8)}`;
+    const tabsId = stableRenderId("tabs", JSON.stringify(parsed));
     const nav = parsed.tabs
       .map(
         (tab) =>

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { BlockTypeDefinition } from "./types";
-import { escapeHtml, parseJson } from "./types";
+import { escapeHtml, parseJson, stableRenderId } from "./types";
 import { renderInlineMarkdown } from "./BlockquoteBlock";
 
 export interface QuizOption {
@@ -153,7 +153,7 @@ export const QuizBlock: BlockTypeDefinition<QuizBlockData> = {
     }
 
     const optionType = parsed.allowMultiple ? "checkbox" : "radio";
-    const nameAttr = `quiz-${Math.random().toString(36).slice(2, 8)}`;
+    const nameAttr = stableRenderId("quiz", JSON.stringify(parsed));
 
     let options = parsed.options;
     if (parsed.randomizeOptions) {
