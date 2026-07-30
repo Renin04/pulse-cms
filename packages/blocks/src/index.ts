@@ -338,3 +338,7 @@ export function registerBuiltinBlocks(
 ): BlockDefinition[] {
   return registerDefinitions(BUILTIN_BLOCK_DEFINITIONS, registry);
 }
+
+export { renderMath } from "./mathRenderer";
+export { solveEquation } from "./mathSolver";
+export type { SolveResult, SolveStep } from "./mathSolver";

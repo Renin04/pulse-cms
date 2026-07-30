@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, forwardRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, forwardRef, type CSSProperties } from 'react';
 import { Trash2, Plus, Upload, Play, Terminal, GripVertical, ChevronUp, ChevronDown, Type, ListChecks, Star, AlignLeft, AlignCenter, AlignRight, BarChart3, Image as ImageIcon, MessageSquare, Sun, CloudRain, BrainCircuit, Maximize, MoveVertical, StretchHorizontal, Expand, ExternalLink, Link2, Palette, Layout, MousePointerClick, Type as TypeIcon } from 'lucide-react';
 import type { EditorStateAdapter } from '@pulse/editor';
 import type { Block, BlockData } from '@pulse/core';
-import { type ReferenceStyle, formatReferenceNumber, buildPyodideSrcdoc, CardBlock } from '@pulse/blocks';
+import { type ReferenceStyle, type CardBlockData, formatReferenceNumber, buildPyodideSrcdoc, CardBlock } from '@pulse/blocks';
 import { media as mediaApi } from '@/lib/api-client';
 import { createSandboxHtml } from './CodeSandbox';
 
@@ -1934,8 +1934,8 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
     ctaTarget: raw.ctaTarget || '_blank',
     overlayAlign: raw.overlayAlign || 'center',
     overlayFontSize: raw.overlayFontSize || 'md',
-    geometricForm: raw.geometricForm || 'none',
-    geometricPosition: raw.geometricPosition || 'top-right',
+    geometricForm: (raw.geometricForm || 'none') as CardBlockData['geometricForm'],
+    geometricPosition: (raw.geometricPosition || 'top-right') as CardBlockData['geometricPosition'],
     geometricColor: normalizeColorToHex(raw.geometricColor),
     geometricOpacity: raw.geometricOpacity ?? 0.15,
     titleAlign: raw.titleAlign || 'left',
@@ -1989,7 +1989,7 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
 
   const previewHtml = useMemo(() => {
     try {
-      return CardBlock.render(data);
+      return CardBlock.render(data as CardBlockData);
     } catch {
       return '';
     }
@@ -2254,7 +2254,7 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
           <div className="flex gap-2">
             <Select
               value={data.geometricForm || 'none'}
-              onChange={(e) => update({ geometricForm: e.target.value })}
+              onChange={(e) => update({ geometricForm: e.target.value as CardBlockData['geometricForm'] })}
               options={[
                 { value: 'none', label: 'None' },
                 { value: 'circle', label: 'Circle' },
@@ -2272,7 +2272,7 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
             {data.geometricForm && data.geometricForm !== 'none' && (
               <Select
                 value={data.geometricPosition || 'top-right'}
-                onChange={(e) => update({ geometricPosition: e.target.value })}
+                onChange={(e) => update({ geometricPosition: e.target.value as CardBlockData['geometricPosition'] })}
                 options={[
                   { value: 'top-left', label: 'TL' },
                   { value: 'top-right', label: 'TR' },
@@ -2323,12 +2323,12 @@ export function EditableCard({ block, adapter }: { block: Block<BlockData>; adap
             <div className="flex gap-2">
               <Select
                 value={data.overlayAlign || 'center'}
-                onChange={(e) => update({ overlayAlign: e.target.value })}
+                onChange={(e) => update({ overlayAlign: e.target.value as CardBlockData['overlayAlign'] })}
                 options={[{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]}
               />
               <Select
                 value={data.overlayFontSize || 'md'}
-                onChange={(e) => update({ overlayFontSize: e.target.value })}
+                onChange={(e) => update({ overlayFontSize: e.target.value as CardBlockData['overlayFontSize'] })}
                 options={[{ value: 'sm', label: 'Small' }, { value: 'md', label: 'Medium' }, { value: 'lg', label: 'Large' }, { value: 'xl', label: 'XL' }]}
               />
             </div>
@@ -2414,8 +2414,8 @@ export function EditableSpeechBubble({ block, adapter }: { block: Block<BlockDat
     thinking: 'Thinking',
   };
 
-  const titleAlign = data.titleAlign || 'left';
-  const contentAlign = data.contentAlign || 'left';
+  const titleAlign = (data.titleAlign || 'left') as CSSProperties['textAlign'];
+  const contentAlign = (data.contentAlign || 'left') as CSSProperties['textAlign'];
 
   useEffect(() => {
     const el = titleRef.current;
