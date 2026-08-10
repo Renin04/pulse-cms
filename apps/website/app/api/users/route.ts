@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import { assertCanAssignRoles } from "@/lib/rbac";
 import {
   jsonResponse,
   handleApiError,
@@ -10,7 +11,6 @@ import {
   parseQueryInt,
   logAudit,
 } from "@/lib/api-utils";
-import { randomUUID } from "crypto";
 
 function serializeUser(user: any) {
   return {
@@ -76,12 +76,23 @@ export async function POST(req: NextRequest) {
       throw new ApiError("INVALID_INPUT", "Email is required", 400);
     }
 
+    // S5: a missing password used to store randomUUID(), creating accounts
+    // that could never log in. Require an explicit, usable password.
+    if (!password || typeof password !== "string" || password.length < 8) {
+      throw new ApiError("INVALID_INPUT", "Password is required (min 8 characters)", 400);
+    }
+
+    // S1: the actor may only assign roles below their own rank.
+    if (Array.isArray(roleIds) && roleIds.length > 0) {
+      await assertCanAssignRoles(ctx, roleIds);
+    }
+
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new ApiError("CONFLICT", "User with this email already exists", 409);
     }
 
-    const passwordHash = await hashPassword(password || randomUUID());
+    const passwordHash = await hashPassword(password);
 
     const user = await prisma.user.create({
       data: {

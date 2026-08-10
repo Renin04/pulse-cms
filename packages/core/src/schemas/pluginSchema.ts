@@ -24,7 +24,7 @@ export const pluginDefinitionSchema = z
     description: z.string().min(1).optional(),
     dependencies: z.array(z.string().min(1)).optional(),
     configSchema: zodTypeSchema.optional(),
-    defaultConfig: z.union([z.record(z.unknown()), functionSchema]).optional(),
+    defaultConfig: z.union([z.record(z.string(), z.unknown()), functionSchema]).optional(),
     onInstall: functionSchema.optional(),
     onEnable: functionSchema.optional(),
     onDisable: functionSchema.optional(),

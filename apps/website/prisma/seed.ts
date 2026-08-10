@@ -4,41 +4,43 @@ import { hashPassword } from "../lib/auth";
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create default roles
+  // Create default roles — rank powers the privilege-escalation guard in
+  // lib/rbac.ts (higher = more powerful). update: { rank } keeps existing
+  // databases correct when the seed re-runs.
   const superAdminRole = await prisma.role.upsert({
     where: { name: "super_admin" },
-    update: {},
-    create: { name: "super_admin", description: "Full system access" },
+    update: { rank: 100 },
+    create: { name: "super_admin", description: "Full system access", rank: 100 },
   });
 
   const adminRole = await prisma.role.upsert({
     where: { name: "admin" },
-    update: {},
-    create: { name: "admin", description: "Administrative access" },
+    update: { rank: 80 },
+    create: { name: "admin", description: "Administrative access", rank: 80 },
   });
 
   const editorRole = await prisma.role.upsert({
     where: { name: "editor" },
-    update: {},
-    create: { name: "editor", description: "Can edit and publish content" },
+    update: { rank: 60 },
+    create: { name: "editor", description: "Can edit and publish content", rank: 60 },
   });
 
   const reviewerRole = await prisma.role.upsert({
     where: { name: "reviewer" },
-    update: {},
-    create: { name: "reviewer", description: "Can review and approve content" },
+    update: { rank: 40 },
+    create: { name: "reviewer", description: "Can review and approve content", rank: 40 },
   });
 
   const authorRole = await prisma.role.upsert({
     where: { name: "author" },
-    update: {},
-    create: { name: "author", description: "Can create and edit own content" },
+    update: { rank: 20 },
+    create: { name: "author", description: "Can create and edit own content", rank: 20 },
   });
 
   const viewerRole = await prisma.role.upsert({
     where: { name: "viewer" },
-    update: {},
-    create: { name: "viewer", description: "Read-only access" },
+    update: { rank: 10 },
+    create: { name: "viewer", description: "Read-only access", rank: 10 },
   });
 
   // Create default permissions

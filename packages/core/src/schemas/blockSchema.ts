@@ -38,7 +38,7 @@ export const blockDefinitionSchema = z
     type: z.string().min(1),
     name: z.string().min(1),
     schema: zodTypeSchema,
-    defaultData: z.union([z.record(z.unknown()), functionSchema]),
+    defaultData: z.union([z.record(z.string(), z.unknown()), functionSchema]),
     config: blockConfigSchema.optional(),
     hooks: blockLifecycleHooksSchema.optional(),
   })
@@ -49,7 +49,7 @@ export const blockSchema = z
     id: z.string().min(1),
     parentId: z.string().min(1).nullable().optional(),
     type: z.string().min(1),
-    data: z.record(z.unknown()),
+    data: z.record(z.string(), z.unknown()),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })

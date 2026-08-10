@@ -11,7 +11,7 @@
 import { BUILTIN_BLOCK_DEFINITIONS } from "@pulse/blocks";
 
 // Build a lookup map of block type -> schema with safeParse
-const blockSchemaMap = new Map<string, { safeParse: (data: unknown) => { success: boolean; error?: { errors: Array<{ path: (string | number)[]; message: string }> } } }>();
+const blockSchemaMap = new Map<string, { safeParse: (data: unknown) => { success: boolean; error?: { errors?: Array<{ path: (string | number)[]; message: string }>; issues?: Array<{ path: (string | number)[]; message: string }> } } }>();
 
 for (const def of (BUILTIN_BLOCK_DEFINITIONS as unknown as any[])) {
   if (def.schema && typeof def.schema.safeParse === "function") {
@@ -71,7 +71,7 @@ export function validateBlocks(blocks: unknown[]): BlockValidationResult {
 
     const dataResult = schema.safeParse(block.data ?? {});
     if (!dataResult.success && dataResult.error) {
-      const issues = dataResult.error.errors;
+      const issues: any[] = (dataResult.error as any).issues ?? dataResult.error.errors ?? [];
       errors.push({
         blockIndex: i,
         blockId,

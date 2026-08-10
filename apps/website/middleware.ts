@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { checkRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
+import { checkRateLimit, headersFromResult } from '@/lib/rate-limit';
 import { getCorsHeaders } from '@/lib/cors';
 
 // Paths that require stricter rate limiting (auth endpoints)
@@ -32,10 +32,18 @@ function isWriteMethod(method: string): boolean {
   return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
 }
 
-function applyRateLimit(req: NextRequest, maxRequests: number): NextResponse | null {
-  const identifier = req.ip || req.headers.get('x-forwarded-for') || 'anonymous';
+function clientIdentifier(req: NextRequest): string {
+  const forwarded = req.headers.get('x-forwarded-for');
+  // x-forwarded-for may be a "client, proxy1, proxy2" list — the real client is first
+  return req.ip || forwarded?.split(',')[0].trim() || 'anonymous';
+}
+
+function applyRateLimit(req: NextRequest, bucket: string, maxRequests: number): NextResponse | null {
+  // Per-tier bucket prefix: public reads, CMS writes and auth attempts must NOT
+  // share one counter, or blog browsing burns the upload/mutation budget.
+  const identifier = `${bucket}:${clientIdentifier(req)}`;
   const limit = checkRateLimit(identifier, maxRequests);
-  const headers = rateLimitHeaders(identifier, maxRequests);
+  const headers = headersFromResult(limit, maxRequests);
 
   if (!limit.allowed) {
     return NextResponse.json(
@@ -88,20 +96,20 @@ export function middleware(req: NextRequest) {
 
   // Stricter rate limiting for auth endpoints (10 per 15 min)
   if (AUTH_PATHS.some((p) => pathname.startsWith(p))) {
-    const result = applyRateLimit(req, 10);
+    const result = applyRateLimit(req, 'auth', 10);
     if (result) return result;
     return NextResponse.next();
   }
 
   // Rate limiting for CMS write operations (30 per 15 min)
   if (isWriteMethod(req.method) && WRITE_PATHS.some((p) => pathname.startsWith(p))) {
-    const result = applyRateLimit(req, 30);
+    const result = applyRateLimit(req, 'write', 30);
     if (result) return result;
     return NextResponse.next();
   }
 
   // General rate limiting for all other API routes (100 per 15 min)
-  const result = applyRateLimit(req, 100);
+  const result = applyRateLimit(req, 'api', 100);
   if (result) return result;
   return NextResponse.next();
 }

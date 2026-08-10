@@ -7,6 +7,7 @@ import {
   ApiError,
   logAudit,
 } from "@/lib/api-utils";
+import { assertCanAssignRoles, assertCanModifyUser, assertNotRemovingLastSuperAdmin } from "@/lib/rbac";
 
 export async function PUT(
   req: NextRequest,
@@ -26,6 +27,14 @@ export async function PUT(
     if (!existing) {
       throw new ApiError("NOT_FOUND", "User not found", 404);
     }
+
+    // S1: only roles below the actor's own rank may be assigned — this is
+    // what stops a users.manage holder from crowning themselves super_admin.
+    await assertCanAssignRoles(ctx, roleIds);
+    // S1: the target must rank below the actor (no re-roling peers/superiors).
+    await assertCanModifyUser(ctx, id);
+    // S7: never leave the system without a super_admin.
+    await assertNotRemovingLastSuperAdmin(id, roleIds);
 
     await prisma.userRole.deleteMany({ where: { userId: id } });
     if (roleIds.length > 0) {

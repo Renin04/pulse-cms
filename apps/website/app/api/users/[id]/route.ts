@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import { assertCanAssignRoles, assertCanModifyUser, assertNotRemovingLastSuperAdmin } from "@/lib/rbac";
 import {
   jsonResponse,
   handleApiError,
@@ -61,6 +62,9 @@ export async function PUT(
       throw new ApiError("NOT_FOUND", "User not found", 404);
     }
 
+    // S1: the target must rank below the actor.
+    await assertCanModifyUser(ctx, id);
+
     if (email && email !== existing.email) {
       const emailTaken = await prisma.user.findUnique({ where: { email } });
       if (emailTaken) {
@@ -69,6 +73,9 @@ export async function PUT(
     }
 
     if (roleIds !== undefined) {
+      // S1: only roles below the actor's rank; S7: keep a last super_admin.
+      await assertCanAssignRoles(ctx, roleIds);
+      await assertNotRemovingLastSuperAdmin(id, roleIds);
       await prisma.userRole.deleteMany({ where: { userId: id } });
       if (roleIds.length > 0) {
         await prisma.userRole.createMany({
@@ -121,6 +128,10 @@ export async function DELETE(
     if (id === ctx.userId) {
       throw new ApiError("FORBIDDEN", "You cannot delete your own account", 403);
     }
+
+    // S1: no deleting peers/superiors; S7: never delete the last super_admin.
+    await assertCanModifyUser(ctx, id);
+    await assertNotRemovingLastSuperAdmin(id, null);
 
     await prisma.user.delete({ where: { id } });
 

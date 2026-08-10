@@ -47,14 +47,29 @@ export function checkRateLimit(identifier: string, maxRequests = MAX_REQUESTS): 
   return { allowed: true, remaining: maxRequests - entry.count, resetAt: entry.resetAt };
 }
 
-export function rateLimitHeaders(identifier: string, maxRequests = MAX_REQUESTS): Record<string, string> {
-  const { allowed, remaining, resetAt } = checkRateLimit(identifier, maxRequests);
+/**
+ * Build rate-limit headers from an ALREADY-COMPUTED check result.
+ * Never calls checkRateLimit itself — pairing this with a check avoids
+ * the double-count bug where every request consumed two quota slots.
+ */
+export function headersFromResult(
+  result: { allowed: boolean; remaining: number; resetAt: number },
+  maxRequests = MAX_REQUESTS
+): Record<string, string> {
   return {
     'X-RateLimit-Limit': String(maxRequests),
-    'X-RateLimit-Remaining': String(Math.max(0, remaining)),
-    'X-RateLimit-Reset': String(Math.ceil(resetAt / 1000)),
-    ...(allowed ? {} : { 'Retry-After': String(Math.ceil((resetAt - now()) / 1000)) }),
+    'X-RateLimit-Remaining': String(Math.max(0, result.remaining)),
+    'X-RateLimit-Reset': String(Math.ceil(result.resetAt / 1000)),
+    ...(result.allowed ? {} : { 'Retry-After': String(Math.ceil((result.resetAt - now()) / 1000)) }),
   };
+}
+
+/**
+ * Convenience: check the limit AND emit headers in one call.
+ * NOTE: consumes one quota slot — do not pair with a separate checkRateLimit call.
+ */
+export function rateLimitHeaders(identifier: string, maxRequests = MAX_REQUESTS): Record<string, string> {
+  return headersFromResult(checkRateLimit(identifier, maxRequests), maxRequests);
 }
 
 // Simple cleanup to prevent memory leaks in long-running processes

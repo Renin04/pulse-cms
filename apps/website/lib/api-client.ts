@@ -217,7 +217,13 @@ export const auth = {
   },
 
   logout: async (): Promise<void> => {
-    await request("/auth/logout", { method: "POST" });
+    // Send the refresh token so the server can revoke it (logout used to be
+    // a client-side-only no-op, leaving the token valid for its full TTL).
+    const { refreshToken } = getStoredTokens();
+    await request("/auth/logout", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
+    });
     clearStoredTokens();
   },
 

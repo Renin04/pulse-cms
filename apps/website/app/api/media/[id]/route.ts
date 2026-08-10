@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/db';
 import { requireAuthAndPermission, ApiError, jsonResponse, handleApiError, logAudit } from '@/lib/api-utils';
+import { hasPermission } from '@/lib/auth';
 import { createStorageAdapter } from '@/lib/media-storage';
 import sharp from 'sharp';
 import path from 'path';
@@ -199,6 +200,13 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     const existing = await prisma.mediaAsset.findUnique({ where: { id } });
     if (!existing) {
       throw new ApiError('NOT_FOUND', 'Media asset not found', 404);
+    }
+
+    // S8: media.manage alone must not let someone delete OTHER users' files
+    // (DB record + on-disk file). Owners may delete their own uploads;
+    // deleting others' requires an elevated scope.
+    if (existing.uploaderId !== ctx.userId && !hasPermission(ctx, 'users.manage')) {
+      throw new ApiError('FORBIDDEN', 'You can only delete your own uploads', 403);
     }
 
     // Delete physical file if using local storage

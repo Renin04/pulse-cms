@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAuthAndPermission, ApiError } from "@/lib/api-utils";
 import { jsonResponse, handleApiError, logAudit } from "@/lib/api-utils";
 import { validateBlocks } from "@/lib/block-validator";
+import { assertEntryAccess } from "@/lib/entry-access";
 
 function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback;
@@ -28,7 +29,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    await requireAuthAndPermission(req, "content.read");
+    const ctx = await requireAuthAndPermission(req, "content.read");
     const { id } = await context.params;
 
     const entry = await prisma.entry.findUnique({
@@ -51,6 +52,8 @@ export async function GET(
     if (!entry) {
       throw new ApiError("NOT_FOUND", "Entry not found", 404);
     }
+
+    assertEntryAccess(ctx, entry, "read");
 
     const serialized = serializeEntry(entry);
     serialized.taxonomyTerms = entry.taxonomyLinks.map((link: any) => ({
@@ -82,6 +85,8 @@ export async function PUT(
     if (!entry) {
       throw new ApiError("NOT_FOUND", "Entry not found", 404);
     }
+
+    assertEntryAccess(ctx, entry, "update");
 
     // Create version snapshot
     const maxVersion = await prisma.entryVersion.findFirst({
@@ -209,6 +214,8 @@ export async function DELETE(
     if (!entry) {
       throw new ApiError("NOT_FOUND", "Entry not found", 404);
     }
+
+    assertEntryAccess(ctx, entry, "delete");
 
     await prisma.entry.delete({
       where: { id },

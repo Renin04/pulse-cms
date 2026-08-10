@@ -64,7 +64,7 @@ export {
 export type { SteppedEquationBlockData, SteppedEquationStep } from "./SteppedEquationBlock";
 export { AlertBlock, alertBlockDataSchema, dismissAlert, resetAlert } from "./AlertBlock";
 export type { AlertBlockData, AlertSeverity } from "./AlertBlock";
-export { AccordionBlock, accordionBlockDataSchema, addAccordionItem } from "./AccordionBlock";
+export { AccordionBlock, accordionBlockDataSchema, addAccordionItem, normalizeAccordionData } from "./AccordionBlock";
 export type { AccordionBlockData, AccordionItem } from "./AccordionBlock";
 export {
   AnnotatedImageBlock,
@@ -95,7 +95,7 @@ export { CalloutBlock, calloutBlockDataSchema, updateCallout } from "./CalloutBl
 export type { CalloutBlockData, CalloutVariant } from "./CalloutBlock";
 export { CarouselBlock, carouselBlockDataSchema, addCarouselSlide } from "./CarouselBlock";
 export type { CarouselBlockData, CarouselSlide } from "./CarouselBlock";
-export { ChartBlock, chartBlockDataSchema, addChartDataset } from "./ChartBlock";
+export { ChartBlock, chartBlockDataSchema, addChartDataset, normalizeChartData } from "./ChartBlock";
 export type { ChartBlockData, ChartDataset, ChartType } from "./ChartBlock";
 export {
   CodeBlock,

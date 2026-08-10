@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAccessToken, AuthContext, requirePermission } from "./auth";
+import { verifyAccessToken, AuthContext, requirePermission, ForbiddenError } from "./auth";
 import { prisma } from "./db";
 
 export function jsonResponse<T>(data: T, status = 200) {
@@ -60,10 +60,13 @@ export function handleApiError(err: unknown): NextResponse {
   if (err instanceof ApiError) {
     return errorResponse(err.code, err.message, err.status, err.details);
   }
-  if (err instanceof Error) {
-    return errorResponse("INTERNAL_ERROR", err.message, 500);
+  if (err instanceof ForbiddenError) {
+    return errorResponse("FORBIDDEN", err.message, 403);
   }
-  return errorResponse("INTERNAL_ERROR", "An unknown error occurred", 500);
+  // Never leak internals (Prisma messages, stack frames, SQL) to clients —
+  // the full error stays server-side in the logs.
+  console.error("[api] Unhandled error:", err);
+  return errorResponse("INTERNAL_ERROR", "Internal server error", 500);
 }
 
 export function parseQueryInt(req: NextRequest, key: string, fallback: number): number {

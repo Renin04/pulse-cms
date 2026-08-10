@@ -98,6 +98,13 @@ npm run test:e2e    # Playwright end-to-end (see playwright.config.ts)
 npm run ci:local    # lint + typecheck + tests, mirrors CI
 ```
 
+## Security notes
+
+- **Rate limiting is in-memory and per-process** (`apps/website/lib/rate-limit.ts`). It is correct for the supported single-instance deployment (each tier — auth / CMS writes / general API — gets its own bucket). If you scale to multiple instances, replace the store with Redis (ioredis/bullmq) or limits will be per-node.
+- **Refresh tokens are persisted (SHA-256 hashes) and rotated**: presenting a rotated or logged-out token fails closed. Logout revokes server-side.
+- **Role ranks**: every role has a `rank`; users can only assign roles below their own rank and modify users ranked below themselves. The last `super_admin` cannot be removed.
+- Password reset is intentionally disabled (501) until a real signed-token flow ships.
+
 ## Roadmap
 
 - [x] Phase 1 — Core block system & content model

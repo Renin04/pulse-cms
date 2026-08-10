@@ -39,12 +39,15 @@ export async function createAccessToken(payload: TokenPayload): Promise<string> 
     .sign(JWT_SECRET);
 }
 
+export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
 export async function createRefreshToken(userId: string): Promise<string> {
   return new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
     .setSubject(userId)
+    .setJti(crypto.randomUUID())
     .sign(JWT_REFRESH_SECRET);
 }
 
@@ -53,10 +56,15 @@ export async function verifyAccessToken(token: string): Promise<TokenPayload> {
   return payload as unknown as TokenPayload;
 }
 
-export async function verifyRefreshToken(token: string): Promise<string> {
+export interface RefreshTokenPayload {
+  userId: string;
+  jti: string | null;
+}
+
+export async function verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
   const { payload } = await jwtVerify(token, JWT_REFRESH_SECRET, { clockTolerance: 60 });
   if (!payload.sub) throw new Error("Invalid refresh token");
-  return payload.sub;
+  return { userId: payload.sub, jti: payload.jti ?? null };
 }
 
 export interface AuthContext {
@@ -66,21 +74,29 @@ export interface AuthContext {
   permissions: string[];
 }
 
+/**
+ * Thrown when an authenticated user lacks a required permission/role.
+ * Mapped to a 403 response by handleApiError.
+ */
+export class ForbiddenError extends Error {}
+
 export function hasPermission(ctx: AuthContext, scope: string): boolean {
-  if (ctx.roles.includes("super_admin") || ctx.roles.includes("admin")) return true;
+  // Only super_admin bypasses permission checks. Every other role — including
+  // one literally named "admin" — is evaluated strictly by its granted scopes.
+  if (ctx.roles.includes("super_admin")) return true;
   return ctx.permissions.includes(scope);
 }
 
 export function requirePermission(ctx: AuthContext, scope: string): void {
   if (!hasPermission(ctx, scope)) {
-    throw new Error(`Forbidden: missing permission '${scope}'`);
+    throw new ForbiddenError(`Forbidden: missing permission '${scope}'`);
   }
 }
 
 export function requireAnyRole(ctx: AuthContext, roles: string[]): void {
   if (ctx.roles.includes("super_admin")) return;
   if (!roles.some((r) => ctx.roles.includes(r))) {
-    throw new Error(`Forbidden: requires one of roles [${roles.join(", ")}]`);
+    throw new ForbiddenError(`Forbidden: requires one of roles [${roles.join(", ")}]`);
   }
 }
 

@@ -4,7 +4,8 @@ import { useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, Clock3, Tag } from 'lucide-react'
-import { useEntry } from '../../lib/use-api'
+import { useApi } from '../../lib/use-api'
+import { content, entries, EntryDetail } from '../../lib/api-client'
 import { adaptEntryDetail } from '../../lib/entry-adapter'
 import { formatDisplayDate } from '../../lib/site-content'
 import { buildSandboxSrcdoc, base64ToUtf8 } from '@pulse/blocks'
@@ -56,8 +57,22 @@ function hydrateDemoIframes(container: HTMLElement) {
 
 export default function StudioBlogPreview() {
   const searchParams = useSearchParams()
+  // Pulse's own preview links are /blog/preview?token=<jwt> — handle the
+  // signed-token branch first; ?slug= is the studio-local fallback.
+  const token = searchParams.get('token') ?? ''
   const slug = searchParams.get('slug') ?? ''
-  const { data: apiEntry, loading } = useEntry(slug || null)
+
+  const { data: tokenEntry, loading: tokenLoading } = useApi(
+    () => (token ? content.preview(token) : Promise.resolve(null as unknown as EntryDetail)),
+    [token]
+  )
+  const { data: slugEntry, loading: slugLoading } = useApi(
+    () => (!token && slug ? entries.getBySlug(slug) : Promise.resolve(null as unknown as EntryDetail)),
+    [token, slug]
+  )
+
+  const apiEntry = token ? tokenEntry : slugEntry
+  const loading = token ? tokenLoading : slugLoading
 
   const entry = useMemo(() => {
     if (!apiEntry) return null
@@ -87,7 +102,7 @@ export default function StudioBlogPreview() {
     )
   }
 
-  if (!slug) {
+  if (!slug && !token) {
     return (
       <section className="section bg-white">
         <div className="container">

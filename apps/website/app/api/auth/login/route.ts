@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyPassword, createAccessToken, createRefreshToken } from "@/lib/auth";
+import { verifyPassword, createAccessToken, createRefreshToken, REFRESH_TOKEN_TTL_MS } from "@/lib/auth";
+import { storeRefreshToken } from "@/lib/refresh-tokens";
 import { jsonResponse, handleApiError, ApiError, logAudit } from "@/lib/api-utils";
 
 export async function POST(req: NextRequest) {
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
       permissions,
     });
     const refreshToken = await createRefreshToken(user.id);
+    await storeRefreshToken(user.id, refreshToken, new Date(Date.now() + REFRESH_TOKEN_TTL_MS));
 
     await prisma.user.update({
       where: { id: user.id },

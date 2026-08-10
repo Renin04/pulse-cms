@@ -1,26 +1,33 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAuthAndPermission, ApiError } from "@/lib/api-utils";
+import { requireAuth, ApiError } from "@/lib/api-utils";
+import { requirePermission } from "@/lib/auth";
 import { jsonResponse, handleApiError, logAudit } from "@/lib/api-utils";
 
-const VALID_BULK_ACTIONS = ["publish", "unpublish", "archive", "delete"];
+// Each bulk action is gated on the SAME scope the equivalent single-entry
+// route requires — checked up front, before any entry is touched.
+const BULK_ACTION_SCOPES: Record<string, string> = {
+  publish: "content.publish",
+  unpublish: "content.publish",
+  archive: "content.archive",
+  delete: "content.delete",
+};
 
 export async function POST(req: NextRequest) {
   try {
-    const ctx = await requireAuthAndPermission(req, "content.update");
+    const ctx = await requireAuth(req);
     const body = await req.json();
     const { ids, action } = body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
       throw new ApiError("INVALID_INPUT", "ids must be a non-empty array", 400);
     }
-    if (!VALID_BULK_ACTIONS.includes(action)) {
-      throw new ApiError("INVALID_INPUT", `Action must be one of: ${VALID_BULK_ACTIONS.join(", ")}`, 400);
+    const scope = BULK_ACTION_SCOPES[action];
+    if (!scope) {
+      throw new ApiError("INVALID_INPUT", `Action must be one of: ${Object.keys(BULK_ACTION_SCOPES).join(", ")}`, 400);
     }
 
-    if (action === "delete") {
-      await requireAuthAndPermission(req, "content.delete");
-    }
+    requirePermission(ctx, scope);
 
     const results = { succeeded: 0, failed: 0, errors: [] as string[] };
 

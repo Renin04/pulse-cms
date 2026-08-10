@@ -111,7 +111,7 @@ export const contentTypeSchema: z.ZodType<ContentType> = z.object({
 export const entryFieldValueSchema = z.object({
   fieldId: z.string().min(1),
   value: z.unknown(),
-  localized: z.record(z.unknown()).optional(),
+  localized: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const entryMetadataSchema = z
@@ -154,7 +154,7 @@ export const collectionSettingsSchema = z
     perPage: z.number().int().min(1).max(100),
     sortField: z.string(),
     sortDirection: z.enum(["asc", "desc"]),
-    filters: z.record(z.unknown()).optional(),
+    filters: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -185,7 +185,7 @@ export const taxonomyTermSchema: z.ZodType<TaxonomyTerm> = z.object({
   parentId: z.string().nullable().optional(),
   order: z.number().int().optional(),
   entryCount: z.number().int().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const taxonomyConfigSchema = z
@@ -217,7 +217,7 @@ export const relationshipConfigSchema = z
     minItems: z.number().int().min(0).optional(),
     maxItems: z.number().int().min(1).optional(),
     sortField: z.string().optional(),
-    filter: z.record(z.unknown()).optional(),
+    filter: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
 
@@ -238,7 +238,7 @@ export const entryRelationshipSchema: z.ZodType<EntryRelationship> = z.object({
   sourceEntryId: z.string().min(1),
   targetEntryId: z.string().min(1),
   order: z.number().int().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // ============================================================================
@@ -287,7 +287,7 @@ export const migrationOperationSchema = z.union([
   z.object({
     type: z.literal("modifyField"),
     fieldId: z.string(),
-    changes: z.record(z.unknown()),
+    changes: z.record(z.string(), z.unknown()),
   }),
   z.object({
     type: z.literal("transformField"),
@@ -436,7 +436,7 @@ export const workflowAuditLogSchema: z.ZodType<WorkflowAuditLog> = z.object({
   toStatus: entryStatusSchema.optional(),
   performedBy: z.string().min(1),
   performedAt: z.string().datetime(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // ============================================================================
@@ -500,7 +500,7 @@ export const seoMetadataSchema: z.ZodType<SEOMetadata> = z.object({
   keywords: z.array(z.string()).optional(),
   canonicalUrl: z.string().optional(),
   robots: z.string().optional(),
-  structuredData: z.record(z.unknown()).optional(),
+  structuredData: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const seoSocialPreviewSchema: z.ZodType<SEOSocialPreview> = z.object({
