@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+.next
+.next2
+dist
+**/.next2
+**/dist
+.git
+*.log
+.DS_Store
+uploads
+**/uploads
+coverage
+playwright-report
+test-results
