@@ -26,13 +26,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let body: { email?: unknown; password?: unknown };
+    let body: unknown;
     try {
       body = await req.json();
     } catch {
       throw new ApiError("INVALID_INPUT", "Request body must be valid JSON", 400);
     }
-    const { email, password } = body;
+    const email = typeof (body as any)?.email === "string" ? (body as any).email : "";
+    const password = typeof (body as any)?.password === "string" ? (body as any).password : "";
 
     if (!email || !password) {
       throw new ApiError("INVALID_INPUT", "Email and password are required", 400);
