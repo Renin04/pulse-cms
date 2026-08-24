@@ -10,6 +10,13 @@ module.exports = (phase) => {
     // are incompatible with output: 'export'.
     output: undefined,
 
+    // Container/CI builds must not fail on eslint-plugin resolution issues
+    // (rule 'react/no-danger' missing on the builder). Lint stays a local/CI
+    // concern (`npm run lint`), not a production-build gate.
+    eslint: {
+      ignoreDuringBuilds: true,
+    },
+
     // Keep dev builds in `.next` so local hot-reload does not clash with
     // production/export artifacts that live in `dist`.
     distDir: isDevServer ? '.next2' : 'dist',

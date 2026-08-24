@@ -90,7 +90,7 @@ WORKDIR /app/apps/website
 RUN npx prisma generate
 
 ENV NODE_OPTIONS=--max-old-space-size=2048
-RUN npm run build 2>&1 | tee /tmp/next-build.log || (tail -120 /tmp/next-build.log; exit 1)
+RUN set -o pipefail; npm run build 2>&1 | tee /tmp/next-build.log || (tail -120 /tmp/next-build.log; exit 1)
 
 ###################
 # RUNNER
