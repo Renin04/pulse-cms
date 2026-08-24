@@ -73,6 +73,7 @@ RUN set -eu; \
       echo "Selected registry: $selected"; \
     fi; \
     npm config set registry "$selected"; \
+    npm config set replace-registry-host always; \
     npm config set fetch-retries 5; \
     npm config set fetch-retry-mintimeout 15000; \
     npm config set fetch-retry-maxtimeout 120000; \
