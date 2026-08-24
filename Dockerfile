@@ -97,6 +97,11 @@ ENV JWT_SECRET=build-placeholder-0123456789abcdef0123456789abcdef \
     JWT_REFRESH_SECRET=build-placeholder-0123456789abcdef0123456789abcdef \
     DATABASE_URL=file:/tmp/build-placeholder.db
 
+# Prisma's libssl detection fails on alpine builders and defaults to
+# openssl-1.1.x (engine libquery_engine-linux-musl.so.node → libssl.so.1.1
+# missing → build worker SIGABRT). Pin the 3.0.x musl engine explicitly.
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node
+
 ENV NODE_OPTIONS=--max-old-space-size=2048
 RUN set -o pipefail; npm run build 2>&1 | tee /tmp/next-build.log || (tail -120 /tmp/next-build.log; exit 1)
 
