@@ -143,11 +143,24 @@ async function main() {
     await prisma.userRole.create({
       data: { userId: adminUser.id, roleId: superAdminRole.id },
     });
-    console.log(`Created default admin user: ${adminEmail} / ${adminPassword}`);
+    console.log(`Created default admin user: ${adminEmail}`);
     if (!process.env.ADMIN_PASSWORD) {
-      console.log("⚠️  Randomly generated password — save it now; it will not be shown again.");
+      console.log(`⚠️  Randomly generated password: ${adminPassword} — save it now; it will not be shown again.`);
       console.log("    Set ADMIN_EMAIL / ADMIN_PASSWORD env vars to control the credentials.");
     }
+  } else if (process.env.ADMIN_PASSWORD) {
+    // Idempotent reset: an explicitly-set ADMIN_PASSWORD always wins, so a
+    // previously random-generated (and lost) password gets repaired on boot.
+    const user = await prisma.user.update({
+      where: { email: adminEmail },
+      data: { passwordHash: await hashPassword(adminPassword) },
+    });
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: user.id, roleId: superAdminRole.id } },
+      update: {},
+      create: { userId: user.id, roleId: superAdminRole.id },
+    });
+    console.log(`Admin password reset from ADMIN_PASSWORD for: ${adminEmail}`);
   }
 
   // Create default content types
