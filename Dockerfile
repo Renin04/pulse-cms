@@ -128,9 +128,10 @@ WORKDIR /app/apps/website
 EXPOSE 3000
 
 # Boot: pin the musl Prisma engine (libssl detection is unreliable on alpine),
-# apply sqlite migrations to the on-disk db, then serve.
+# apply sqlite migrations to the on-disk db, seed (idempotent: roles, content
+# types, first admin from ADMIN_EMAIL/ADMIN_PASSWORD), then serve.
 # Required env (set in Hamravesh console):
 #   DATABASE_URL="file:/app/data/pulse.db"
 #   STORAGE_LOCAL_PATH="/app/data/uploads"
-#   JWT_SECRET / JWT_REFRESH_SECRET (see apps/website/.env.example)
-CMD ["sh", "-c", "ENGINE=$(ls /app/node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node 2>/dev/null || true); if [ -n \"$ENGINE\" ]; then export PRISMA_QUERY_ENGINE_LIBRARY=$ENGINE; fi; npx prisma migrate deploy && npx next start -p ${PORT} -H 0.0.0.0"]
+#   JWT_SECRET / JWT_REFRESH_SECRET / ADMIN_EMAIL / ADMIN_PASSWORD
+CMD ["sh", "-c", "ENGINE=$(ls /app/node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node 2>/dev/null || true); if [ -n \"$ENGINE\" ]; then export PRISMA_QUERY_ENGINE_LIBRARY=$ENGINE; fi; npx prisma migrate deploy && npx prisma db seed && npx next start -p ${PORT} -H 0.0.0.0"]
