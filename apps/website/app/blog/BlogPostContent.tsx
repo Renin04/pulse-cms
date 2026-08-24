@@ -9,6 +9,18 @@ import { useBackendBlogEntry } from '../../lib/use-backend-entries';
 import type { AdaptedBlogEntry } from '../../lib/entry-adapter';
 import { buildSandboxSrcdoc, buildPyodideSrcdoc, base64ToUtf8 } from '@pulse/blocks';
 import { hydrateCarousels } from '../../lib/hydrate-carousels';
+import { hydrateSpoilers } from '../../lib/hydrate-spoiler';
+import { hydrateTabs } from '../../lib/hydrate-tabs';
+import { hydrateDisclosures } from '../../lib/hydrate-disclosure';
+import { hydrateSteppedEquations } from '../../lib/hydrate-stepped-equations';
+import { hydrateAutoSolveEquations } from '../../lib/hydrate-auto-solve';
+import { hydrateBranches } from '../../lib/hydrate-branches';
+import { hydrateBranchGates } from '../../lib/hydrate-branch-gates';
+import { hydrateMaps } from '../../lib/hydrate-maps';
+import { hydrateBeforeAfter } from '../../lib/hydrate-before-after';
+import { hydrateFlashcards } from '../../lib/hydrate-flashcards';
+import { hydrateTimelines } from '../../lib/hydrate-timelines';
+import { hydrateAnnotatedImages } from '../../lib/hydrate-annotated-images';
 
 import SpotlightCard from '../components/SpotlightCard';
 import ReadingProgress from '../components/ReadingProgress';
@@ -102,8 +114,52 @@ export default function BlogPostContent({
     }
     hydrateVideoBlocks(article);
 
-    // Carousel hydration (autoplay, arrows, dots, scroll-based active dot)
-    const cleanupCarousels = hydrateCarousels(article);
+    // Interactive block hydration (selectors match the actual block markup).
+    // Self-healing: React can re-write the content div's innerHTML AFTER
+    // hydration when the SSR-rendered markup and the client fiber's copy of
+    // entry.html disagree. That wipes every listener and attribute the
+    // hydrators attached — watch the article body and re-run them whenever
+    // block content gets replaced.
+    let disposeHydrators = () => {};
+    const runHydrators = () => {
+      disposeHydrators();
+      const cleanups = [
+        hydrateCarousels(article),
+        hydrateSpoilers(article),
+        hydrateTabs(article),
+        hydrateDisclosures(article),
+        hydrateSteppedEquations(article),
+        hydrateAutoSolveEquations(article),
+        // Branches first: restores the saved choice synchronously, then gates
+        // mirror that restored state on their initial sync.
+        hydrateBranches(article),
+        hydrateBranchGates(article),
+        hydrateMaps(article),
+        hydrateBeforeAfter(article),
+        hydrateFlashcards(article),
+        hydrateTimelines(article),
+        hydrateAnnotatedImages(article),
+      ];
+      disposeHydrators = () => cleanups.forEach((fn) => fn());
+    };
+    runHydrators();
+
+    let rehydrateTimer: ReturnType<typeof setTimeout> | null = null;
+    const rehydrateObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.removedNodes) {
+          if (
+            node instanceof HTMLElement &&
+            (node.hasAttribute('data-block-type') || node.querySelector('[data-block-type]'))
+          ) {
+            if (rehydrateTimer) clearTimeout(rehydrateTimer);
+            rehydrateTimer = setTimeout(runHydrators, 50);
+            return;
+          }
+        }
+      }
+    });
+    rehydrateObserver.observe(article, { childList: true, subtree: true });
 
     // Use MutationObserver to catch iframes added by React after initial hydration
     const observer = new MutationObserver((mutations) => {
@@ -711,7 +767,9 @@ export default function BlogPostContent({
       article.removeEventListener('submit', handleSubmit);
       article.removeEventListener('mousemove', handleMouseMove);
       observer.disconnect();
-      cleanupCarousels();
+      rehydrateObserver.disconnect();
+      if (rehydrateTimer) clearTimeout(rehydrateTimer);
+      disposeHydrators();
     };
   }, [entry?.html]);
 
