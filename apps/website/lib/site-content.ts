@@ -1,8 +1,19 @@
+import { docSections } from './site-content-sections';
+
+export interface DocSection {
+  heading: string;
+  paragraphs?: string[];
+  list?: string[];
+  code?: { language: string; code: string; caption?: string };
+}
+
 export interface DocLeaf {
   slug: string[];
   title: string;
   summary: string;
   bullets: string[];
+  /** Rich, detailed sections rendered after the key-points card. */
+  sections?: DocSection[];
 }
 
 export const siteStats = [
@@ -235,7 +246,9 @@ export const docsLeafPages: DocLeaf[] = [
 ];
 
 export function getDocLeaf(slug: string[]) {
-  return docsLeafPages.find((page) => page.slug.join('/') === slug.join('/'));
+  const page = docsLeafPages.find((page) => page.slug.join('/') === slug.join('/'));
+  if (!page) return undefined;
+  return { ...page, sections: docSections[page.slug.join('/')] };
 }
 
 export function formatDisplayDate(date: string) {

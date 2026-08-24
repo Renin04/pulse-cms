@@ -14,6 +14,12 @@ interface DocLeafContentProps {
     title: string;
     summary: string;
     bullets: string[];
+    sections?: {
+      heading: string;
+      paragraphs?: string[];
+      list?: string[];
+      code?: { language: string; code: string; caption?: string };
+    }[];
   };
 }
 
@@ -79,6 +85,40 @@ export default function DocLeafContent({ page }: DocLeafContentProps) {
                     </SpotlightCard>
                   ))}
                 </div>
+
+                {page.sections && page.sections.length > 0 && (
+                  <div className="mt-10 space-y-10 border-t border-black/5 pt-10">
+                    {page.sections.map((section) => (
+                      <section key={section.heading}>
+                        <h3 className="mb-4 text-xl font-bold text-[var(--pulse-black)]">
+                          {section.heading}
+                        </h3>
+                        {section.paragraphs?.map((p) => (
+                          <p key={p.slice(0, 40)} className="mb-4 text-base leading-8 text-[var(--neutral-700)]">
+                            {p}
+                          </p>
+                        ))}
+                        {section.list && (
+                          <ul className="mb-4 list-disc space-y-2 pl-6 text-base leading-7 text-[var(--neutral-700)]">
+                            {section.list.map((item) => (
+                              <li key={item.slice(0, 40)}>{item}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {section.code && (
+                          <figure className="overflow-hidden rounded-xl border border-black/10 bg-[#0d1117]">
+                            <pre className="overflow-x-auto p-5 text-sm leading-6 text-[#e6edf3]"><code>{section.code.code}</code></pre>
+                            {section.code.caption && (
+                              <figcaption className="border-t border-white/10 px-5 py-2.5 text-xs text-[#9da7b3]">
+                                {section.code.caption}
+                              </figcaption>
+                            )}
+                          </figure>
+                        )}
+                      </section>
+                    ))}
+                  </div>
+                )}
 
                 <div className="mt-10 flex flex-col gap-4 sm:flex-row">
                   <PulseStarButton href="/docs" innerClassName="px-6 py-3 text-base">
