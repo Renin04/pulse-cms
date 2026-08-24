@@ -130,25 +130,20 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 }
 
 export async function generateStaticParams() {
+  // Snapshot-first: the native Prisma engine cannot load in the thread-
+  // restricted Hamravesh builder, and generateStaticParams only ever runs at
+  // build time. Entries published post-build render on-demand at runtime.
   try {
-    const entries = await prisma.entry.findMany({
-      where: { status: 'published' },
-      select: { slug: true },
-    });
-    return entries.map((entry) => ({ slug: entry.slug }));
+    const fs = await import('fs');
+    const path = await import('path');
+    const snapshotPath = path.join(process.cwd(), 'public', 'blog-snapshot.json');
+    const raw = fs.readFileSync(snapshotPath, 'utf-8');
+    const snapshot = JSON.parse(raw);
+    return snapshot.entries
+      .filter((entry: any) => entry.status === 'published')
+      .map((entry: any) => ({ slug: entry.slug }));
   } catch {
-    try {
-      const fs = await import('fs');
-      const path = await import('path');
-      const snapshotPath = path.join(process.cwd(), 'public', 'blog-snapshot.json');
-      const raw = fs.readFileSync(snapshotPath, 'utf-8');
-      const snapshot = JSON.parse(raw);
-      return snapshot.entries
-        .filter((entry: any) => entry.status === 'published')
-        .map((entry: any) => ({ slug: entry.slug }));
-    } catch {
-      return [];
-    }
+    return [];
   }
 }
 

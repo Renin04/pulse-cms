@@ -29,6 +29,11 @@ module.exports = (phase) => {
 
     experimental: {
       optimizePackageImports: ['lucide-react'],
+      // Thread-restricted Hamravesh builder: concurrent build workers each
+      // loading the native Prisma engine spawn more OS threads than the
+      // builder allows (os error 11 → SIGABRT). Serialize the build.
+      cpus: 1,
+      workerThreads: false,
     },
 
     trailingSlash: true,
