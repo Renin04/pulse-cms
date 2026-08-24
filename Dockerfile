@@ -97,6 +97,15 @@ ENV JWT_SECRET=build-placeholder-0123456789abcdef0123456789abcdef \
     JWT_REFRESH_SECRET=build-placeholder-0123456789abcdef0123456789abcdef \
     DATABASE_URL=file:/tmp/build.db
 
+# Public site URL is baked into metadata/sitemap/OG at build time.
+ARG NEXT_PUBLIC_SITE_URL=
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+RUN if [ -z "$NEXT_PUBLIC_SITE_URL" ]; then \
+      echo "ERROR: NEXT_PUBLIC_SITE_URL build arg is missing." >&2; \
+      echo "Set it as a CI/CD variable (e.g. https://pulse.darkube.ir) and rebuild." >&2; \
+      exit 1; \
+    fi
+
 # Prepare an EMPTY, fully-migrated SQLite db for the build (proven recipe from
 # the drhayat Pulse fork): SSG pages call prisma during page-data collection;
 # with an empty migrated db they prerender nothing and render on-demand at
