@@ -86,8 +86,8 @@ export const publishArticleBodySchema = z.object({
     .string()
     .max(500)
     .regex(
-      /^(\/assets\/\S+|https:\/\/\S+)$/,
-      "coverImage must be a path under /assets/ or an https URL",
+      /^(\/assets\/\S+|\/api\/media\/\S+|https:\/\/\S+)$/,
+      "coverImage must be a path under /assets/ or /api/media/ or an https URL",
     )
     .optional(),
   status: z.enum(["draft", "published"]).default("draft"),

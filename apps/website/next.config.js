@@ -52,11 +52,13 @@ module.exports = (phase) => {
         "font-src 'self'",
         "connect-src 'self'",
         "media-src 'self'",
-        "frame-src 'none'",
+        // frame-src allows embed/video blocks (iframes); frame-ancestors 'self'
+        // keeps clickjacking protection while allowing self-embeds (e.g. /demo).
+        "frame-src 'self' https:",
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
-        "frame-ancestors 'none'",
+        "frame-ancestors 'self'",
         ...(isProd ? ["upgrade-insecure-requests"] : []),
       ];
 

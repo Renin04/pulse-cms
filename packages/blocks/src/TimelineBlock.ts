@@ -85,7 +85,18 @@ export const TimelineBlock: BlockTypeDefinition<TimelineBlockData> = {
         const description = entry.description
           ? `<p>${escapeHtml(entry.description)}</p>`
           : "";
-        return `<li><time>${escapeHtml(entry.date)}</time><strong>${escapeHtml(
+        // Human-readable date for humans, ISO preserved for machines.
+        const parsedDate = new Date(entry.date);
+        const label = Number.isNaN(parsedDate.getTime())
+          ? entry.date
+          : parsedDate.toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            });
+        return `<li><time datetime="${escapeHtml(entry.date)}">${escapeHtml(
+          label,
+        )}</time> <strong>${escapeHtml(
           entry.title,
         )}</strong>${description}</li>`;
       })
