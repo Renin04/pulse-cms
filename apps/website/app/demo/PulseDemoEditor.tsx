@@ -1667,6 +1667,11 @@ export default function PulseDemoEditor() {
   const [showPreview, setShowPreview] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('All');
 
+  // Demo persistence: keep the document in localStorage so a reload or a
+  // closed tab never loses the draft. Restored after mount to avoid SSR
+  // hydration mismatch; Reset clears it.
+  const DEMO_DOC_KEY = 'pulse-demo-document-blocks';
+
   if (!adapterRef.current) {
     adapterRef.current = createEditorStateAdapter<Block<BlockData>>({
       document: {
@@ -1688,6 +1693,32 @@ export default function PulseDemoEditor() {
     });
     return unsubscribe;
   }, [adapter]);
+
+  // Restore a stored demo document after mount (client-only storage).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DEMO_DOC_KEY);
+      if (!raw) return;
+      const stored = JSON.parse(raw);
+      if (!Array.isArray(stored) || stored.length === 0) return;
+      const next = createEditorStateAdapter<Block<BlockData>>({
+        document: { id: 'pulse-demo', metadata: { title: 'Pulse Demo' }, blocks: stored },
+      });
+      next.enableHistory(50);
+      adapterRef.current = next;
+      setBlocks(next.getSnapshot().document.blocks);
+    } catch { /* corrupted storage — start fresh */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounced autosave on every document change.
+  useEffect(() => {
+    if (blocks.length === 0) return;
+    const t = setTimeout(() => {
+      try { localStorage.setItem(DEMO_DOC_KEY, JSON.stringify(blocks)); } catch { /* ignore */ }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [blocks]);
 
   // Keyboard shortcut: / opens palette when not in input
   useEffect(() => {
@@ -2103,6 +2134,7 @@ export default function PulseDemoEditor() {
   };
 
   const resetDoc = () => {
+    try { localStorage.removeItem(DEMO_DOC_KEY); } catch { /* ignore */ }
     const next = createEditorStateAdapter<Block<BlockData>>({
       document: {
         id: 'pulse-demo',
