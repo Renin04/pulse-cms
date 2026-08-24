@@ -89,6 +89,14 @@ WORKDIR /app/apps/website
 
 RUN npx prisma generate
 
+# Placeholder envs ONLY for `next build` page-data collection: route modules
+# import lib/auth.ts (throws without JWT_*) and lib/db.ts (PrismaClient
+# construction needs DATABASE_URL to exist). Real secrets are runtime-only
+# (Hamravesh console envs) and never enter the image.
+ENV JWT_SECRET=build-placeholder-0123456789abcdef0123456789abcdef \
+    JWT_REFRESH_SECRET=build-placeholder-0123456789abcdef0123456789abcdef \
+    DATABASE_URL=file:/tmp/build-placeholder.db
+
 ENV NODE_OPTIONS=--max-old-space-size=2048
 RUN set -o pipefail; npm run build 2>&1 | tee /tmp/next-build.log || (tail -120 /tmp/next-build.log; exit 1)
 
