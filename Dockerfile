@@ -95,14 +95,22 @@ RUN npx prisma generate
 # (Hamravesh console envs) and never enter the image.
 ENV JWT_SECRET=build-placeholder-0123456789abcdef0123456789abcdef \
     JWT_REFRESH_SECRET=build-placeholder-0123456789abcdef0123456789abcdef \
-    DATABASE_URL=file:/tmp/build-placeholder.db
+    DATABASE_URL=file:/tmp/build.db
+
+# Prepare an EMPTY, fully-migrated SQLite db for the build (proven recipe from
+# the drhayat Pulse fork): SSG pages call prisma during page-data collection;
+# with an empty migrated db they prerender nothing and render on-demand at
+# runtime. Without it the engine spawns against a missing db and the build
+# worker dies on this builder's resource limits.
+RUN npx prisma migrate deploy
 
 # Prisma's libssl detection fails on alpine builders and defaults to
 # openssl-1.1.x (engine libquery_engine-linux-musl.so.node → libssl.so.1.1
 # missing → build worker SIGABRT). Pin the 3.0.x musl engine explicitly.
 ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node
 
-ENV NODE_OPTIONS=--max-old-space-size=2048
+# 1536MB is the proven heap sweet spot on this builder (2048 gets killed).
+ENV NODE_OPTIONS=--max-old-space-size=1536
 RUN set -o pipefail; npm run build 2>&1 | tee /tmp/next-build.log || (tail -120 /tmp/next-build.log; exit 1)
 
 ###################
