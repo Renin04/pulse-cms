@@ -17,7 +17,7 @@ export interface DocLeaf {
 }
 
 export const siteStats = [
-  { value: '30+', label: 'Block Types' },
+  { value: '42', label: 'Block Types' },
   { value: '1000+', label: 'Tests Passing' },
   { value: '4', label: 'Core Packages' },
 ];

@@ -5,9 +5,11 @@ import { useState } from 'react';
 import {
   Blocks, Zap, Wand2, Palette, Code2, Rocket,
   Layers, Type, Image as ImageIcon, Table, Sparkles,
-  Terminal, CheckCircle, ArrowRight,
+  Terminal, CheckCircle, ArrowRight, ArrowUpDown,
   LayoutGrid, BarChart3, FileText, Video, Music, Globe,
-  MessageSquare, HelpCircle, BookOpen, Clock,
+  MessageSquare, HelpCircle, BookOpen, Clock, Link2, Minus,
+  EyeOff, Images, PanelTop, MapPin, FileDown, GitBranch,
+  Sigma, MousePointerClick, GraduationCap, Quote,
 } from 'lucide-react';
 import Footer from '../components/Footer';
 import PulseStarButton from '../components/PulseStarButton';
@@ -80,30 +82,52 @@ const blockTypes: {
   description: string;
   icon: React.ElementType;
 }[] = [
-  { name: 'Paragraph', category: 'Basic', description: 'Rich text with formatting', icon: FileText },
-  { name: 'Heading', category: 'Basic', description: 'H1-H6 with anchor links', icon: Type },
-  { name: 'List', category: 'Basic', description: 'Ordered and unordered', icon: BookOpen },
-  { name: 'Blockquote', category: 'Basic', description: 'Styled quotations', icon: MessageSquare },
-  { name: 'Code', category: 'Basic', description: 'Syntax highlighted', icon: Terminal },
-  { name: 'Image', category: 'Basic', description: 'With captions and alt text', icon: ImageIcon },
-  { name: 'Video', category: 'Media', description: 'Embeddable video', icon: Video },
-  { name: 'Audio', category: 'Media', description: 'Audio player', icon: Music },
-  { name: 'Embed', category: 'Media', description: 'External content', icon: Globe },
-  { name: 'Table', category: 'Structured', description: 'Data tables', icon: Table },
-  { name: 'Callout', category: 'Structured', description: 'Info boxes', icon: MessageSquare },
-  { name: 'Alert', category: 'Structured', description: 'Warning notices', icon: HelpCircle },
-  { name: 'Quiz', category: 'Interactive', description: 'Multiple choice', icon: HelpCircle },
-  { name: 'Poll', category: 'Interactive', description: 'Voting blocks', icon: BarChart3 },
-  { name: 'Survey', category: 'Interactive', description: 'Multi-question', icon: FileText },
-  { name: 'Accordion', category: 'Interactive', description: 'Collapsible sections', icon: LayoutGrid },
-  { name: 'Tabs', category: 'Interactive', description: 'Tabbed content', icon: Table },
-  { name: 'Toggle', category: 'Interactive', description: 'Show/hide content', icon: CheckCircle },
-  { name: 'Manga Panel', category: 'Creative', description: 'Comic layouts', icon: ImageIcon },
-  { name: 'Speech Bubble', category: 'Creative', description: 'Dialogue blocks', icon: MessageSquare },
-  { name: 'Card', category: 'Creative', description: 'Content cards', icon: Layers },
-  { name: 'Gallery', category: 'Creative', description: 'Image grids', icon: ImageIcon },
-  { name: 'Carousel', category: 'Creative', description: 'Sliding content', icon: Video },
-  { name: 'Timeline', category: 'Creative', description: 'Event sequences', icon: Clock },
+  // Basic
+  { name: 'Text', category: 'Basic', description: 'Paragraphs with inline links', icon: FileText },
+  { name: 'Heading', category: 'Basic', description: 'H1–H6 with anchor links', icon: Type },
+  { name: 'List', category: 'Basic', description: 'Unordered, numeric, roman, abjad', icon: BookOpen },
+  { name: 'Blockquote', category: 'Basic', description: 'Quotations with citations', icon: Quote },
+  { name: 'Link', category: 'Basic', description: 'Standalone link / CTA', icon: Link2 },
+  { name: 'Spoiler', category: 'Basic', description: 'Click-to-reveal content', icon: EyeOff },
+  { name: 'Toggle', category: 'Basic', description: 'Show/hide switch', icon: CheckCircle },
+  { name: 'Horizontal Rule', category: 'Basic', description: 'Section divider', icon: Minus },
+  { name: 'Code', category: 'Basic', description: 'Syntax highlighted, runnable', icon: Terminal },
+  // Media
+  { name: 'Image', category: 'Media', description: 'Caption, credit, license fields', icon: ImageIcon },
+  { name: 'Gallery', category: 'Media', description: 'Grid or masonry, up to 40', icon: Images },
+  { name: 'Carousel', category: 'Media', description: 'Slides with autoplay', icon: Video },
+  { name: 'Video', category: 'Media', description: 'YouTube, Vimeo or self-hosted', icon: Video },
+  { name: 'Audio', category: 'Media', description: 'Audio player with cover', icon: Music },
+  { name: 'Embed', category: 'Media', description: 'External pages, fixed ratio', icon: Globe },
+  { name: 'Map', category: 'Media', description: 'OpenStreetMap / Google / Mapbox', icon: MapPin },
+  { name: 'Before / After', category: 'Media', description: 'Draggable image compare', icon: ArrowUpDown },
+  { name: 'Annotated Image', category: 'Media', description: 'Up to 30 hotspots', icon: MousePointerClick },
+  { name: 'File', category: 'Media', description: 'Downloadable attachments', icon: FileDown },
+  // Structured
+  { name: 'Table', category: 'Structured', description: 'Up to 12 aligned columns', icon: Table },
+  { name: 'Chart', category: 'Structured', description: 'Bar, line and pie from data', icon: BarChart3 },
+  { name: 'Comparison', category: 'Structured', description: 'Two-column comparisons', icon: ArrowUpDown },
+  { name: 'Diagram', category: 'Structured', description: 'Mermaid / PlantUML source', icon: GitBranch },
+  { name: 'Callout', category: 'Structured', description: 'Five framed variants', icon: MessageSquare },
+  { name: 'Alert', category: 'Structured', description: 'Dismissible severity notices', icon: HelpCircle },
+  { name: 'Card', category: 'Structured', description: 'Self-contained panels', icon: Layers },
+  { name: 'Accordion', category: 'Structured', description: 'Collapsible Q&A sections', icon: LayoutGrid },
+  { name: 'Tabs', category: 'Structured', description: 'Up to 20 tabbed panes', icon: PanelTop },
+  { name: 'Timeline', category: 'Structured', description: 'Dated event sequences', icon: Clock },
+  // Interactive
+  { name: 'Poll', category: 'Interactive', description: 'Live voting with results', icon: BarChart3 },
+  { name: 'Quiz', category: 'Interactive', description: 'Per-option explanations', icon: GraduationCap },
+  { name: 'Survey', category: 'Interactive', description: 'Text, choice and rating questions', icon: FileText },
+  { name: 'Flashcard', category: 'Interactive', description: 'Front/back decks with hints', icon: Layers },
+  { name: 'Branches', category: 'Interactive', description: 'Reader-chosen content paths', icon: GitBranch },
+  { name: 'Code Sandbox', category: 'Interactive', description: 'Editable, runnable code cell', icon: Terminal },
+  // Creative
+  { name: 'Manga Panel', category: 'Creative', description: 'Comic layouts with dialogue', icon: ImageIcon },
+  { name: 'Speech Bubble', category: 'Creative', description: 'Character dialogue', icon: MessageSquare },
+  { name: 'Hero Section', category: 'Creative', description: 'Banners with CTA', icon: PanelTop },
+  { name: 'Math Equation', category: 'Creative', description: 'LaTeX, inline or display', icon: Sigma },
+  { name: 'Auto-Solve Equation', category: 'Creative', description: 'Solves and explains algebra', icon: Sigma },
+  { name: 'Stepped Equation', category: 'Creative', description: 'Step-by-step derivations', icon: Sigma },
 ];
 
 const categoryBadgeStyles: Record<Exclude<BlockCategoryId, 'All'>, string> = {
@@ -298,9 +322,29 @@ export default function FeaturesPage() {
               transition={{ delay: 0.1 }}
               className="text-3xl font-bold text-[var(--pulse-black)] sm:text-4xl lg:text-5xl"
             >
-              30+ blocks. Zero limits.
+              42 blocks. Zero limits.
             </motion.h2>
           </div>
+
+          {/* Live proof banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mx-auto mb-12 max-w-3xl"
+          >
+            <a
+              href="/blog/pulse-block-reference"
+              className="group flex items-center justify-between gap-4 rounded-2xl border border-[var(--pulse-red)]/20 bg-[var(--pulse-red)]/5 px-6 py-4 transition-all hover:border-[var(--pulse-red)]/40 hover:bg-[var(--pulse-red)]/10"
+            >
+              <span className="text-sm font-semibold text-[var(--pulse-black)]">
+                Don&apos;t take the grid&apos;s word for it — every single block, live on one page.
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--pulse-red)]">
+                Open the block reference <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </span>
+            </a>
+          </motion.div>
 
           {/* Glass icon category filters */}
           <motion.div
