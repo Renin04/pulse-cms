@@ -166,6 +166,17 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // 10 · Bust ISR caches — prerendered pages carry s-maxage=1y, so without
+    // on-demand revalidation edits would stay stale in production.
+    try {
+      const { revalidatePath } = await import("next/cache");
+      revalidatePath("/blog");
+      revalidatePath(`/blog/${slug}`);
+      revalidatePath("/sitemap.xml");
+    } catch (revalErr) {
+      console.warn("[publish-article] revalidate failed (non-fatal):", revalErr);
+    }
+
     return NextResponse.json(
       {
         status: "ok",

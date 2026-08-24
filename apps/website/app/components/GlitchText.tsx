@@ -18,6 +18,11 @@ export default function GlitchText({ text, className = '' }: GlitchTextProps) {
   const burstRef = useRef<'main' | 'echo'>('main');
 
   useEffect(() => {
+    // Respect reduced-motion: skip the scramble entirely and show final text.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplayText(text);
+      return;
+    }
     let cancelled = false;
 
     const scheduleNext = (delay: number) => {
@@ -84,11 +89,16 @@ export default function GlitchText({ text, className = '' }: GlitchTextProps) {
   }, [text]);
 
   return (
-    <span
-      className={`${styles.glitch} ${isGlitching ? styles.animating : ''} ${className}`}
-      data-text={displayText}
-    >
-      {displayText}
+    // Screen readers must always get the FINAL word, not mid-scramble symbols:
+    // aria-label on the wrapper, animated characters hidden from the a11y tree.
+    <span className={className} aria-label={text} role="text">
+      <span
+        aria-hidden="true"
+        className={`${styles.glitch} ${isGlitching ? styles.animating : ''}`}
+        data-text={displayText}
+      >
+        {displayText}
+      </span>
     </span>
   );
 }

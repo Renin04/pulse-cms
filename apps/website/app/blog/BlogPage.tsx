@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Calendar, Clock, ArrowRight, Sparkles, FileText, Tag, Mail, TrendingUp, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Sparkles, FileText, Tag, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { AdaptedBlogEntry } from '../../lib/entry-adapter';
 
 function makeExcerpt(post: any, fallbackLength = 160): string {
@@ -460,46 +460,9 @@ export default function BlogPage({ initialEntries, initialFeaturedTags }: BlogPa
         </section>
       ) : null}
 
-      {/* ─── Newsletter CTA ─── */}
-      <section className="border-t border-[var(--neutral-200)] bg-white py-16 sm:py-20">
-        <div className="container">
-          <div className="mx-auto max-w-2xl text-center">
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--pulse-red)]/10">
-              <Mail className="h-6 w-6 text-[var(--pulse-red)]" />
-            </div>
-            <h2 className="text-2xl font-bold text-[var(--pulse-black)] sm:text-3xl">
-              Stay in the loop
-            </h2>
-            <p className="mt-3 text-[var(--neutral-600)]">
-              Get the latest articles, updates, and insights delivered to your inbox.
-            </p>
-            <form
-              className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center"
-              onSubmit={(e) => {
-                e.preventDefault();
-                alert('Thanks for subscribing! This is a demo.');
-              }}
-            >
-              <input
-                type="email"
-                placeholder="Enter your email"
-                required
-                className="w-full rounded-xl border border-[var(--neutral-200)] bg-[var(--neutral-50)] px-5 py-3 text-sm text-[var(--pulse-black)] outline-none transition-colors focus:border-[var(--pulse-red)] focus:ring-2 focus:ring-[var(--pulse-red)]/10 sm:w-80"
-              />
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--pulse-red-dark)] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[var(--pulse-red-dark)]/90 hover:shadow-lg hover:shadow-[var(--pulse-red-dark)]/20"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Subscribe
-              </button>
-            </form>
-            <p className="mt-3 text-xs text-[var(--neutral-500)]">
-              No spam. Unsubscribe anytime.
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* Newsletter CTA removed for production: the form was a demo stub that
+          collected emails nowhere (alert("This is a demo")). Reintroduce only
+          when a real subscribe backend exists. */}
 
       </main>
       <Footer />

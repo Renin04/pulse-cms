@@ -3,10 +3,35 @@ import { prisma } from "@/lib/db";
 import { verifyPassword, createAccessToken, createRefreshToken, REFRESH_TOKEN_TTL_MS } from "@/lib/auth";
 import { storeRefreshToken } from "@/lib/refresh-tokens";
 import { jsonResponse, handleApiError, ApiError, logAudit } from "@/lib/api-utils";
+import { checkRateLimit, headersFromResult } from "@/lib/rate-limit";
+import { NextResponse } from "next/server";
+
+// Brute-force guard: 10 attempts per 15 min per IP (in-memory; single instance).
+const LOGIN_MAX_ATTEMPTS = 10;
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const identifier = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "anonymous";
+    const limit = checkRateLimit(`login:${identifier}`, LOGIN_MAX_ATTEMPTS);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many login attempts. Try again later.",
+            retryAfter: Math.ceil((limit.resetAt - Date.now()) / 1000),
+          },
+        },
+        { status: 429, headers: headersFromResult(limit, LOGIN_MAX_ATTEMPTS) }
+      );
+    }
+
+    let body: { email?: unknown; password?: unknown };
+    try {
+      body = await req.json();
+    } catch {
+      throw new ApiError("INVALID_INPUT", "Request body must be valid JSON", 400);
+    }
     const { email, password } = body;
 
     if (!email || !password) {
