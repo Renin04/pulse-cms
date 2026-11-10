@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""lean-log: record per-session usage and sync it to the `lean-usage` branch of the repo's origin.
+  lean-log --hook            Stop/SessionEnd hook: reads hook JSON on stdin, records, syncs (throttled; forced on SessionEnd)
+  lean-log --statusline      status line: prints a compact line and stores the 5h/7d limit percentages
+  lean-log --backfill        import every local session log (all projects) into the local store
+  lean-log --sync [repo]     push pending records now
+Local store: ~/.claude/lean/usage/<project>/<session>.json   Remote: branch lean-usage, sessions/<project>/<session>.json
+Env: LEAN_USAGE_REMOTE (git URL, default = origin of the session's repo), LEAN_USAGE_SYNC_MIN (default 5), LEAN_USAGE_OFF=1,
+LEAN_USAGE_NO_TITLE=1 (do not store the first prompt), LEAN_DASH_OUT=<file> (rebuild the dashboard there after each sync)."""
+import hashlib, json, os, pathlib, subprocess, sys, time
+for _s in (sys.stdout, sys.stderr):
+    try: _s.reconfigure(encoding="utf-8")
+    except Exception: pass
+RT = lambda p: pathlib.Path(p).read_text(encoding="utf-8", errors="replace")
+WT = lambda p, s: pathlib.Path(p).write_text(s, encoding="utf-8")
+HOME = pathlib.Path(os.environ.get("CLAUDE_CONFIG_DIR", pathlib.Path.home() / ".claude"))
+STORE = HOME / "lean" / "usage"; BRANCH = "lean-usage"
+def git(*a, cwd=None, check=False):
+    r = subprocess.run(["git", *a], cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+    if check and r.returncode: raise RuntimeError(f"git {a[0]}: {r.stderr.strip()[:200]}")
+    return r
+def scan(f, side, buckets, first_last):
+    seen = {}
+    title = None
+    for line in open(f, encoding="utf-8", errors="replace"):
+        try: d = json.loads(line)
+        except ValueError: continue
+        m = d.get("message")
+        if not isinstance(m, dict): continue
+        if title is None and side == "main" and d.get("type") == "user" and not d.get("isMeta"):
+            c = m.get("content")
+            t = c if isinstance(c, str) else next((b.get("text", "") for b in c or [] if isinstance(b, dict) and b.get("type") == "text"), "")
+            t = " ".join(t.split())
+            if t and not t.startswith("<"): title = "" if os.environ.get("LEAN_USAGE_NO_TITLE") else t[:80]
+        if m.get("usage"): seen[m.get("id") or d.get("uuid")] = (d.get("timestamp", ""), m.get("model", "?"), m["usage"])
+    for ts, model, u in seen.values():
+        if model.startswith("<"): continue
+        cc = u.get("cache_creation") or {}
+        w1, w5 = cc.get("ephemeral_1h_input_tokens", 0), cc.get("ephemeral_5m_input_tokens", 0)
+        if not (w1 or w5): w5 = u.get("cache_creation_input_tokens", 0)
+        b = buckets.setdefault(ts[:13], {}).setdefault(f"{side}|{model}", [0] * 7)  # req,in,cw1h,cw5m,cr,out,think
+        for i, v in enumerate((1, u.get("input_tokens", 0), w1, w5, u.get("cache_read_input_tokens", 0), u.get("output_tokens", 0),
+                               (u.get("output_tokens_details") or {}).get("thinking_tokens", 0))): b[i] += v or 0
+        if ts: first_last[0] = min(first_last[0] or ts, ts); first_last[1] = max(first_last[1], ts)
+    return title
+def project_of(cwd):
+    r = git("rev-parse", "--show-toplevel", cwd=cwd) if cwd and os.path.isdir(cwd) else None
+    return pathlib.Path(r.stdout.strip() if r and r.returncode == 0 else (cwd or "unknown")).name or "unknown"
+def record(transcript, cwd=None, sid=None):
+    f = pathlib.Path(transcript)
+    if not f.exists(): return None
+    buckets, fl = {}, ["", ""]
+    title = scan(f, "main", buckets, fl)
+    subs = sorted((f.parent / f.stem).glob("subagents/*.jsonl"))
+    for s in subs: scan(s, "sub", buckets, fl)
+    if not buckets: return None
+    if not cwd:  # backfill: take cwd from the log itself
+        for line in open(f, encoding="utf-8", errors="replace"):
+            if '"cwd"' in line:
+                try: cwd = json.loads(line).get("cwd")
+                except ValueError: pass
+                if cwd: break
+    proj = project_of(cwd)
+    um = HOME / "CLAUDE.md"
+    kit = None  # backfilled sessions: unknown, the dashboard classifies them by date
+    if sid: kit = bool(cwd and (pathlib.Path(cwd) / ".claude/rules/lean.md").exists()) or (um.exists() and "lean:start" in RT(um))
+    rec = dict(v=1, session=sid or f.stem, project=proj, where="cloud" if os.environ.get("CLAUDE_CODE_REMOTE") else "local",
+               first=fl[0], last=fl[1], title=title or "", subagents=len(subs), kit=kit, buckets=buckets)
+    out = STORE / proj / f"{rec['session']}.json"; out.parent.mkdir(parents=True, exist_ok=True)
+    old = json.loads(RT(out)) if out.exists() else {}
+    if old.get("limits"): rec["limits"] = old["limits"]
+    if old.get("kit") is not None and kit is None: rec["kit"] = old["kit"]
+    if rec["kit"]: rec["kit_at"] = old.get("kit_at") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())  # first time the kit was seen active
+    new = json.dumps(rec, ensure_ascii=False, separators=(",", ":"))
+    if not out.exists() or RT(out) != new: WT(out, new)
+    return out
+def sync(cwd, force=False):
+    remote = os.environ.get("LEAN_USAGE_REMOTE") or git("remote", "get-url", "origin", cwd=cwd).stdout.strip()
+    if not remote: return "no remote"
+    key = hashlib.sha1(remote.encode()).hexdigest()[:10]
+    rd = HOME / "lean" / f"usage-repo-{key}"; stamp = HOME / "lean" / f".sync-{key}"
+    if not force and stamp.exists() and time.time() - stamp.stat().st_mtime < 60 * float(os.environ.get("LEAN_USAGE_SYNC_MIN", 5)): return "throttled"
+    stamp.parent.mkdir(parents=True, exist_ok=True); stamp.touch()
+    if not (rd / ".git").exists():
+        rd.mkdir(parents=True, exist_ok=True); git("init", "-q", cwd=rd, check=True); git("remote", "add", "origin", remote, cwd=rd)
+        git("config", "user.name", "lean-log", cwd=rd); git("config", "user.email", "lean-log@users.noreply.github.com", cwd=rd)
+        git("config", "commit.gpgsign", "false", cwd=rd)
+    proj = project_of(cwd) if not os.environ.get("LEAN_USAGE_REMOTE") else None  # own-repo remote: only this project's records
+    for attempt in range(3):
+        if git("fetch", "-q", "--depth", "1", "origin", BRANCH, cwd=rd).returncode == 0: git("checkout", "-q", "-B", BRANCH, "FETCH_HEAD", cwd=rd, check=True)
+        elif git("rev-parse", "--verify", "-q", BRANCH, cwd=rd).returncode: git("checkout", "-q", "--orphan", BRANCH, cwd=rd)
+        n = 0
+        for src in STORE.glob("*/*.json"):
+            if proj and src.parent.name != proj: continue
+            dst = rd / "sessions" / src.parent.name / src.name
+            if not dst.exists() or dst.read_bytes() != src.read_bytes():
+                dst.parent.mkdir(parents=True, exist_ok=True); dst.write_bytes(src.read_bytes()); n += 1
+        if not n: return "up to date"
+        git("add", "-A", "sessions", cwd=rd, check=True); git("commit", "-q", "-m", f"usage: {n} session record(s)", cwd=rd, check=True)
+        if git("push", "-q", "origin", f"HEAD:refs/heads/{BRANCH}", cwd=rd).returncode == 0: return f"pushed {n}"
+        time.sleep(2 * (attempt + 1))
+    return "push failed"
+def self_update():
+    kit = os.environ.get("LEAN_KIT_DIR"); stamp = HOME / "lean" / ".update"
+    if not kit or not os.path.isdir(os.path.join(kit, ".git")) or (stamp.exists() and time.time() - stamp.stat().st_mtime < 86400): return
+    stamp.parent.mkdir(parents=True, exist_ok=True); stamp.touch()
+    before = git("rev-parse", "HEAD:lean", cwd=kit).stdout.strip()
+    if git("pull", "-q", "--ff-only", cwd=kit).returncode: return
+    if git("rev-parse", "HEAD:lean", cwd=kit).stdout.strip() != before:
+        subprocess.run(["bash", "lean/install.sh", "--user"], cwd=kit, capture_output=True, timeout=120)
+def statusline():
+    d = json.load(sys.stdin); rl = d.get("rate_limits") or {}
+    h, w = (rl.get("five_hour") or {}), (rl.get("seven_day") or {})
+    ctx = (d.get("context_window") or {}).get("used_percentage")
+    parts = [(d.get("model") or {}).get("display_name") or (d.get("model") or {}).get("id", "")]
+    if ctx is not None: parts.append(f"ctx {ctx:.0f}%")
+    if h.get("used_percentage") is not None: parts.append(f"5h {h['used_percentage']:.0f}%")
+    if w.get("used_percentage") is not None: parts.append(f"7d {w['used_percentage']:.0f}%")
+    cost = (d.get("cost") or {}).get("total_cost_usd")
+    if cost: parts.append(f"${cost:.2f}")
+    print(" · ".join(p for p in parts if p))
+    if h or w:  # keep the latest official percentages next to the session record (one sample per 10 min)
+        proj = project_of(d.get("cwd") or (d.get("workspace") or {}).get("current_dir")); f = STORE / proj / f"{d.get('session_id')}.json"
+        if f.exists():
+            rec = json.loads(RT(f)); lim = rec.setdefault("limits", []); now = int(time.time())
+            if not lim or now - lim[-1][0] >= 600:
+                lim.append([now, h.get("used_percentage"), w.get("used_percentage"), h.get("resets_at"), w.get("resets_at")])
+                rec["limits"] = lim[-300:]; WT(f, json.dumps(rec, ensure_ascii=False, separators=(",", ":")))
+def main():
+    if os.environ.get("LEAN_USAGE_OFF"): return
+    a = sys.argv[1:]
+    if "--statusline" in a: return statusline()
+    if "--hook" in a:
+        d = json.load(sys.stdin)
+        if record(d.get("transcript_path", ""), d.get("cwd"), d.get("session_id")):
+            r = sync(d.get("cwd"), force=d.get("hook_event_name") == "SessionEnd")
+            self_update()
+            out = os.environ.get("LEAN_DASH_OUT")
+            if out and r != "throttled":  # keep the local dashboard file current, zero model tokens
+                subprocess.run([sys.executable, "-X", "utf8", str(pathlib.Path(__file__).with_name("lean-dash")), "--out", os.path.expanduser(out), d.get("cwd") or "."], capture_output=True, timeout=120)
+    elif "--backfill" in a:
+        n = sum(1 for f in (HOME / "projects").glob("*/*.jsonl") if record(f))
+        print(f"recorded {n} sessions -> {STORE}")
+    elif "--sync" in a:
+        rest = [x for x in a if not x.startswith("-")]; print(sync(rest[0] if rest else os.getcwd(), force=True))
+    else: print(__doc__)
+try: main()
+except Exception as e:  # a usage logger must never break a session
+    if "--hook" not in sys.argv and "--statusline" not in sys.argv: raise
+    sys.stderr.write(f"lean-log: {e}\n")

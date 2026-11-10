@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+"""lean-guard: hook that enforces the lean rules instead of only stating them. Fail-open, zero model tokens unless it fires.
+PreToolUse (Read|Agent|Task), main session only:
+  - Read of a big text file without `limit` -> denied once with the line count; pass `limit` (deliberate) or ask scout.
+  - second spawn of scout/worker in one session -> denied once: reuse via SendMessage. A repeat of the same call passes.
+UserPromptSubmit: notes the context size to the model when it crosses a step (each request re-sends it).
+Env: LEAN_GUARD_OFF=1, LEAN_GUARD_READ_LINES (500), LEAN_GUARD_CTX (120000), LEAN_GUARD_CTX_STEP (40000)."""
+import json, os, sys, time
+
+BIN = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf", ".ipynb", ".ico", ".woff", ".woff2", ".ttf", ".zip", ".gz", ".mp4", ".mp3"}
+REUSE = {"scout", "worker"}
+
+
+def env_int(k, d):
+    try: return int(os.environ.get(k, d))
+    except ValueError: return d
+
+
+def state_path(sid):
+    d = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude"), "lean", "guard")
+    os.makedirs(d, exist_ok=True)
+    if int(time.time()) % 50 == 0:  # occasional cleanup of week-old state
+        for n in os.listdir(d):
+            p = os.path.join(d, n)
+            if time.time() - os.path.getmtime(p) > 7 * 86400: os.remove(p)
+    return os.path.join(d, "".join(c for c in sid if c.isalnum() or c in "-_")[:80] + ".json")
+
+
+def load(p):
+    try: return json.load(open(p, encoding="utf-8"))
+    except Exception: return {}
+
+
+def save(p, s): json.dump(s, open(p, "w", encoding="utf-8"))
+
+
+def log(st, what): st.setdefault("fired", {})[what] = st.get("fired", {}).get(what, 0) + 1
+
+
+def deny(reason):
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": reason}}))
+
+
+def guard_read(inp, st):
+    ti = inp.get("tool_input") or {}
+    path = ti.get("file_path") or ""
+    if "limit" in ti or not path or os.path.splitext(path)[1].lower() in BIN: return False
+    try:
+        size = os.path.getsize(path)
+        if size < 16000: return False
+        with open(path, "rb") as f: lines = f.read(8_000_000).count(b"\n") + 1
+    except OSError: return False
+    cap = env_int("LEAN_GUARD_READ_LINES", 500)
+    if lines <= cap: return False
+    seen = st.setdefault("read_denied", [])
+    if path in seen: return False  # second identical attempt passes
+    seen.append(path); log(st, "read")
+    deny(f"lean-guard: {os.path.basename(path)} has {lines} lines (~{size // 4000}k tokens), over the {cap}-line main-session limit. "
+         "Grep for what is needed and Read with offset+limit, or send the question to the scout agent (SendMessage if one exists). "
+         "If the whole file really is needed here, repeat the Read with an explicit limit.")
+    return True
+
+
+def guard_agent(inp, st):
+    ti = inp.get("tool_input") or {}
+    typ = (ti.get("subagent_type") or "").strip()
+    if typ not in REUSE: return False
+    spawned = st.setdefault("spawned", {})
+    if typ not in spawned:
+        spawned[typ] = ti.get("description") or typ; return False
+    pend = st.setdefault("agent_denied", {})
+    key = typ + "|" + (ti.get("prompt") or "")[:200]
+    if pend.get(typ) == key:  # same call repeated: the earlier one is gone or unusable, allow
+        pend.pop(typ); return False
+    pend[typ] = key; log(st, "agent")
+    deny(f"lean-guard: a {typ} agent already exists in this session (first task: {spawned[typ]!r}). Reuse it with SendMessage, "
+         "also for unrelated work: its context is cached and a fresh spawn pays the setup again. "
+         "If it is gone or cannot be resumed, repeat this exact Agent call and it will pass.")
+    return True
+
+
+def context_tokens(tp):
+    try:
+        with open(tp, "rb") as f:
+            f.seek(0, 2); n = f.tell(); f.seek(max(0, n - 400_000)); tail = f.read().decode("utf-8", "replace")
+    except OSError: return 0
+    for line in reversed(tail.splitlines()):
+        if '"usage"' not in line: continue
+        try: r = json.loads(line)
+        except ValueError: continue
+        if r.get("isSidechain") or r.get("type") != "assistant": continue
+        u = (r.get("message") or {}).get("usage") or {}
+        t = u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0) + u.get("cache_creation_input_tokens", 0)
+        if t: return t
+    return 0
+
+
+def note_context(inp, st):
+    ctx = context_tokens(inp.get("transcript_path") or "")
+    base, step = env_int("LEAN_GUARD_CTX", 120000), max(1, env_int("LEAN_GUARD_CTX_STEP", 40000))
+    if ctx < base:
+        st["ctx_level"] = -1; return
+    level = (ctx - base) // step
+    if level <= st.get("ctx_level", -1): return
+    st["ctx_level"] = level; log(st, "ctx")
+    print(f"lean-guard: main context is now about {ctx // 1000}k tokens and every request re-sends it. "
+          "If this prompt starts a new topic, tell the user in one line that a fresh session or /compact would be cheaper. "
+          "Delegate further reading to scout and keep tool output short.")
+
+
+def main():
+    if os.environ.get("LEAN_GUARD_OFF"): return
+    inp = json.load(sys.stdin)
+    if inp.get("agent_id"): return  # subagents read and work freely
+    sp = state_path(inp.get("session_id") or "nosession"); st = load(sp); before = json.dumps(st, sort_keys=True)
+    ev, tool = inp.get("hook_event_name"), inp.get("tool_name")
+    if ev == "PreToolUse" and tool == "Read": guard_read(inp, st)
+    elif ev == "PreToolUse" and tool in ("Agent", "Task"): guard_agent(inp, st)
+    elif ev == "UserPromptSubmit": note_context(inp, st)
+    if json.dumps(st, sort_keys=True) != before: save(sp, st)
+
+
+if __name__ == "__main__":
+    try:
+        if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8")
+        main()
+    except Exception:
+        pass  # never block work because the guard broke

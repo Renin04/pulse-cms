@@ -1,0 +1,33 @@
+#!/usr/bin/env python3
+"""lean-dash: build the usage dashboard (one self-contained HTML file) from recorded sessions.
+  lean-dash [--out FILE] [--artifact] [--no-fetch] [repo ...]
+Reads the local store (~/.claude/lean/usage) plus the `lean-usage` branch of each repo's origin (default: current repo).
+--artifact writes page content without the <!doctype> wrapper (for publishing as a Claude artifact). Default out: ./lean-usage.html"""
+import datetime, json, os, pathlib, subprocess, sys, tempfile
+HOME = pathlib.Path(os.environ.get("CLAUDE_CONFIG_DIR", pathlib.Path.home() / ".claude"))
+a = sys.argv[1:]; out = pathlib.Path(a[a.index("--out") + 1]) if "--out" in a else pathlib.Path("lean-usage.html")
+repos = [x for i, x in enumerate(a) if not x.startswith("-") and (i == 0 or a[i - 1] != "--out")] or [os.getcwd()]
+recs = {}
+def add(f):
+    try: r = json.loads(pathlib.Path(f).read_text(encoding="utf-8"))
+    except (ValueError, OSError): return
+    old = recs.get(r.get("session"))
+    if not old or r.get("last", "") >= old.get("last", ""):
+        if old and old.get("limits") and not r.get("limits"): r["limits"] = old["limits"]
+        recs[r["session"]] = r
+if "--no-fetch" not in a:
+    for repo in repos:
+        url = os.environ.get("LEAN_USAGE_REMOTE") or subprocess.run(["git", "remote", "get-url", "origin"], cwd=repo, capture_output=True, text=True, encoding="utf-8", errors="replace").stdout.strip() or repo
+        with tempfile.TemporaryDirectory() as td:
+            r = subprocess.run(["git", "clone", "-q", "--depth", "1", "--single-branch", "--branch", "lean-usage", url, td], capture_output=True, text=True)
+            if r.returncode: sys.stderr.write(f"no lean-usage branch on {url}\n"); continue
+            for f in pathlib.Path(td).glob("sessions/*/*.json"): add(f)
+for f in (HOME / "lean" / "usage").glob("*/*.json"): add(f)
+data = json.dumps({"generated": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"), "records": list(recs.values())},
+                  ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+tpl = (pathlib.Path(__file__).resolve().parent / "lean-dash.html").read_text(encoding="utf-8")
+s, e = tpl.index("/*DATA*/"), tpl.index("/*END*/")
+page = tpl[:s] + "/*DATA*/" + data + tpl[e:]
+if "--artifact" not in a: page = '<!doctype html>\n<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\n' + page
+out.write_text(page, encoding="utf-8")
+sys.stdout.reconfigure(encoding="utf-8"); print(f"{out}  sessions={len(recs)}")

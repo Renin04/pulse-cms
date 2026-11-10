@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+"""lean-stats: token/request usage per model from Claude Code session logs (main + subagents).
+usage: lean-stats [--all] [session.jsonl | project-dir]   default: newest session of the current project.
+Cost = list price per 1M tokens (in, out, cache read); cache write billed 2x input (1h) / 1.25x (5m). A yardstick, not a bill."""
+import json, os, pathlib, sys
+sys.stdout.reconfigure(encoding="utf-8")
+PRICE = {"fable": (8, 40, .20), "mythos": (8, 40, .20), "opus": (4, 20, .20), "sonnet": (2, 10, .10), "haiku": (.10, .50, .01)}
+def price(model):
+    for k, v in PRICE.items():
+        if k in model: return v
+    return (0, 0, 0)
+def scan(f, agg, side):
+    seen = {}
+    for line in open(f, encoding="utf-8", errors="replace"):
+        try: d = json.loads(line)
+        except ValueError: continue
+        m = d.get("message")
+        if not isinstance(m, dict) or not m.get("usage"): continue
+        seen[m.get("id") or d.get("uuid")] = (m.get("model", "?"), m["usage"])  # last chunk of a message wins
+    for model, u in seen.values():
+        a = agg.setdefault((side, model), dict(req=0, inp=0, cw=0, cr=0, out=0, think=0, cost=0.0))
+        cc = u.get("cache_creation") or {}
+        w1h = cc.get("ephemeral_1h_input_tokens", 0); w5 = cc.get("ephemeral_5m_input_tokens", 0)
+        cw = u.get("cache_creation_input_tokens", 0) or (w1h + w5)
+        if not (w1h or w5): w5 = cw
+        i, o, r = u.get("input_tokens", 0), u.get("output_tokens", 0), u.get("cache_read_input_tokens", 0)
+        pi, po, pr = price(model)
+        a["req"] += 1; a["inp"] += i; a["cw"] += cw; a["cr"] += r; a["out"] += o
+        a["think"] += (u.get("output_tokens_details") or {}).get("thinking_tokens", 0)
+        a["cost"] += (i * pi + w1h * pi * 2 + w5 * pi * 1.25 + r * pr + o * po) / 1e6
+def main():
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]; all_ = "--all" in sys.argv
+    root = pathlib.Path(os.environ.get("CLAUDE_CONFIG_DIR", pathlib.Path.home() / ".claude")) / "projects"
+    if args and args[0].endswith(".jsonl"): files = [pathlib.Path(args[0])]
+    else:
+        proj = pathlib.Path(args[0]) if args else root / str(pathlib.Path.cwd()).replace("/", "-").replace(".", "-")
+        files = sorted(proj.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
+        if not files: sys.exit(f"no sessions in {proj}")
+        if not all_: files = files[-1:]
+    agg = {}
+    for f in files:
+        scan(f, agg, "main")
+        for s in (f.parent / f.stem).glob("subagents/*.jsonl"): scan(s, agg, "sub")
+    k = lambda n: f"{n/1000:.1f}k"
+    print(f"sessions={len(files)}  ({files[-1].name})")
+    print(f"{'side':5}{'model':22}{'req':>5}{'input':>9}{'c.write':>9}{'c.read':>10}{'output':>9}{'think':>8}{'$list':>8}")
+    tot = dict(req=0, cost=0.0)
+    for (side, model), a in sorted(agg.items()):
+        print(f"{side:5}{model[:21]:22}{a['req']:>5}{k(a['inp']):>9}{k(a['cw']):>9}{k(a['cr']):>10}{k(a['out']):>9}{k(a['think']):>8}{a['cost']:>8.2f}")
+        tot["req"] += a["req"]; tot["cost"] += a["cost"]
+    print(f"total requests={tot['req']}  list-price cost=${tot['cost']:.2f}")
+main()

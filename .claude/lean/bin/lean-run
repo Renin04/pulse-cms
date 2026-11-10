@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# lean-run <cmd...>: run a noisy command, print only what a model needs. Full log kept on disk.
+# Env: LEAN_TAIL (default 25) lines of tail, LEAN_ERR (default 40) max error lines.
+[ $# -eq 0 ] && { echo "usage: lean-run <command...>" >&2; exit 2; }
+dir="${TMPDIR:-/tmp}/lean-run"; mkdir -p "$dir"
+log="$dir/$(date +%H%M%S)-$$.log"
+if [ $# -eq 1 ]; then bash -c "$1" >"$log" 2>&1; else "$@" >"$log" 2>&1; fi
+rc=$?
+n=$(wc -l <"$log")
+echo "exit=$rc lines=$n log=$log"
+if [ "$n" -le $(( ${LEAN_TAIL:-25} + 15 )) ]; then cat "$log"; exit $rc; fi
+grep -n -i -E '(^|[^a-z])(error|fail(ed|ure)?|exception|traceback|fatal|panic|denied|not found|cannot|✗|✖)' "$log" \
+  | cut -c1-300 | head -n "${LEAN_ERR:-40}" | sed 's/^/E /'
+echo "--- tail"
+tail -n "${LEAN_TAIL:-25}" "$log" | cut -c1-300
+exit $rc

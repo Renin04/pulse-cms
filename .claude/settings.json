@@ -1,0 +1,71 @@
+{
+  "modelSettings": {
+    "claude-fable-5-2": {
+      "effortLevel": "medium",
+      "autoCompactWindow": 200000
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "medium",
+      "autoCompactWindow": 200000
+    },
+    "claude-sonnet-5-5": {
+      "effortLevel": "high",
+      "autoCompactWindow": 200000
+    },
+    "claude-haiku-5-5": {
+      "effortLevel": "xhigh",
+      "autoCompactWindow": 200000
+    }
+  },
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet",
+    "LEAN_USAGE_OFF": "1"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/lean/bin/lean-log --hook",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/lean/bin/lean-log --hook",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/lean/bin/lean-guard",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/lean/bin/lean-guard",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
